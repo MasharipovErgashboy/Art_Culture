@@ -16,6 +16,7 @@ import {
   Lightbulb,
 } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image" // ✅ qo‘shildi
 
 export default function HomePage() {
   const sections = [
@@ -70,6 +71,18 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="py-12 sm:py-16 lg:py-20 responsive-padding bg-gradient-to-b from-background to-primary/5">
         <div className="container mx-auto text-center max-w-4xl">
+          {/* Logo */}
+          <div className="flex justify-center mb-6 sm:mb-8">
+            <Image
+              src="/logo.jpg" // public/logo.jpg da bo'lishi kerak
+              alt="Art&Culture Logo"
+              width={120}
+              height={120}
+              className="rounded-full shadow-md"
+              priority
+            />
+          </div>
+
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-primary mb-4 sm:mb-6 text-balance">
             Art&Culture Publishing
           </h1>
