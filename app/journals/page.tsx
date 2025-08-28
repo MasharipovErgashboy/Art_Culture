@@ -11,7 +11,7 @@ export default function JournalsPage() {
   const journals = [
     {
       id: "uzbekistan-culture-art",
-      title: "O'zbekiston madaniyati va san'ati",
+      title: "O'zbekiston madaniyati va san'ati ",
       description:
         "O'zbekiston madaniyati, san'ati va merosiga bag'ishlangan ilmiy jurnal. Tarix, adabiyot, tasviriy san'at va musiqa sohasidagi tadqiqotlar.",
       issn: "2181-9092",
@@ -25,13 +25,13 @@ export default function JournalsPage() {
     },
     {
       id: "scientific-heritage",
-      title: "Ilmiy meros va zamonaviy tadqiqotlar",
+      title: "О‘zbekiston davlat san’at va madaniyat instituti xabarlari",
       description:
         "Ilmiy meros va zamonaviy tadqiqotlar sohasidagi eng so'nggi ishlanmalar va kashfiyotlar haqida ma'lumotlar.",
       issn: "2181-8754",
       year: "2024",
       issue: "2-son",
-      author: "Ilmiy Tadqiqotlar Markazi",
+      author: "O'zbekiston Madaniyat va San'at Instituti",
       image: "/placeholder-j65e2.png",
       category: "Ilm-fan",
       status: "Faol",
@@ -45,7 +45,7 @@ export default function JournalsPage() {
       issn: "2181-7634",
       year: "2024",
       issue: "1-son",
-      author: "Madaniyatshunoslik Instituti",
+      author: "O'zbekiston Madaniyat va San'at Instituti",
       image: "/placeholder-1loz8.png",
       category: "Madaniyatshunoslik",
       status: "Faol",

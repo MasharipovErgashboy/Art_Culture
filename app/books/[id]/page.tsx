@@ -355,7 +355,7 @@ export default function BookDetailPage({ params }: { params: { id: string } }) {
                 <CardHeader>
                   <CardTitle className="flex items-center">
                     <BookOpen className="mr-2 h-5 w-5" />
-                    Mundarija
+                      Bo'limlar
                   </CardTitle>
                 </CardHeader>
                 <CardContent>

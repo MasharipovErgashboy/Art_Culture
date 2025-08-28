@@ -18,8 +18,41 @@ const journalsData = {
     title: "O'zbekiston madaniyati va san'ati",
     description:
       "O'zbekiston madaniyati, san'ati va merosiga bag'ishlangan ilmiy jurnal. Bu jurnal tarix, adabiyot, tasviriy san'at va musiqa sohasidagi fundamental va amaliy tadqiqotlarni o'z ichiga oladi. Jurnal O'zbekiston madaniyati va san'atining boy merosini zamonaviy ilmiy yondashuvlar bilan o'rganishga qaratilgan.",
-    fullDescription:
-      "O'zbekiston madaniyati va san'ati jurnali 2020-yilda tashkil etilgan bo'lib, madaniyat va san'at sohasidagi ilmiy tadqiqotlarni rivojlantirishga qaratilgan. Jurnal yiliga 4 marta nashr etiladi va har bir sonda 15-20 ta ilmiy maqola joylashtiriladi. Jurnal maqolalari o'zbek, rus va ingliz tillarida qabul qilinadi.",
+  fullDescription: `Respublikamizda olib borilayotgan islohotlar, tub o‘zgarishlar, san’at va madaniyat sohasiga ham yangi innovatsion texnologiyalarning kirib kelishi va bu sohaga bo‘lgan e’tibor, milliy va umuminsoniy qadriyatlarimizga sodiqlik, kelajakka bo’lgan umid va ishonch, ilm-fanning turli jabhalaridagi yuksalishlar, muhtaram prezidentimizning yoshlarga yaratib berayotgan keng imkoniyatlarini, Yangi O‘zbekistonda yangicha dunyoqarash g‘oyalarining targ‘ibi sifatida O‘zbekiston davlat san’at va madaniyati instituti qoshida “O‘zbekiston madaniyati va san’ati” ilmiy-uslibiy, nazariy-amaliy elektron jurnal tashkil etildi.
+
+Jurnalning maqsad va vazifalari:
+- ilmiy yо‘nalishlarni;
+- hukumatning ilm-fanni qо‘llab-quvvatlash va rivojlantirish borasidagi siyosatini keng targ‘ib qilish;
+- respublikamizning oliy ta’lim va ilmiy-tadqiqot institutlari, ilmiy markazlari va xorijda bajarilgan ilmiy-tadqiqot ishlarining natijalarini nashr etish;
+- talaba yoshlarning dunyoqarashini boyitish, qо‘lga kiritilayotgan yutuqlar va ilg‘or tajribalarni jamoatchilikka yetkazishda targ‘ibot va tashviqot ishlarini olib borish;
+- ta’lim jarayonini, yangi pedagogik texnologiyalar va о‘qitish usullarini sifat jihatidan yangilash va zamonaviy tashkiliy shakllarini keng targ‘ib qilish;
+- oliy ta’limda ilm-fanni yanada rivojlantirish, professor-о‘qituvchilarining ilmiy-tadqiqot faoliyati samaradorligi va natijadorligini oshirish, iqtidorli talaba-yoshlarni ilmiy faoliyat bilan shug‘ullanishga keng jalb etish;
+- yuksak ma’naviyat va insoniylikning milliy an’analariga sodiqlik ruhini shakllantirish, jamiyatda yot g‘oya va mafkuralarga nisbatan immunitet va tahliliy tafakkurni mustahkamlash bо‘yicha keng kо‘lamli ma’rifiy va tarbiyaviy ishlarni yoritib borish.
+
+Jurnal nomi: “O‘zbekiston madaniyati va san’ati” ilmiy-uslibiy, nazariy-amaliy elektron jurnal. Muqovada jurnal nomi bitta o‘zbek (lotin) tilida yoziladi.
+
+Amal qiluvchi tillar: o‘zbek (lotin), rus, qoraqalpoq va ingliz tillarida.
+Jurnalning nashr yili: 2025-yil, 14-iyun.
+Jurnalning davriyligi: Jurnal bir yilda olti marta chop etiladi (Keyinchalik rо‘yxatdan о‘tkazuvchi organni bir oy muddatda yozma shaklda xabardor qilgan holda davriyligiga о‘zgartirish kiritilishi mumkin).
+
+Jurnal muassisi: O‘zbekiston davlat san’at va madaniyati instituti (bundan buyon matnda “Muassis” deb yuritiladi) hisoblanadi.
+
+Jurnal quyidagi ruknlar bo‘yicha ish olib boradi:
+1. Teatr va kino san’ati.
+2. Musiqa, raqs, tasviriy san’at.
+3. Madaniyatshunoslik, sotsiologiya, siyosatshunoslik.
+4. Filologiya, tarix, falsafa.
+5. Pedagogika, psixologiya, kutubxonashunoslik.
+
+Jurnalning ixtisoslashuvi: san’atshunoslik, filologiya, tarix, falsafa, pedagogika, psixologiya, sotsiologiya, siyosatshunoslik fanlari bo‘yicha olib borilgan, ilmiy–nazariy hamda ilmiy–amaliy tadqiqotlar natijalarini chop etishga ixtisoslashgan ilmiy jurnal.
+
+Tarqatish shakli: onlayn elektron kо‘rinishda (web sayt: https://dsmi.uz/).
+
+Jurnal tahririyatining joylashgan manzili (pochta manzili): 100164. Toshkent shahar, Yalang‘och dahasi, 127-“a” uy. Tel: +998 973018084. Elektron pochta: sanatmadaniyat4@gmail.com. Telegram manzil: @m_s_jurnali
+
+<></>`,
+
+
     issn: "2181-9092",
     year: "2024",
     issue: "4-son",

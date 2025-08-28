@@ -89,7 +89,7 @@ export default function AboutPage() {
               <div>
                 <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-4 text-balance">Loyihaning maqsadi</h2>
                 <p className="text-muted-foreground leading-relaxed responsive-text">
-                  Art&Culture portali O'zbekiston Milliy Universiteti tomonidan 2020-yilda boshlangan va madaniyat,
+                  Art&Culture portali O'zbekiston Madaniyat va San'at Instituti tomonidan 2020-yilda boshlangan va madaniyat,
                   san'at sohasidagi ilmiy tadqiqotlarni rivojlantirish, saqlash va tarqatishga qaratilgan. Portal
                   talabalar, tadqiqotchilar, olimlar va madaniyat sohasida faoliyat yurituvchi barcha mutaxassislar
                   uchun mo'ljallangan.
@@ -272,7 +272,7 @@ export default function AboutPage() {
                 <div className="pt-1">
                   <h3 className="font-semibold text-foreground mb-2 text-lg">2020 - Loyiha boshlandi</h3>
                   <p className="text-muted-foreground responsive-text">
-                    O'zbekiston Milliy Universiteti tomonidan Art&Culture portali loyihasi boshlandi.
+                    O'zbekiston Madaniyat va San'at Instituti tomonidan Art&Culture portali loyihasi boshlandi.
                   </p>
                 </div>
               </div>

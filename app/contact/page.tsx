@@ -67,7 +67,7 @@ export default function ContactPage() {
     {
       icon: MapPin,
       title: "Manzil",
-      details: ["O'zbekiston Milliy Universiteti", "100174, Toshkent sh., Universitetskaya ko'chasi, 4-uy"],
+      details: ["O'zbekiston Madaniyat va San'at Instituti", "100174, Toshkent sh., Universitetskaya ko'chasi, 4-uy"],
     },
     {
       icon: Phone,

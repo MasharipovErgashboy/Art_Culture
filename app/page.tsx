@@ -71,7 +71,7 @@ export default function HomePage() {
       <section className="py-12 sm:py-16 lg:py-20 responsive-padding bg-gradient-to-b from-background to-primary/5">
         <div className="container mx-auto text-center max-w-4xl">
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-primary mb-4 sm:mb-6 text-balance">
-            Art&Culture
+            Art&Culture Publishing
           </h1>
           <p className="text-lg sm:text-xl md:text-2xl text-muted-foreground mb-6 sm:mb-8 text-pretty">
             Ilmiy meros va zamonaviy bilimlar jamlanmasi
