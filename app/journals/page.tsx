@@ -11,7 +11,7 @@ export default function JournalsPage() {
   const journals = [
     {
       id: "uzbekistan-culture-art",
-      title: "O'zbekiston madaniyati va san'ati ",
+      title: "O'zbekiston madaniyati va san'ati",
       description:
         "O'zbekiston madaniyati, san'ati va merosiga bag'ishlangan ilmiy jurnal. Tarix, adabiyot, tasviriy san'at va musiqa sohasidagi tadqiqotlar.",
       issn: "2181-9092",
@@ -60,7 +60,7 @@ export default function JournalsPage() {
       {/* Header Section */}
       <section className="py-12 sm:py-16 lg:py-20 responsive-padding bg-gradient-to-b from-primary/5 to-background">
         <div className="container mx-auto">
-          <div className="text-center mb-8 sm:mb-12">
+          <div className="text-center">
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-4 sm:mb-6 text-balance">
               Ilmiy jurnallar
             </h1>
@@ -72,7 +72,7 @@ export default function JournalsPage() {
       </section>
 
       {/* Journals Grid */}
-      <section className="py-12 sm:py-16 responsive-padding">
+      <section className="py-10 sm:py-1 responsive-padding">
         <div className="container mx-auto">
           <div className="responsive-grid max-w-6xl mx-auto">
             {journals.map((journal) => (
@@ -143,9 +143,6 @@ export default function JournalsPage() {
           </div>
 
           <div className="text-center mt-12 sm:mt-16">
-            <Button variant="outline" size="lg" className="bg-transparent hover-primary px-8 py-3 text-base sm:text-lg">
-              Ko'proq yuklash
-            </Button>
           </div>
         </div>
       </section>

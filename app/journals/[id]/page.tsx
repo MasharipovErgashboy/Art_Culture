@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Calendar, User, BookOpen, Download, ArrowLeft, ExternalLink } from "lucide-react"
+import { Calendar, User, BookOpen, Download, ArrowLeft, ExternalLink, HelpCircle, ChevronDown, ChevronUp } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { notFound } from "next/navigation"
+import { useState } from "react"
 
 // Mock data - in real app this would come from database
 const journalsData = {
@@ -18,41 +19,6 @@ const journalsData = {
     title: "O'zbekiston madaniyati va san'ati",
     description:
       "O'zbekiston madaniyati, san'ati va merosiga bag'ishlangan ilmiy jurnal. Bu jurnal tarix, adabiyot, tasviriy san'at va musiqa sohasidagi fundamental va amaliy tadqiqotlarni o'z ichiga oladi. Jurnal O'zbekiston madaniyati va san'atining boy merosini zamonaviy ilmiy yondashuvlar bilan o'rganishga qaratilgan.",
-  fullDescription: `Respublikamizda olib borilayotgan islohotlar, tub o‘zgarishlar, san’at va madaniyat sohasiga ham yangi innovatsion texnologiyalarning kirib kelishi va bu sohaga bo‘lgan e’tibor, milliy va umuminsoniy qadriyatlarimizga sodiqlik, kelajakka bo’lgan umid va ishonch, ilm-fanning turli jabhalaridagi yuksalishlar, muhtaram prezidentimizning yoshlarga yaratib berayotgan keng imkoniyatlarini, Yangi O‘zbekistonda yangicha dunyoqarash g‘oyalarining targ‘ibi sifatida O‘zbekiston davlat san’at va madaniyati instituti qoshida “O‘zbekiston madaniyati va san’ati” ilmiy-uslibiy, nazariy-amaliy elektron jurnal tashkil etildi.
-
-Jurnalning maqsad va vazifalari:
-- ilmiy yо‘nalishlarni;
-- hukumatning ilm-fanni qо‘llab-quvvatlash va rivojlantirish borasidagi siyosatini keng targ‘ib qilish;
-- respublikamizning oliy ta’lim va ilmiy-tadqiqot institutlari, ilmiy markazlari va xorijda bajarilgan ilmiy-tadqiqot ishlarining natijalarini nashr etish;
-- talaba yoshlarning dunyoqarashini boyitish, qо‘lga kiritilayotgan yutuqlar va ilg‘or tajribalarni jamoatchilikka yetkazishda targ‘ibot va tashviqot ishlarini olib borish;
-- ta’lim jarayonini, yangi pedagogik texnologiyalar va о‘qitish usullarini sifat jihatidan yangilash va zamonaviy tashkiliy shakllarini keng targ‘ib qilish;
-- oliy ta’limda ilm-fanni yanada rivojlantirish, professor-о‘qituvchilarining ilmiy-tadqiqot faoliyati samaradorligi va natijadorligini oshirish, iqtidorli talaba-yoshlarni ilmiy faoliyat bilan shug‘ullanishga keng jalb etish;
-- yuksak ma’naviyat va insoniylikning milliy an’analariga sodiqlik ruhini shakllantirish, jamiyatda yot g‘oya va mafkuralarga nisbatan immunitet va tahliliy tafakkurni mustahkamlash bо‘yicha keng kо‘lamli ma’rifiy va tarbiyaviy ishlarni yoritib borish.
-
-Jurnal nomi: “O‘zbekiston madaniyati va san’ati” ilmiy-uslibiy, nazariy-amaliy elektron jurnal. Muqovada jurnal nomi bitta o‘zbek (lotin) tilida yoziladi.
-
-Amal qiluvchi tillar: o‘zbek (lotin), rus, qoraqalpoq va ingliz tillarida.
-Jurnalning nashr yili: 2025-yil, 14-iyun.
-Jurnalning davriyligi: Jurnal bir yilda olti marta chop etiladi (Keyinchalik rо‘yxatdan о‘tkazuvchi organni bir oy muddatda yozma shaklda xabardor qilgan holda davriyligiga о‘zgartirish kiritilishi mumkin).
-
-Jurnal muassisi: O‘zbekiston davlat san’at va madaniyati instituti (bundan buyon matnda “Muassis” deb yuritiladi) hisoblanadi.
-
-Jurnal quyidagi ruknlar bo‘yicha ish olib boradi:
-1. Teatr va kino san’ati.
-2. Musiqa, raqs, tasviriy san’at.
-3. Madaniyatshunoslik, sotsiologiya, siyosatshunoslik.
-4. Filologiya, tarix, falsafa.
-5. Pedagogika, psixologiya, kutubxonashunoslik.
-
-Jurnalning ixtisoslashuvi: san’atshunoslik, filologiya, tarix, falsafa, pedagogika, psixologiya, sotsiologiya, siyosatshunoslik fanlari bo‘yicha olib borilgan, ilmiy–nazariy hamda ilmiy–amaliy tadqiqotlar natijalarini chop etishga ixtisoslashgan ilmiy jurnal.
-
-Tarqatish shakli: onlayn elektron kо‘rinishda (web sayt: https://dsmi.uz/).
-
-Jurnal tahririyatining joylashgan manzili (pochta manzili): 100164. Toshkent shahar, Yalang‘och dahasi, 127-“a” uy. Tel: +998 973018084. Elektron pochta: sanatmadaniyat4@gmail.com. Telegram manzil: @m_s_jurnali
-
-<></>`,
-
-
     issn: "2181-9092",
     year: "2024",
     issue: "4-son",
@@ -69,7 +35,8 @@ Jurnal tahririyatining joylashgan manzili (pochta manzili): 100164. Toshkent sha
         id: "update-1",
         title: "4-son (2024) - Yangi maqolalar",
         date: "2024-03-15",
-        description: "O'zbekiston xalq san'ati va zamonaviy madaniyat o'rtasidagi bog'liqlik haqida yangi tadqiqotlar",
+        description:
+          "O'zbekiston xalq san'ati va zamonaviy madaniyat o'rtasidagi bog'liqlik haqida yangi tadqiqotlar",
       },
       {
         id: "update-2",
@@ -79,67 +46,134 @@ Jurnal tahririyatining joylashgan manzili (pochta manzili): 100164. Toshkent sha
       },
     ],
   },
-  "scientific-heritage": {
-    id: "scientific-heritage",
-    title: "Ilmiy meros va zamonaviy tadqiqotlar",
-    description:
-      "Ilmiy meros va zamonaviy tadqiqotlar sohasidagi eng so'nggi ishlanmalar va kashfiyotlar haqida ma'lumotlar.",
-    fullDescription:
-      "Bu jurnal ilmiy merosni saqlash va zamonaviy tadqiqot usullarini qo'llash orqali yangi bilimlar yaratishga qaratilgan. Jurnal tabiiy fanlar, ijtimoiy fanlar va gumanitar fanlar sohasidagi tadqiqotlarni qamrab oladi.",
-    issn: "2181-8754",
-    year: "2024",
-    issue: "2-son",
-    author: "Ilmiy Tadqiqotlar Markazi",
-    editor: "Prof. Abdullayev S.M.",
-    publishDate: "2024-03-10",
-    pages: "142",
-    image: "/placeholder-j65e2.png",
-    category: "Ilm-fan",
-    status: "Faol",
-    price: "45,000 so'm",
-    updates: [
-      {
-        id: "update-1",
-        title: "2-son (2024) - Innovatsion tadqiqotlar",
-        date: "2024-03-10",
-        description: "Sun'iy intellekt va mashinali o'rganish sohasidagi so'nggi yutuqlar",
-      },
-    ],
-  },
-  "cultural-studies": {
-    id: "cultural-studies",
-    title: "Madaniyatshunoslik tadqiqotlari",
-    description:
-      "Madaniyatshunoslik, etnografiya va antropologiya sohasidagi fundamental va amaliy tadqiqotlar jurnali.",
-    fullDescription:
-      "Madaniyatshunoslik tadqiqotlari jurnali O'zbekiston va Markaziy Osiyo xalqlarining madaniy merosini o'rganishga bag'ishlangan. Jurnal etnografiya, antropologiya, folkloristika va madaniy antropologiya sohasidagi tadqiqotlarni nashr etadi.",
-    issn: "2181-7634",
-    year: "2024",
-    issue: "1-son",
-    author: "Madaniyatshunoslik Instituti",
-    editor: "Prof. Rahimova N.K.",
-    publishDate: "2024-02-28",
-    pages: "128",
-    image: "/placeholder-1loz8.png",
-    category: "Madaniyatshunoslik",
-    status: "Faol",
-    price: "40,000 so'm",
-    updates: [
-      {
-        id: "update-1",
-        title: "1-son (2024) - Etnografik tadqiqotlar",
-        date: "2024-02-28",
-        description: "O'zbekiston xalqlarining an'anaviy hunarmandchiligi haqida yangi ma'lumotlar",
-      },
-    ],
-  },
 }
+
+const faqData = [
+  {
+    question: "Jurnal haqida",
+    answer: `Respublikamizda olib borilayotgan islohotlar, tub o‘zgarishlar, san’at va madaniyat sohasiga ham yangi innovatsion texnologiyalarning kirib kelishi va bu sohaga bo‘lgan e’tibor, milliy va umuminsoniy qadriyatlarimizga sodiqlik, kelajakka bo’lgan umid va ishonch, ilm-fanning turli jabhalaridagi yuksalishlar, muhtaram prezidentimizning yoshlarga yaratib berayotgan keng imkoniyatlarini, Yangi O‘zbekistonda yangicha dunyoqarash g‘oyalarining targ‘ibi sifatida O‘zbekiston davlat san’at va madaniyati instituti qoshida “O‘zbekiston madaniyati va san’ati” ilmiy-uslibiy, nazariy-amaliy elektron jurnal tashkil etildi.
+
+Jurnalning maqsad va vazifalari:
+-ilmiy yо‘nalishlarni;
+-hukumatning ilm-fanni qо‘llab-quvvatlash va rivojlantirish borasidagi siyosatini keng targ‘ib qilish;
+-respublikamizning oliy ta’lim va ilmiy-tadqiqot institutlari, ilmiy markazlari va xorijda bajarilgan ilmiy-tadqiqot ishlarining natijalarini nashr etish;
+-talaba yoshlarning dunyoqarashini boyitish, qо‘lga kiritilayotgan yutuqlar va ilg‘or tajribalarni jamoatchilikka yetkazishda targ‘ibot va tashviqot ishlarini olib borish;
+-ta’lim jarayonini, yangi pedagogik texnologiyalar va о‘qitish usullarini sifat jihatidan yangilash va zamonaviy tashkiliy shakllarini keng targ‘ib qilish;
+-oliy ta’limda ilm-fanni yanada rivojlantirish, professor-о‘qituvchilarining ilmiy-tadqiqot faoliyati samaradorligi va natijadorligini oshirish, iqtidorli talaba-yoshlarni ilmiy faoliyat bilan shug‘ullanishga keng jalb etish;
+-yuksak ma’naviyat va insoniylikning milliy an’analariga sodiqlik ruhini shakllantirish, jamiyatda yot g‘oya va mafkuralarga nisbatan immunitet va tahliliy tafakkurni mustahkamlash bо‘yicha keng kо‘lamli ma’rifiy va tarbiyaviy ishlarni yoritib borish.
+
+Jurnal nomi: “O‘zbekiston madaniyati va san’ati” ilmiy-uslibiy, nazariy-amaliy elektron jurnal. Muqovada jurnal nomi bitta o‘zbek (lotin) tilida yoziladi.
+Amal qiluvchi tillar: o‘zbek (lotin), rus, qoraqalpoq va ingliz tillarida.
+Jurnalning nashr yili: 2025-yil, 14-iyun.
+Jurnalning davriyligi: Jurnal bir yilda olti marta chop etiladi (Keyinchalik rо‘yxatdan о‘tkazuvchi organni bir oy muddatda yozma shaklda xabardor qilgan holda davriyligiga о‘zgartirish kiritilishi mumkin).
+Jurnal muassisi: O‘zbekiston davlat san’at va madaniyati instituti (bundan buyon matnda “Muassis” deb yuritiladi) hisoblanadi
+
+Jurnal quyidagi ruknlar bo‘yicha ish olib boradi:
+1. Teatr va kino san’ati.
+2. Musiqa, raqs, tasviriy san’at.
+3. Madaniyatshunoslik, sotsiologiya, siyosatshunoslik.
+4. Filologiya, tarix, falsafa.
+5. Pedagogika, psixologiya, kutubxonashunoslik.
+
+Jurnalning ixtisoslashuvi: san’atshunoslik, filologiya, taix, falsafa, pedagogika, psixologiya, sotsiologiya, siyosatshunoslik fanlari bo‘yicha olib borilgan, ilmiy – nazariy hamda ilmiy – amaliy tadqiqotlar natijalarini chop etishga ixtisoslashgan ilmiy jurnal.
+
+Tarqatish shakli: onlayn elektron kо‘rinishda (web sayt: https://dsmi.uz/).
+
+Jurnal tahririyatining joylashgan manzili (pochta manzili): 100164. Toshkent shahar, Yalang‘och dahasi, 127-“a” uy. Tel: +998 973018084. Elektron pochta: sanatmadaniyat4@gmail.com. Telegram manzil: @m_s_jurnali`,
+  },
+  {
+    question: "Tahririyat jamoasi",
+    answer: `“O‘zbekiston madaniyati va san’ati” ilmiy-uslubiy, nazariy-amaliy elektron jurnali
+Bosh muharrir:
+Sayfullayev Nodirbek Baxtiyorovich
+Tarix fanlari nomzodi,professor
+
+Bosh muharrir o‘rinbosari:
+Yakubov Baxtiyor Choriyevich
+Sanʼatshunoslik fanlari boʻyicha falsafa doktori (PhD),dotsent
+
+Ma’sul kotib:
+Xolmuminova Nigora Xankulovna
+
+Texnik muharrir:
+Nematov Shuxratjon muxtor o‘g‘li
+
+Jamoatchilik kengashi:
+Ozodbek NAZARBEKOV
+O‘zbekiston Respublikasi Madaniyat vaziri,
+O‘zbekiston Respublikasi xalq artisti
+Shuhratilla RIZAYEV
+О‘zbekiston Respublikasi Madaniyat vazirligi huzuridagi Kinematografiya agentligi direktori, filologiya fanlari nomzodi, professor,
+О‘zbekistonda xizmat kо‘rsatgan yoshlar murabbiysi
+Sirojiddin SAYYID
+O‘zbekiston Yozuvchilar uyushmasi raisi,
+O‘zbekiston xalq shoiri
+Otabek XASANOV
+Respublika ma’naviyat va ma’rifat markazi direktori,
+siyosiy fanlari doktori (DSc)
+Umida TESHABOYEVA
+O‘zbekiston Respublikasi Prezidenti Administratsiyasi huzuridagi Axborot va ommaviy komunikatsiyalar agentligining Alisher Navoiy nomidagi O‘zbekiston milliy kutubxonasi direktori
+Rustam ABDULLAYEV
+O‘zbekiston Bastakorlar uyushmasi raisi,
+O‘zbekiston Respublikasi san’at arbobi
+Nodir KASIMOV
+O‘zbekiston Respublikasi Oliy ta’lim Oliy ta’lim, fan va innovatsiyalar vazirligi
+Yoshlar siyosati va ma’naviy tarbiyaviy ishlar boshqarmasi boshlig‘i
+
+Tahrir hay’ati:
+Muhabbat TULYAXODJAYEVA
+San’atshunoslik fanlari doktori, professor
+Absalom UMAROV
+Sotsiologiya fanlari doktori, professor
+Abduxalil MAVRULOV
+Tarix fanlari doktori, professor
+Sarvinoz QODIROVA
+San’atshunoslik fanlari doktori,professor
+Sayyora TО‘YCHIYEVA
+Falsafa fanlari doktori,professor
+Temur RASHIDOV
+San’atshunoslik fanlari nomzodi, professor
+Go‘zalxon ISAKOVA
+Filologiya fanlari doktori (DSc), dotsent
+O‘rozali TOSHMATOV
+Professor
+Go‘zal XALIKULOVA
+San’atshunoslik fanlari nomzodi, dotsent
+Sabohat HAYTMATOVA
+San’atshunoslik fanlari nomzodi, dotsent
+G‘ani XUDOYEV
+San’atshunoslik fanlari bо‘yicha falsafa doktori (PhD), dotsent
+Zulfiya MA’RUFOVA
+Filologiya fanlari bo‘yicha falsafa doktori (PhD), dotsent
+Musallam ABDUJABBOROVA
+Pedagogika fanlari nomzodi, dotsent
+Oybek DAVLATOV
+Pedagogika fanlari bо‘yicha falsafa doktori (PhD), dotsent
+Ziyodulla ISOQOV
+Tarix fanlari nomzodi, dotsent
+Mirali MAXMUDOV
+Pedagogika fanlari nomzodi,dotsent
+Feruza ABDIRAHMONOVA
+Filologiya fanlari bo‘yicha falsafa doktori (PhD), dotsent`,
+  },
+  {
+    question: "Jurnal materiallari nashri",
+    answer: `“O‘zbekiston madaniyati va san’ati” ilmiy-uslubiy, nazariy-amaliy jurnal materiallari to‘plam holida nashr etiladi. Ekspertlar xulosasiga ko‘ra talabga javob bermaydigan materiallar qabul qilinmaydi. Tashkiliy qo‘mita materiallarni texnik tahrir qilish, shuningdek, maqola qabul qilinmaganda bu bo‘yicha izoh bermaslik huquqiga ega.`,
+  },
+]
+
 
 export default function JournalDetailPage({ params }: { params: { id: string } }) {
   const journal = journalsData[params.id as keyof typeof journalsData]
 
   if (!journal) {
     notFound()
+  }
+
+  const [openFAQ, setOpenFAQ] = useState<number | null>(null)
+
+  const toggleFAQ = (index: number) => {
+    setOpenFAQ(openFAQ === index ? null : index)
   }
 
   const handlePreview = () => {
@@ -247,22 +281,56 @@ export default function JournalDetailPage({ params }: { params: { id: string } }
             <div className="lg:col-span-2 space-y-8">
               <div>
                 <Button variant="ghost" asChild className="mb-6 p-0 h-auto">
-                  <Link href="/journals" className="flex items-center text-muted-foreground hover:text-primary">
+                  <Link href="/journals" className="flex items-center text-muted-foreground ">
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Jurnallarga qaytish
                   </Link>
                 </Button>
               </div>
 
-              {/* Full Description */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Jurnal haqida</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground leading-relaxed">{journal.fullDescription}</p>
-                </CardContent>
-              </Card>
+              {/* FAQ Section */}
+              <div>
+                <div className="text-center mb-8 sm:mb-12">
+                  <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-4">
+                    Jurnal bo'yicha asosiy ma'lumotlar
+                  </h2>
+                </div>
+
+                <div className="max-w- mx-auto space-y-4">
+                  {faqData.map((faq, index) => {
+                    const isOpen = openFAQ === index
+                    return (
+                      <Card
+                        key={index}
+                        className="overflow-hidden hover:shadow-lg transition-all duration-300 border-0 shadow-md"
+                      >
+                        <CardHeader
+                          className="cursor-pointer hover:bg-primary/5 transition-colors duration-200"
+                          onClick={() => toggleFAQ(index)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <CardTitle className="text-lg sm:text-xl font-semibold text-foreground">
+                              {faq.question}
+                            </CardTitle>
+                            <div className="flex-shrink-0">
+                              {isOpen ? (
+                                <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                              ) : (
+                                <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                              )}
+                            </div>
+                          </div>
+                        </CardHeader>
+                        {isOpen && (
+                          <CardContent className="pt-0 pb-6">
+                            <p className="text-muted-foreground leading-relaxed">{faq.answer}</p>
+                          </CardContent>
+                        )}
+                      </Card>
+                    )
+                  })}
+                </div>
+              </div>
 
               {/* Latest Updates */}
               <Card>

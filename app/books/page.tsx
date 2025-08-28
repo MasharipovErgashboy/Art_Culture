@@ -10,13 +10,14 @@ import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
+import { Input } from "@/components/ui/input"
+import { Search, Filter } from "lucide-react"
 
 export default function BooksPage() {
   const router = useRouter()
   const [isLoggedIn, setIsLoggedIn] = useState(false)
 
   useEffect(() => {
-    // Check if user is logged in
     const user = localStorage.getItem("user")
     setIsLoggedIn(!!user)
   }, [])
@@ -206,11 +207,33 @@ export default function BooksPage() {
               Madaniyat, san'at va ilm-fan sohasidagi eng so'nggi darsliklar va monografiyalar to'plami
             </p>
           </div>
+
+          {/* Search & Filter */}
+          <div className="max-w-2xl mx-auto">
+            <div className="flex gap-3 sm:gap-4">
+              <div className="relative flex-1">
+                <Search
+                  className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
+                  aria-hidden="true"
+                />
+                <Input
+                  type="search"
+                  placeholder="Kitob nomi yoki muallif bo'yicha qidirish..."
+                  className="pl-10 bg-background"
+                  aria-label="Kitob qidirish"
+                />
+              </div>
+              <Button variant="outline" className="bg-transparent">
+                <Filter className="h-4 w-4 mr-2" />
+                Filtr
+              </Button>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* Books Grid */}
-      <section className="py-12 sm:py-16 responsive-padding">
+      <section className="py-1 sm:py-1 responsive-padding">
         <div className="container mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
             {currentBooks.map((book) => (
@@ -308,7 +331,8 @@ export default function BooksPage() {
             ))}
           </div>
 
-          <div className="flex items-center justify-center gap-2 mt-12">
+          {/* Pagination with bottom space */}
+          <div className="flex items-center justify-center gap-2 mt-12 mb-20">
             <Button variant="outline" size="sm" className="hover-primary bg-transparent" disabled={currentPage === 1}>
               <ChevronLeft className="h-4 w-4 mr-1" />
               Oldingi
@@ -334,7 +358,7 @@ export default function BooksPage() {
               disabled={currentPage === totalPages}
             >
               Keyingi
-              <ChevronRight className="h-4 w-4 ml-1" />
+              <ChevronRight className="h-1 w-4 ml-1" />
             </Button>
           </div>
         </div>

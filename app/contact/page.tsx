@@ -67,12 +67,12 @@ export default function ContactPage() {
     {
       icon: MapPin,
       title: "Manzil",
-      details: ["O'zbekiston Madaniyat va San'at Instituti", "100174, Toshkent sh., Universitetskaya ko'chasi, 4-uy"],
+      details: [" О‘zbekiston Respublikasi Toshkent sh. Mirzo Ulug’bek tumani, Yalang’och dahasi 127 «A» uy. 100164"],
     },
     {
       icon: Phone,
       title: "Telefon",
-      details: ["+998 71 227 12 24", "+998 71 227 12 25"],
+      details: ["(71)230-28-15", "(71)230-28-15"],
     },
     {
       icon: Mail,
