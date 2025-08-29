@@ -27,7 +27,6 @@ export function Navbar() {
   const [user, setUser] = useState<UserData | null>(null)
 
   useEffect(() => {
-    // Check if user is logged in
     const userData = localStorage.getItem("user")
     if (userData) {
       setUser(JSON.parse(userData))
@@ -47,48 +46,54 @@ export function Navbar() {
   ]
 
   const navItems = [
-    { href: "/", label: "Asosiy Sahifa" },
     { href: "/journals", label: "Jurnallar" },
     { href: "/books", label: "Kitoblar" },
     { href: "/conference", label: "Konferensiya" },
-    { href: "/news", label: "Yangiliklar" },
-    { href: "/about", label: "Biz Haqimizda" },
-    { href: "/contact", label: "Bog'lanish" },
   ]
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <nav
+      className="sticky top-0 z-50 w-full border-b backdrop-blur supports-[backdrop-filter]:bg-[#003D7F]/95"
+      style={{ backgroundColor: "#003D7F" }}
+    >
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
-      <Link href="/" className="flex items-center space-x-2">
-        <img 
-          src="/logo.jpg" 
-          alt="Art&Culture Logo" 
-          className="h-8 w-8 rounded" 
-        />
-        <span className="font-bold text-xl text-primary">Art&Culture Publishing</span>
-      </Link>
-
-
-          {/* Desktop Navigation */}
+          {/* Desktop Navigation - Chap tomonda */}
           <div className="hidden md:flex items-center space-x-6">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="text-sm font-medium text-foreground hover:text-primary transition-colors"
+                className="text-sm font-medium text-blue-100 hover:text-white transition-colors"
               >
                 {item.label}
               </Link>
             ))}
           </div>
 
+          {/* Logo - Markazda */}
+          <Link href="/" className="absolute left-1/2 transform -translate-x-1/2 flex items-center space-x-2">
+            <img src="/logo.jpg" alt="Art&Culture Logo" className="h-8 w-8 rounded" />
+            <span className="flex flex-col items-center font-bold text-white leading-tight">
+              <span className="text-xl">
+                Art
+                <span className="text-sm">&</span>
+                Culture
+              </span>
+              <span className="text-lg">Publishing</span>
+            </span>
+          </Link>
+
           {/* Right Side Actions */}
           <div className="flex items-center space-x-4">
             {/* Language Switcher */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2 bg-transparent">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 bg-transparent border-blue-300 text-blue-100 hover:bg-blue-800 hover:text-white"
+                >
                   <Globe className="h-4 w-4" />
                   <span className="hidden sm:inline">{currentLang}</span>
                 </Button>
@@ -106,12 +111,14 @@ export function Navbar() {
             {/* User Actions */}
             {user ? (
               <div className="hidden sm:flex items-center space-x-2">
-                {/* Products/Cart Icon */}
-                <Button variant="ghost" size="sm" title="Sotib olingan mahsulotlar">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  title="Sotib olingan mahsulotlar"
+                  className="text-blue-100 hover:text-white hover:bg-blue-800"
+                >
                   <ShoppingBag className="h-4 w-4" />
                 </Button>
-
-                {/* User Menu */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
@@ -135,25 +142,34 @@ export function Navbar() {
                     </div>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                      <Link href="/profile" className="cursor-pointer">
+                      <Link href="/profile" className="cursor-pointer text-blue-100 hover:text-white hover:bg-blue-800">
                         <User className="mr-2 h-4 w-4" />
                         <span>Profil</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href="/my-books" className="cursor-pointer">
+                      <Link
+                        href="/my-books"
+                        className="cursor-pointer text-blue-100 hover:text-white hover:bg-blue-800"
+                      >
                         <BookOpen className="mr-2 h-4 w-4" />
                         <span>Mening kitoblarim</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href="/settings" className="cursor-pointer">
+                      <Link
+                        href="/settings"
+                        className="cursor-pointer text-blue-100 hover:text-white hover:bg-blue-800"
+                      >
                         <Settings className="mr-2 h-4 w-4" />
                         <span>Sozlamalar</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                    <DropdownMenuItem
+                      onClick={handleLogout}
+                      className="cursor-pointer text-blue-100 hover:text-white hover:bg-blue-800"
+                    >
                       <LogOut className="mr-2 h-4 w-4" />
                       <span>Chiqish</span>
                     </DropdownMenuItem>
@@ -162,17 +178,22 @@ export function Navbar() {
               </div>
             ) : (
               <div className="hidden sm:flex items-center space-x-2">
-                <Button variant="ghost" size="sm" asChild>
+                <Button variant="ghost" size="sm" asChild className="text-blue-100 hover:text-white hover:bg-blue-800">
                   <Link href="/login">Kirish</Link>
                 </Button>
-                <Button size="sm" asChild>
+                <Button size="sm" asChild className="bg-white text-blue-900 hover:bg-blue-50">
                   <Link href="/register">Ro'yxatdan o'tish</Link>
                 </Button>
               </div>
             )}
 
             {/* Mobile Menu Toggle */}
-            <Button variant="ghost" size="sm" className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="md:hidden text-blue-100 hover:text-white hover:bg-blue-800"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
               {isMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
             </Button>
           </div>
@@ -180,37 +201,52 @@ export function Navbar() {
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className="md:hidden border-t py-4">
+          <div className="md:hidden border-t border-blue-700 py-4">
             <div className="flex flex-col space-y-3">
               {navItems.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="text-sm font-medium text-foreground hover:text-primary transition-colors px-2 py-1"
+                  className="text-sm font-medium text-blue-100 hover:text-white transition-colors px-2 py-1"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {item.label}
                 </Link>
               ))}
-              <div className="flex items-center space-x-2 px-2 pt-2 border-t">
+              <div className="flex items-center space-x-2 px-2 pt-2 border-t border-blue-700">
                 {user ? (
                   <>
-                    <Button variant="ghost" size="sm">
+                    <Button variant="ghost" size="sm" className="text-blue-100 hover:text-white hover:bg-blue-800">
                       <ShoppingBag className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="sm" asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      asChild
+                      className="text-blue-100 hover:text-white hover:bg-blue-800"
+                    >
                       <Link href="/profile">Profil</Link>
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={handleLogout}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleLogout}
+                      className="text-blue-100 hover:text-white hover:bg-blue-800"
+                    >
                       Chiqish
                     </Button>
                   </>
                 ) : (
                   <>
-                    <Button variant="ghost" size="sm" asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      asChild
+                      className="text-blue-100 hover:text-white hover:bg-blue-800"
+                    >
                       <Link href="/login">Kirish</Link>
                     </Button>
-                    <Button size="sm" asChild>
+                    <Button size="sm" asChild className="bg-white text-blue-900 hover:bg-blue-50">
                       <Link href="/register">Ro'yxatdan o'tish</Link>
                     </Button>
                   </>

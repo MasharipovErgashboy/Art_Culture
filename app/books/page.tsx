@@ -11,11 +11,23 @@ import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { Input } from "@/components/ui/input"
-import { Search, Filter } from "lucide-react"
+import { Search, Filter, X } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuCheckboxItem,
+} from "@/components/ui/dropdown-menu"
 
 export default function BooksPage() {
   const router = useRouter()
   const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
+  const [selectedLanguages, setSelectedLanguages] = useState<string[]>([])
+  const [selectedYears, setSelectedYears] = useState<string[]>([])
 
   useEffect(() => {
     const user = localStorage.getItem("user")
@@ -186,11 +198,52 @@ export default function BooksPage() {
     },
   ]
 
+  const categories = [...new Set(allBooks.map((book) => book.category))]
+  const languages = ["O'zbek", "Rus", "Ingliz"]
+  const years = [...new Set(allBooks.map((book) => book.year))]
+
+  const filteredBooks = allBooks.filter((book) => {
+    const matchesSearch =
+      searchQuery === "" ||
+      book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      book.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      book.description.toLowerCase().includes(searchQuery.toLowerCase())
+
+    const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(book.category)
+    const matchesLanguage = selectedLanguages.length === 0 || selectedLanguages.includes(book.language)
+    const matchesYear = selectedYears.length === 0 || selectedYears.includes(book.year)
+
+    return matchesSearch && matchesCategory && matchesLanguage && matchesYear
+  })
+
+  const handleCategoryToggle = (category: string) => {
+    setSelectedCategories((prev) =>
+      prev.includes(category) ? prev.filter((c) => c !== category) : [...prev, category],
+    )
+  }
+
+  const handleLanguageToggle = (language: string) => {
+    setSelectedLanguages((prev) => (prev.includes(language) ? prev.filter((l) => l !== language) : [...prev, language]))
+  }
+
+  const handleYearToggle = (year: string) => {
+    setSelectedYears((prev) => (prev.includes(year) ? prev.filter((y) => y !== year) : [...prev, year]))
+  }
+
+  const clearAllFilters = () => {
+    setSelectedCategories([])
+    setSelectedLanguages([])
+    setSelectedYears([])
+    setSearchQuery("")
+  }
+
+  const hasActiveFilters = selectedCategories.length > 0 || selectedLanguages.length > 0 || selectedYears.length > 0
+
   const booksPerPage = 9
   const currentPage = 1
-  const totalPages = Math.ceil(allBooks.length / booksPerPage)
+  const totalPages = Math.ceil(filteredBooks.length / booksPerPage)
   const startIndex = (currentPage - 1) * booksPerPage
-  const currentBooks = allBooks.slice(startIndex, startIndex + booksPerPage)
+  const currentBooks = filteredBooks.slice(startIndex, startIndex + booksPerPage)
 
   return (
     <div className="min-h-screen bg-background">
@@ -221,13 +274,109 @@ export default function BooksPage() {
                   placeholder="Kitob nomi yoki muallif bo'yicha qidirish..."
                   className="pl-10 bg-background"
                   aria-label="Kitob qidirish"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              <Button variant="outline" className="bg-transparent">
-                <Filter className="h-4 w-4 mr-2" />
-                Filtr
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="bg-transparent relative hover:bg-[#003D7F] hover:text-white hover:border-[#003D7F] transition-colors"
+                  >
+                    <Filter className="h-4 w-4 mr-2" />
+                    Filtr
+                    {hasActiveFilters && <div className="absolute -top-1 -right-1 h-3 w-3 bg-primary rounded-full" />}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-64" align="end">
+                  <DropdownMenuLabel className="flex items-center justify-between">
+                    Filtrlar
+                    {hasActiveFilters && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={clearAllFilters}
+                        className="h-auto p-1 text-xs hover:bg-[#003D7F] hover:text-white"
+                      >
+                        <X className="h-3 w-3 mr-1" />
+                        Tozalash
+                      </Button>
+                    )}
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+
+                  <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">
+                    Kategoriya
+                  </DropdownMenuLabel>
+                  {categories.map((category) => (
+                    <DropdownMenuCheckboxItem
+                      key={category}
+                      checked={selectedCategories.includes(category)}
+                      onCheckedChange={() => handleCategoryToggle(category)}
+                      className="hover:bg-[#003D7F] hover:text-white focus:bg-[#003D7F] focus:text-white"
+                    >
+                      {category}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">Til</DropdownMenuLabel>
+                  {languages.map((language) => (
+                    <DropdownMenuCheckboxItem
+                      key={language}
+                      checked={selectedLanguages.includes(language)}
+                      onCheckedChange={() => handleLanguageToggle(language)}
+                      className="hover:bg-[#003D7F] hover:text-white focus:bg-[#003D7F] focus:text-white"
+                    >
+                      {language}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">Yil</DropdownMenuLabel>
+                  {years.map((year) => (
+                    <DropdownMenuCheckboxItem
+                      key={year}
+                      checked={selectedYears.includes(year)}
+                      onCheckedChange={() => handleYearToggle(year)}
+                      className="hover:bg-[#003D7F] hover:text-white focus:bg-[#003D7F] focus:text-white"
+                    >
+                      {year}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
+
+            {hasActiveFilters && (
+              <div className="flex flex-wrap gap-2 mt-4">
+                {selectedCategories.map((category) => (
+                  <Badge key={category} variant="secondary" className="text-xs">
+                    {category}
+                    <button onClick={() => handleCategoryToggle(category)} className="ml-1 hover:text-destructive">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+                {selectedLanguages.map((language) => (
+                  <Badge key={language} variant="secondary" className="text-xs">
+                    {language}
+                    <button onClick={() => handleLanguageToggle(language)} className="ml-1 hover:text-destructive">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+                {selectedYears.map((year) => (
+                  <Badge key={year} variant="secondary" className="text-xs">
+                    {year}
+                    <button onClick={() => handleYearToggle(year)} className="ml-1 hover:text-destructive">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -235,6 +384,10 @@ export default function BooksPage() {
       {/* Books Grid */}
       <section className="py-1 sm:py-1 responsive-padding">
         <div className="container mx-auto">
+          <div className="mb-6 text-center">
+            <p className="text-muted-foreground">{filteredBooks.length} ta kitob topildi</p>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
             {currentBooks.map((book) => (
               <Card

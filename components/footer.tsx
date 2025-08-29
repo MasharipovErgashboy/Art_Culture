@@ -9,15 +9,29 @@ export function Footer() {
           {/* University Info */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
-              <div className="h-8 w-8 rounded bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">A&C</span>
+              {/* Logo joylashgan qismi */}
+              <img 
+                src="/logo.jpg" 
+                alt="Art&Culture Logo" 
+                className="h-10 w-10 rounded" 
+              />
+
+              {/* Matn qismi */}
+              <div className="flex flex-col items-center font-bold text-primary leading-tight">
+                <span className="text-lg">
+                  Art
+                  <span className="text-sm">&</span>
+                  Culture
+                </span>
+                <span className="text-base">Publishing</span>
               </div>
-              <span className="font-bold text-lg text-primary">Art&Culture</span>
             </div>
+
             <p className="text-sm text-muted-foreground">
-              Ilmiy meros va zamonaviy bilimlar jamlanmasi - University Scientific Portal
+              O'zbekiston Madaniyat va San'at Instituti
             </p>
           </div>
+
 
           {/* Quick Links */}
           <div className="space-y-4">
@@ -49,17 +63,15 @@ export function Footer() {
             <h3 className="font-semibold text-foreground">Ilmiy resurslar</h3>
             <div className="space-y-2">
               <Link href="/about" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
-                Haqida
+                Biz Haqimizda
               </Link>
               <Link
                 href="/contact"
                 className="block text-sm text-muted-foreground hover:text-primary transition-colors"
               >
-                Aloqa
+                Bog'lanish
               </Link>
-              <Link href="/help" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
-                Yordam
-              </Link>
+
             </div>
           </div>
 
@@ -77,7 +89,7 @@ export function Footer() {
               </div>
               <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                 <Phone className="h-4 w-4" />
-                <span>+998 71 123 45 67</span>
+                <span>(71)230-28-15</span>
               </div>
             </div>
           </div>
@@ -85,7 +97,7 @@ export function Footer() {
 
         <div className="border-t mt-8 pt-8 text-center">
           <p className="text-sm text-muted-foreground">
-            © 2024 Art&Culture University Scientific Portal. Barcha huquqlar himoyalangan.
+            © 2024 Art&Culture  University Scientific Portal. Barcha huquqlar himoyalangan.
           </p>
         </div>
       </div>
