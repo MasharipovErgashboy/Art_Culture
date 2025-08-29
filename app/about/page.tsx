@@ -67,18 +67,6 @@ export default function AboutPage() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      {/* Hero Section */}
-      <section className="py-12 sm:py-16 lg:py-20 responsive-padding bg-gradient-to-b from-primary/5 to-background">
-        <div className="container mx-auto text-center">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-4 sm:mb-6 text-balance">
-            Loyiha haqida
-          </h1>
-          <p className="text-lg sm:text-xl text-muted-foreground max-w-4xl mx-auto text-pretty leading-relaxed">
-            Art&Culture - O'zbekiston madaniyati va san'ati sohasidagi ilmiy bilimlarni tizimlashtirish va keng
-            jamoatchilikka yetkazish maqsadida yaratilgan zamonaviy raqamli platforma
-          </p>
-        </div>
-      </section>
 
       {/* Main Content */}
       <section className="py-12 sm:py-16 responsive-padding">

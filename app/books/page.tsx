@@ -252,13 +252,7 @@ export default function BooksPage() {
       {/* Header Section */}
       <section className="py-12 sm:py-16 lg:py-20 responsive-padding bg-gradient-to-b from-primary/5 to-background">
         <div className="container mx-auto">
-          <div className="text-center mb-8 sm:mb-12">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-4 sm:mb-6 text-balance">
-              Akademik kitoblar
-            </h1>
-            <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto text-pretty">
-              Madaniyat, san'at va ilm-fan sohasidagi eng so'nggi darsliklar va monografiyalar to'plami
-            </p>
+          <div className="text-center mb-8 sm:mb-1">
           </div>
 
           {/* Search & Filter */}
@@ -384,9 +378,6 @@ export default function BooksPage() {
       {/* Books Grid */}
       <section className="py-1 sm:py-1 responsive-padding">
         <div className="container mx-auto">
-          <div className="mb-6 text-center">
-            <p className="text-muted-foreground">{filteredBooks.length} ta kitob topildi</p>
-          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
             {currentBooks.map((book) => (

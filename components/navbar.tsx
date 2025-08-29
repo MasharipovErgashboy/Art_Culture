@@ -45,7 +45,12 @@ export function Navbar() {
     { code: "ENG", name: "English", flag: "🇺🇸" },
   ]
 
-  const navItems = [
+  const leftNavItems = [
+    { href: "/about", label: "Biz haqimizda" },
+    { href: "/contact", label: "Bog'lanish" },
+  ]
+
+  const rightNavItems = [
     { href: "/journals", label: "Jurnallar" },
     { href: "/books", label: "Kitoblar" },
     { href: "/conference", label: "Konferensiya" },
@@ -58,9 +63,35 @@ export function Navbar() {
     >
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
-          {/* Desktop Navigation - Chap tomonda */}
-          <div className="hidden md:flex items-center space-x-6">
-            {navItems.map((item) => (
+          <div className="flex items-center space-x-6 flex-1">
+            {/* Left nav items before logo */}
+            <div className="hidden md:flex items-center space-x-6">
+              {leftNavItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="text-sm font-medium text-blue-100 hover:text-white transition-colors"
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+
+            <Link href="/" className="flex items-center space-x-2">
+              <img src="/logo.jpg" alt="Art&Culture Logo" className="h-8 w-8 rounded" />
+              <span className="flex flex-col items-center font-bold text-white leading-tight">
+                <span className="text-xl">
+                  Art
+                  <span className="text-sm">&</span>
+                  Culture
+                </span>
+                <span className="text-lg">Publishing</span>
+              </span>
+            </Link>
+          </div>
+
+          <div className="hidden md:flex items-center space-x-6 flex-1 justify-center">
+            {rightNavItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
@@ -71,21 +102,7 @@ export function Navbar() {
             ))}
           </div>
 
-          {/* Logo - Markazda */}
-          <Link href="/" className="absolute left-1/2 transform -translate-x-1/2 flex items-center space-x-2">
-            <img src="/logo.jpg" alt="Art&Culture Logo" className="h-8 w-8 rounded" />
-            <span className="flex flex-col items-center font-bold text-white leading-tight">
-              <span className="text-xl">
-                Art
-                <span className="text-sm">&</span>
-                Culture
-              </span>
-              <span className="text-lg">Publishing</span>
-            </span>
-          </Link>
-
-          {/* Right Side Actions */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4 flex-1 justify-end">
             {/* Language Switcher */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -199,11 +216,10 @@ export function Navbar() {
           </div>
         </div>
 
-        {/* Mobile Navigation */}
         {isMenuOpen && (
           <div className="md:hidden border-t border-blue-700 py-4">
             <div className="flex flex-col space-y-3">
-              {navItems.map((item) => (
+              {[...leftNavItems, ...rightNavItems].map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}

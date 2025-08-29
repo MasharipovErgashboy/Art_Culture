@@ -16,16 +16,18 @@ import {
   ChevronRight,
   Megaphone,
   Star,
-  TrendingUp,
   Bell,
-  MapPin,
+  Eye,
+  Play,
+  Volume2,
+  X,
 } from "lucide-react"
 import Link from "next/link"
-import Image from "next/image"
 import { useState, useEffect } from "react"
 
 export default function HomePage() {
   const [currentSlide, setCurrentSlide] = useState(0)
+  const [showVideoModal, setShowVideoModal] = useState(false)
 
   const slides = [
     {
@@ -38,7 +40,7 @@ export default function HomePage() {
     {
       title: "Xalqaro konferensiya",
       description: "Zamonaviy texnologiyalar va innovatsiyalar bo'yicha xalqaro anjuman",
-      image: "/international-conference-presentation.png",
+      image: "/international-conference-presentation.jpg",
       buttonText: "Ro'yxatdan o'tish",
       href: "/conference",
     },
@@ -85,6 +87,21 @@ export default function HomePage() {
     },
   ]
 
+  const handlePdfView = (language: string) => {
+    const pdfUrls = {
+      uzbek: "/documents/rector-info-uz.pdf",
+      russian: "/documents/rector-info-ru.pdf",
+      english: "/documents/rector-info-en.pdf",
+    }
+
+    const url = pdfUrls[language as keyof typeof pdfUrls] || pdfUrls.uzbek
+    window.open(url, "_blank")
+  }
+
+  const handleVideoClick = () => {
+    setShowVideoModal(true)
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -92,28 +109,53 @@ export default function HomePage() {
       {/* Hero Section with Swiper */}
       <section className="py-8 bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 lg:grid-cols-12">
-            {/* Left Advertisement */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
             <div className="lg:col-span-2">
               <Card className="h-96 bg-white/20 backdrop-blur-md border-white/30 shadow-2xl rounded-r-none overflow-hidden">
                 <CardContent className="p-0 h-full flex flex-col">
                   <div className="bg-gradient-to-r from-white/30 to-white/20 p-4 flex items-center justify-center border-b">
-                    <Megaphone className="w-5 h-5 mr-2" />
-                    <h3 className="font-bold text-sm">REKLAMA</h3>
+                    <Bell className="w-5 h-5 mr-2" />
+                    <h3 className="font-bold text-sm">RASMIY E'LON</h3>
                   </div>
                   <div className="flex-1 p-4 space-y-3 overflow-y-auto">
-                    <div className="bg-white/40 rounded-xl p-4 border shadow-lg hover:shadow-xl transition-all">
-                      <div className="flex items-center mb-3">
-                        <div className="w-8 h-8 bg-white/50 rounded-full flex items-center justify-center mr-2">
-                          <Star className="w-4 h-4 text-gray-700" />
-                        </div>
-                        <span className="text-sm font-bold text-gray-800">Premium Xizmat</span>
+                    <div className="text-center mb-4">
+                      <div className="w-20 h-20 mx-auto mb-3 rounded-full overflow-hidden border-2 border-white/50">
+                        <img src="/rector-photo.jpg" alt="Rektor" className="w-full h-full object-cover" />
                       </div>
-                      <p className="text-xs text-gray-700 mb-3 leading-relaxed">
-                        Ilmiy nashriyot xizmatlarimiz bilan tanishing va professional yordam oling
+                      <h4 className="text-sm font-bold text-gray-900 mb-1">NODIRBEK SAYFULLAYEV</h4>
+                      <p className="text-xs text-gray-700 leading-relaxed">
+                        Universitetimiz rektori, ilmiy faoliyat va ta'lim sohasi bo'yicha mutaxassis
                       </p>
-                      <Button size="sm" className="w-full bg-white/60 hover:bg-white/80 text-gray-800 text-xs">
-                        Batafsil ma'lumot
+                    </div>
+
+                    <div className="space-y-2">
+                      <p className="text-xs font-semibold text-gray-800 mb-2">Maqolasi:</p>
+
+                      <Button
+                        size="sm"
+                        onClick={() => handlePdfView("uzbek")}
+                        className="w-full bg-[#003D7F] hover:bg-[#002B5A] text-white text-xs flex items-center justify-center gap-1"
+                      >
+                        <Eye className="w-3 h-3" />
+                        O'zbek tilida
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        onClick={() => handlePdfView("russian")}
+                        className="w-full bg-[#003D7F] hover:bg-[#002B5A] text-white text-xs flex items-center justify-center gap-1"
+                      >
+                        <Eye className="w-3 h-3" />
+                        Rus tilida
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        onClick={() => handlePdfView("english")}
+                        className="w-full bg-[#003D7F] hover:bg-[#002B5A] text-white text-xs flex items-center justify-center gap-1"
+                      >
+                        <Eye className="w-3 h-3" />
+                        English
                       </Button>
                     </div>
                   </div>
@@ -177,22 +219,49 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Right Announcement */}
             <div className="lg:col-span-2">
               <Card className="h-96 bg-white/20 backdrop-blur-md border-white/30 shadow-2xl rounded-l-none overflow-hidden">
                 <CardContent className="p-0 h-full flex flex-col">
                   <div className="bg-gradient-to-r from-white/30 to-white/20 p-4 flex items-center justify-center border-b">
-                    <Bell className="w-5 h-5 mr-2" />
-                    <h3 className="font-bold text-sm">RASMIY E'LON</h3>
+                    <Megaphone className="w-5 h-5 mr-2" />
+                    <h3 className="font-bold text-sm">REKLAMA</h3>
                   </div>
                   <div className="flex-1 p-4 space-y-3 overflow-y-auto">
-                    <div className="bg-white/40 rounded-xl p-4 border shadow-lg hover:shadow-xl transition-all">
-                      <h4 className="text-sm font-bold text-gray-900 mb-2">2024-2025 Akademik yil</h4>
+                    <div className="bg-gradient-to-br from-[#003D7F]/20 to-[#0059B2]/20 rounded-xl p-4 border shadow-lg hover:shadow-xl transition-all">
+                      <div className="relative mb-3">
+                        <div
+                          className="aspect-video bg-black/80 rounded-lg overflow-hidden relative group cursor-pointer"
+                          onClick={handleVideoClick}
+                        >
+                          <img src="/video-poster.jpg" alt="Video reklama" className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center group-hover:bg-black/30 transition-all">
+                            <div className="w-14 h-14 bg-white/90 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
+                              <Play className="w-7 h-7 text-gray-800 ml-1" />
+                            </div>
+                          </div>
+                          <div className="absolute bottom-2 right-2">
+                            <Volume2 className="w-4 h-4 text-white" />
+                          </div>
+                          <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">
+                            LIVE
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center mb-2">
+                        <div className="w-6 h-6 bg-gradient-to-r from-[#003D7F] to-[#0059B2] rounded-full flex items-center justify-center mr-2">
+                          <Star className="w-3 h-3 text-white" />
+                        </div>
+                        <span className="text-xs font-bold text-gray-800">ACP</span>
+                      </div>
                       <p className="text-xs text-gray-700 mb-3 leading-relaxed">
-                        Yangi akademik yil uchun ro'yxatdan o'tish jarayoni boshlandi
+                        Ilmiy Kengashda ikki nafar tadqiqotchilarning san’atshunoslik fanlari bо‘yicha falsafa doktori (PhD) dissertatsiyalarining himoyasi bо‘lib о‘tdi.
                       </p>
-                      <Button size="sm" className="w-full bg-white/60 hover:bg-white/80 text-gray-800 text-xs">
-                        To'liq o'qish
+                      <Button
+                        size="sm"
+                        onClick={handleVideoClick}
+                        className="w-full bg-gradient-to-r from-[#003D7F] to-[#0059B2] hover:from-[#002B5A] hover:to-[#004080] text-white text-xs"
+                      >
+                        Videoni ko'rish
                       </Button>
                     </div>
                   </div>
@@ -202,6 +271,25 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {showVideoModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+          <div className="relative w-full max-w-4xl mx-4">
+            <button
+              onClick={() => setShowVideoModal(false)}
+              className="absolute -top-10 right-0 text-white hover:text-gray-300"
+            >
+              <X className="w-8 h-8" />
+            </button>
+            <div className="aspect-video bg-black rounded-lg overflow-hidden">
+              <video controls autoPlay className="w-full h-full" poster="/Video_1.jpg">
+                <source src="/Reklama_1.mp4" type="video/mp4" />
+                Brauzeringiz video formatini qo'llab-quvvatlamaydi.
+              </video>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Sections */}
       <section className="py-12 sm:py-16">
@@ -228,7 +316,7 @@ export default function HomePage() {
                     <CardDescription>{section.description}</CardDescription>
                   </CardHeader>
                   <CardContent className="text-center">
-                    <Button variant="outline" asChild className="w-full">
+                    <Button variant="outline" asChild className="w-full bg-transparent">
                       <Link href={section.href}>Ko'rish</Link>
                     </Button>
                   </CardContent>

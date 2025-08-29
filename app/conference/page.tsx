@@ -91,17 +91,7 @@ export default function ConferencePage() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      {/* Header Section */}
-      <section className="py-12 sm:py-16 lg:py-20 responsive-padding bg-gradient-to-b from-primary/5 to-background">
-        <div className="container mx-auto text-center">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-4 sm:mb-6 text-balance">
-            Ilmiy konferensiyalar
-          </h1>
-          <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto text-pretty">
-            Madaniyat, san'at va ilm-fan sohasidagi eng muhim tadbirlar va konferensiyalar haqida ma'lumot
-          </p>
-        </div>
-      </section>
+
 
       {/* Conference Tabs */}
       <section className="py-12 sm:py-16 responsive-padding">
