@@ -157,7 +157,7 @@ Feruza ABDIRAHMONOVA
 Filologiya fanlari bo‘yicha falsafa doktori (PhD), dotsent`,
   },
   {
-    question: "Jurnal materiallari nashri",
+    question: "Jurnalda maqola chop etish",
     answer: `“O‘zbekiston madaniyati va san’ati” ilmiy-uslubiy, nazariy-amaliy jurnal materiallari to‘plam holida nashr etiladi. Ekspertlar xulosasiga ko‘ra talabga javob bermaydigan materiallar qabul qilinmaydi. Tashkiliy qo‘mita materiallarni texnik tahrir qilish, shuningdek, maqola qabul qilinmaganda bu bo‘yicha izoh bermaslik huquqiga ega.`,
   },
 ]

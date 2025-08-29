@@ -40,14 +40,14 @@ export default function HomePage() {
     {
       title: "Xalqaro konferensiya",
       description: "Zamonaviy texnologiyalar va innovatsiyalar bo'yicha xalqaro anjuman",
-      image: "/international-conference-presentation.jpg",
+      image: "/Conference.jpg",
       buttonText: "Ro'yxatdan o'tish",
       href: "/conference",
     },
     {
       title: "Akademik kitoblar",
       description: "Oliy ta'lim muassasalari uchun maxsus tayyorlangan darsliklar",
-      image: "/academic-textbooks-library.png",
+      image: "/Akademic.jpg",
       buttonText: "Kitoblarni ko'rish",
       href: "/books",
     },
@@ -89,9 +89,9 @@ export default function HomePage() {
 
   const handlePdfView = (language: string) => {
     const pdfUrls = {
-      uzbek: "/documents/rector-info-uz.pdf",
-      russian: "/documents/rector-info-ru.pdf",
-      english: "/documents/rector-info-en.pdf",
+      uzbek: "/rector-info-uz.pdf",
+      russian: "/rector-info-ru.pdf",
+      english: "/rector-info-en.pdf",
     }
 
     const url = pdfUrls[language as keyof typeof pdfUrls] || pdfUrls.uzbek
@@ -108,10 +108,10 @@ export default function HomePage() {
 
       {/* Hero Section with Swiper */}
       <section className="py-8 bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="container mx-auto px-4">
+        <div className="w-full">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
-            <div className="lg:col-span-2">
-              <Card className="h-96 bg-white/20 backdrop-blur-md border-white/30 shadow-2xl rounded-r-none overflow-hidden">
+            <div className="lg:col-span-3">
+              <Card className="h-96 bg-white/20 backdrop-blur-md border-white/30 shadow-2xl rounded-none overflow-hidden">
                 <CardContent className="p-0 h-full flex flex-col">
                   <div className="bg-gradient-to-r from-white/30 to-white/20 p-4 flex items-center justify-center border-b">
                     <Bell className="w-5 h-5 mr-2" />
@@ -163,8 +163,7 @@ export default function HomePage() {
               </Card>
             </div>
 
-            {/* Main Swiper */}
-            <div className="lg:col-span-8">
+            <div className="lg:col-span-6">
               <div className="relative bg-white shadow-xl overflow-hidden rounded-none">
                 <div className="relative h-96">
                   {slides.map((slide, index) => (
@@ -219,8 +218,8 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="lg:col-span-2">
-              <Card className="h-96 bg-white/20 backdrop-blur-md border-white/30 shadow-2xl rounded-l-none overflow-hidden">
+            <div className="lg:col-span-3">
+              <Card className="h-96 bg-white/20 backdrop-blur-md border-white/30 shadow-2xl rounded-none overflow-hidden">
                 <CardContent className="p-0 h-full flex flex-col">
                   <div className="bg-gradient-to-r from-white/30 to-white/20 p-4 flex items-center justify-center border-b">
                     <Megaphone className="w-5 h-5 mr-2" />
@@ -251,10 +250,10 @@ export default function HomePage() {
                         <div className="w-6 h-6 bg-gradient-to-r from-[#003D7F] to-[#0059B2] rounded-full flex items-center justify-center mr-2">
                           <Star className="w-3 h-3 text-white" />
                         </div>
-                        <span className="text-xs font-bold text-gray-800">ACP</span>
+                        <span className="text-xs font-bold text-gray-800">Premium Kurs</span>
                       </div>
                       <p className="text-xs text-gray-700 mb-3 leading-relaxed">
-                        Ilmiy Kengashda ikki nafar tadqiqotchilarning san’atshunoslik fanlari bо‘yicha falsafa doktori (PhD) dissertatsiyalarining himoyasi bо‘lib о‘tdi.
+                        Ilmiy tadqiqot metodlari bo'yicha professional treninglar
                       </p>
                       <Button
                         size="sm"
@@ -282,7 +281,7 @@ export default function HomePage() {
               <X className="w-8 h-8" />
             </button>
             <div className="aspect-video bg-black rounded-lg overflow-hidden">
-              <video controls autoPlay className="w-full h-full" poster="/Video_1.jpg">
+              <video controls autoPlay className="w-full h-full" poster="/video-poster.jpg">
                 <source src="/Reklama_1.mp4" type="video/mp4" />
                 Brauzeringiz video formatini qo'llab-quvvatlamaydi.
               </video>
