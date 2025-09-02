@@ -40,14 +40,14 @@ export default function HomePage() {
     {
       title: "Xalqaro konferensiya",
       description: "Zamonaviy texnologiyalar va innovatsiyalar bo'yicha xalqaro anjuman",
-      image: "/Conference.jpg",
+      image: "/international-conference-presentation.png",
       buttonText: "Ro'yxatdan o'tish",
       href: "/conference",
     },
     {
       title: "Akademik kitoblar",
       description: "Oliy ta'lim muassasalari uchun maxsus tayyorlangan darsliklar",
-      image: "/Akademic.jpg",
+      image: "/academic-textbooks-library.png",
       buttonText: "Kitoblarni ko'rish",
       href: "/books",
     },
@@ -89,9 +89,9 @@ export default function HomePage() {
 
   const handlePdfView = (language: string) => {
     const pdfUrls = {
-      uzbek: "/rector-info-uz.pdf",
-      russian: "/rector-info-ru.pdf",
-      english: "/rector-info-en.pdf",
+      uzbek: "/documents/rector-info-uz.pdf",
+      russian: "/documents/rector-info-ru.pdf",
+      english: "/documents/rector-info-en.pdf",
     }
 
     const url = pdfUrls[language as keyof typeof pdfUrls] || pdfUrls.uzbek
@@ -106,170 +106,199 @@ export default function HomePage() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      {/* Hero Section with Swiper */}
-      <section className="py-8 bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="w-full">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
-            <div className="lg:col-span-3">
-              <Card className="h-96 bg-white/20 backdrop-blur-md border-white/30 shadow-2xl rounded-none overflow-hidden">
-                <CardContent className="p-0 h-full flex flex-col">
-                  <div className="bg-gradient-to-r from-white/30 to-white/20 p-4 flex items-center justify-center border-b">
-                    <Bell className="w-5 h-5 mr-2" />
-                    <h3 className="font-bold text-sm">RASMIY E'LON</h3>
-                  </div>
-                  <div className="flex-1 p-4 space-y-3 overflow-y-auto">
-                    <div className="text-center mb-4">
-                      <div className="w-20 h-20 mx-auto mb-3 rounded-full overflow-hidden border-2 border-white/50">
-                        <img src="/rector-photo.jpg" alt="Rektor" className="w-full h-full object-cover" />
-                      </div>
-                      <h4 className="text-sm font-bold text-gray-900 mb-1">NODIRBEK SAYFULLAYEV</h4>
-                      <p className="text-xs text-gray-700 leading-relaxed">
-                        Universitetimiz rektori, ilmiy faoliyat va ta'lim sohasi bo'yicha mutaxassis
-                      </p>
+<section className="py-8 bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="w-full px-2">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+
+          {/* Chap Card - RASMIY E’LON */}
+          <div className="lg:col-span-3">
+            <Card className="h-[600px] bg-white/20 backdrop-blur-md border-white/30 shadow-2xl rounded-lg overflow-hidden">
+              <CardContent className="p-0 h-full flex flex-col">
+                <div className="bg-gradient-to-r from-white/30 to-white/20 p-4 flex items-center justify-center border-b">
+                  <Bell className="w-5 h-5 mr-2" />
+                  <h3 className="font-bold text-sm">RASMIY E'LON</h3>
+                </div>
+                <div className="flex-1 p-4 space-y-3 overflow-y-auto">
+                  
+                  {/* Hikmat */}
+                  <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border-l-4 border-amber-400 p-3 mb-4 rounded-r-lg">
+                    <div className="flex items-center mb-2">
+                      <Lightbulb className="w-4 h-4 text-amber-600 mr-2" />
+                      <span className="text-xs font-semibold text-amber-800">Konfutsiy hikmati</span>
                     </div>
-
-                    <div className="space-y-2">
-                      <p className="text-xs font-semibold text-gray-800 mb-2">Maqolasi:</p>
-
-                      <Button
-                        size="sm"
-                        onClick={() => handlePdfView("uzbek")}
-                        className="w-full bg-[#003D7F] hover:bg-[#002B5A] text-white text-xs flex items-center justify-center gap-1"
-                      >
-                        <Eye className="w-3 h-3" />
-                        O'zbek tilida
-                      </Button>
-
-                      <Button
-                        size="sm"
-                        onClick={() => handlePdfView("russian")}
-                        className="w-full bg-[#003D7F] hover:bg-[#002B5A] text-white text-xs flex items-center justify-center gap-1"
-                      >
-                        <Eye className="w-3 h-3" />
-                        Rus tilida
-                      </Button>
-
-                      <Button
-                        size="sm"
-                        onClick={() => handlePdfView("english")}
-                        className="w-full bg-[#003D7F] hover:bg-[#002B5A] text-white text-xs flex items-center justify-center gap-1"
-                      >
-                        <Eye className="w-3 h-3" />
-                        English
-                      </Button>
-                    </div>
+                    <p className="text-xs italic text-amber-700 leading-relaxed">
+                      "Bilim olish - hayotning eng katta boyligi"
+                    </p>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
 
-            <div className="lg:col-span-6">
-              <div className="relative bg-white shadow-xl overflow-hidden rounded-none">
-                <div className="relative h-96">
-                  {slides.map((slide, index) => (
-                    <div
-                      key={index}
-                      className={`absolute inset-0 transition-opacity duration-500 ${
-                        index === currentSlide ? "opacity-100" : "opacity-0"
-                      }`}
+                  {/* Rektor */}
+                  <div className="text-center mb-4">
+                    <div className="w-20 h-20 mx-auto mb-3 rounded-full overflow-hidden border-2 border-white/50">
+                      <img src="/rector-photo.jpg" alt="Rektor" className="w-full h-full object-cover" />
+                    </div>
+                    <h4 className="text-sm font-bold text-gray-900 mb-1">NODIRBEK SAYFULLAYEV</h4>
+                    <p className="text-xs text-gray-700 leading-relaxed">
+                      Universitetimiz rektori, ilmiy faoliyat va ta'lim sohasi bo'yicha mutaxassis
+                    </p>
+                  </div>
+
+                  {/* Maqola tugmalari */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-gray-800 mb-2">Maqolasi:</p>
+                    <Button
+                      size="sm"
+                      onClick={() => handlePdfView("uzbek")}
+                      className="w-full bg-[#003D7F] hover:bg-[#002B5A] text-white text-xs flex items-center justify-center gap-1"
                     >
-                      <img
-                        src={slide.image || "/placeholder.svg"}
-                        alt={slide.title}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                        <div className="text-center text-white px-8">
-                          <h2 className="text-3xl md:text-4xl font-bold mb-4">{slide.title}</h2>
-                          <p className="text-lg mb-6 max-w-2xl">{slide.description}</p>
-                          <Button size="lg" asChild className="bg-primary hover:bg-primary/90">
-                            <Link href={slide.href}>{slide.buttonText}</Link>
-                          </Button>
-                        </div>
+                      <Eye className="w-3 h-3" />
+                      O'zbek tilida
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => handlePdfView("russian")}
+                      className="w-full bg-[#003D7F] hover:bg-[#002B5A] text-white text-xs flex items-center justify-center gap-1"
+                    >
+                      <Eye className="w-3 h-3" />
+                      Rus tilida
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => handlePdfView("english")}
+                      className="w-full bg-[#003D7F] hover:bg-[#002B5A] text-white text-xs flex items-center justify-center gap-1"
+                    >
+                      <Eye className="w-3 h-3" />
+                      English
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* O‘rta Swiper */}
+          <div className="lg:col-span-6">
+            <div className="relative bg-white shadow-xl overflow-hidden rounded-lg">
+              <div className="relative h-[600px]">
+                {slides.map((slide, index) => (
+                  <div
+                    key={index}
+                    className={`absolute inset-0 transition-opacity duration-500 ${
+                      index === currentSlide ? "opacity-100" : "opacity-0"
+                    }`}
+                  >
+                    <img
+                      src={slide.image || "/placeholder.svg"}
+                      alt={slide.title}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                      <div className="text-center text-white px-8">
+                        <h2 className="text-3xl md:text-4xl font-bold mb-4">{slide.title}</h2>
+                        <p className="text-lg mb-6 max-w-2xl">{slide.description}</p>
+                        <Button size="lg" asChild className="bg-primary hover:bg-primary/90">
+                          <Link href={slide.href}>{slide.buttonText}</Link>
+                        </Button>
                       </div>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
+              </div>
 
-                {/* Navigation */}
-                <button
-                  onClick={prevSlide}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 text-white p-2 rounded-full"
-                >
-                  <ChevronLeft className="w-6 h-6" />
-                </button>
-                <button
-                  onClick={nextSlide}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 text-white p-2 rounded-full"
-                >
-                  <ChevronRight className="w-6 h-6" />
-                </button>
+              {/* Navigation */}
+              <button
+                onClick={prevSlide}
+                className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 text-white p-2 rounded-full"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+              <button
+                onClick={nextSlide}
+                className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 text-white p-2 rounded-full"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
 
-                {/* Dots */}
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2">
-                  {slides.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setCurrentSlide(index)}
-                      className={`w-3 h-3 rounded-full ${index === currentSlide ? "bg-white" : "bg-white/50"}`}
-                    />
-                  ))}
-                </div>
+              {/* Dots */}
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2">
+                {slides.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentSlide(index)}
+                    className={`w-3 h-3 rounded-full ${
+                      index === currentSlide ? "bg-white" : "bg-white/50"
+                    }`}
+                  />
+                ))}
               </div>
             </div>
-
-            <div className="lg:col-span-3">
-              <Card className="h-96 bg-white/20 backdrop-blur-md border-white/30 shadow-2xl rounded-none overflow-hidden">
-                <CardContent className="p-0 h-full flex flex-col">
-                  <div className="bg-gradient-to-r from-white/30 to-white/20 p-4 flex items-center justify-center border-b">
-                    <Megaphone className="w-5 h-5 mr-2" />
-                    <h3 className="font-bold text-sm">REKLAMA</h3>
-                  </div>
-                  <div className="flex-1 p-4 space-y-3 overflow-y-auto">
-                    <div className="bg-gradient-to-br from-[#003D7F]/20 to-[#0059B2]/20 rounded-xl p-4 border shadow-lg hover:shadow-xl transition-all">
-                      <div className="relative mb-3">
-                        <div
-                          className="aspect-video bg-black/80 rounded-lg overflow-hidden relative group cursor-pointer"
-                          onClick={handleVideoClick}
-                        >
-                          <img src="/video-poster.jpg" alt="Video reklama" className="w-full h-full object-cover" />
-                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center group-hover:bg-black/30 transition-all">
-                            <div className="w-14 h-14 bg-white/90 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
-                              <Play className="w-7 h-7 text-gray-800 ml-1" />
-                            </div>
-                          </div>
-                          <div className="absolute bottom-2 right-2">
-                            <Volume2 className="w-4 h-4 text-white" />
-                          </div>
-                          <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">
-                            LIVE
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center mb-2">
-                        <div className="w-6 h-6 bg-gradient-to-r from-[#003D7F] to-[#0059B2] rounded-full flex items-center justify-center mr-2">
-                          <Star className="w-3 h-3 text-white" />
-                        </div>
-                        <span className="text-xs font-bold text-gray-800">ACP</span>
-                      </div>
-                      <p className="text-xs text-gray-700 mb-3 leading-relaxed">
-                        Ilmiy tadqiqot metodlari bo'yicha professional treninglar
-                      </p>
-                      <Button
-                        size="sm"
-                        onClick={handleVideoClick}
-                        className="w-full bg-gradient-to-r from-[#003D7F] to-[#0059B2] hover:from-[#002B5A] hover:to-[#004080] text-white text-xs"
-                      >
-                        Videoni ko'rish
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
           </div>
+
+          {/* O‘ng Card - REKLAMA */}
+          <div className="lg:col-span-3">
+            <Card className="h-[600px] bg-white/20 backdrop-blur-md border-white/30 shadow-2xl rounded-lg overflow-hidden">
+              <CardContent className="p-0 h-full flex flex-col">
+                <div className="bg-gradient-to-r from-white/30 to-white/20 p-4 flex items-center justify-center border-b">
+                  <Megaphone className="w-5 h-5 mr-2" />
+                  <h3 className="font-bold text-sm">REKLAMA</h3>
+                </div>
+                <div className="flex-1 p-4 space-y-3 overflow-y-auto">
+                  
+                  {/* Maxsus taklif */}
+                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-3 mb-3">
+                    <div className="flex items-center mb-2">
+                      <Star className="w-4 h-4 text-green-600 mr-2" />
+                      <span className="text-xs font-bold text-green-800">MAXSUS TAKLIF</span>
+                    </div>
+                    <p className="text-xs text-green-700 font-medium mb-2">Ilmiy nashrlar uchun 50% chegirma!</p>
+                    <p className="text-xs text-green-600">Birinchi maqolangizni nashr qilish uchun maxsus narx</p>
+                  </div>
+
+                  {/* Video reklama */}
+                  <div className="bg-gradient-to-br from-[#003D7F]/20 to-[#0059B2]/20 rounded-xl p-4 border shadow-lg hover:shadow-xl transition-all">
+                    <div className="relative mb-3">
+                      <div
+                        className="aspect-video bg-black/80 rounded-lg overflow-hidden relative group cursor-pointer"
+                        onClick={handleVideoClick}
+                      >
+                        <img src="/video-poster.jpg" alt="Video reklama" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center group-hover:bg-black/30 transition-all">
+                          <div className="w-14 h-14 bg-white/90 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
+                            <Play className="w-7 h-7 text-gray-800 ml-1" />
+                          </div>
+                        </div>
+                        <div className="absolute bottom-2 right-2">
+                          <Volume2 className="w-4 h-4 text-white" />
+                        </div>
+                        <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">
+                          LIVE
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center mb-2">
+                      <div className="w-6 h-6 bg-gradient-to-r from-[#003D7F] to-[#0059B2] rounded-full flex items-center justify-center mr-2">
+                        <Star className="w-3 h-3 text-white" />
+                      </div>
+                      <span className="text-xs font-bold text-gray-800">Premium Kurs</span>
+                    </div>
+                    <p className="text-xs text-gray-700 mb-3 leading-relaxed">
+                      Ilmiy tadqiqot metodlari bo'yicha professional treninglar
+                    </p>
+                    <Button
+                      size="sm"
+                      onClick={handleVideoClick}
+                      className="w-full bg-gradient-to-r from-[#003D7F] to-[#0059B2] hover:from-[#002B5A] hover:to-[#004080] text-white text-xs"
+                    >
+                      Videoni ko'rish
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
         </div>
-      </section>
+      </div>
+    </section>
 
       {showVideoModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
