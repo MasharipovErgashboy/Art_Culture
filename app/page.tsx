@@ -43,14 +43,14 @@ export default function HomePage() {
     {
       title: "Xalqaro konferensiya",
       description: "Zamonaviy texnologiyalar va innovatsiyalar bo'yicha xalqaro anjuman",
-      image: "/international-conference-presentation.png",
+      image: "/international-conference-presentation.jpg",
       buttonText: "Ro'yxatdan o'tish",
       href: "/conference",
     },
     {
       title: "Akademik kitoblar",
       description: "Oliy ta'lim muassasalari uchun maxsus tayyorlangan darsliklar",
-      image: "/academic-textbooks-library.png",
+      image: "/academic-textbooks-library.jpg",
       buttonText: "Kitoblarni ko'rish",
       href: "/books",
     },
