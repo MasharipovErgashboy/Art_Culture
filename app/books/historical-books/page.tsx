@@ -403,6 +403,50 @@ export default function HistoricalBooksPage() {
               </Button>
             </div>
           )}
+                    {/* Pagination Component */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-12">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="bg-white hover:bg-[#003D7F] hover:text-white"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Oldingi
+              </Button>
+
+              <div className="flex gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <Button
+                    key={page}
+                    variant={currentPage === page ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handlePageChange(page)}
+                    className={
+                      currentPage === page
+                        ? "bg-[#003D7F] text-white hover:bg-blue-700"
+                        : "bg-white hover:bg-[#003D7F] hover:text-white"
+                    }
+                  >
+                    {page}
+                  </Button>
+                ))}
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="bg-white hover:bg-[#003D7F] hover:text-white"
+              >
+                Keyingi
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </div>
       </section>
 
