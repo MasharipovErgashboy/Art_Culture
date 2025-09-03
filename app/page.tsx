@@ -10,8 +10,8 @@ import {
   Calendar,
   Globe,
   Users,
-  Lightbulb,
   Award,
+  Lightbulb,
   ChevronLeft,
   ChevronRight,
   Megaphone,
@@ -27,7 +27,10 @@ import { useState, useEffect } from "react"
 
 export default function HomePage() {
   const [currentSlide, setCurrentSlide] = useState(0)
+  const [currentVideoSlide, setCurrentVideoSlide] = useState(0)
+  const [currentBookSlide, setCurrentBookSlide] = useState(0)
   const [showVideoModal, setShowVideoModal] = useState(false)
+  const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null)
 
   const slides = [
     {
@@ -53,6 +56,87 @@ export default function HomePage() {
     },
   ]
 
+  const bookSlides = [
+    {
+      title: "Matematika asoslari",
+      author: "Prof. A. Karimov",
+      category: "Matematik fanlar",
+      price: "45,000 so'm",
+      originalPrice: "60,000 so'm",
+      discount: "25%",
+      image: "/mathematics-textbook-academic-book-cover-blue-desi.png",
+      isPopular: true,
+      badge: "Eng ko'p o'qilgan",
+      youtubeId: "dQw4w9WgXcQ",
+      thumbnail: "/mathematics-lecture-video-thumbnail.png",
+    },
+    {
+      title: "Fizika qonunlari",
+      author: "Dr. B. Rahimova",
+      category: "Tabiiy fanlar",
+      price: "38,000 so'm",
+      originalPrice: "50,000 so'm",
+      discount: "24%",
+      image: "/physics-textbook-academic-book-cover-red-atoms-des.png",
+      isPopular: true,
+      badge: "Bestseller",
+      youtubeId: "dQw4w9WgXcQ",
+      thumbnail: "/physics-experiment-video-thumbnail.png",
+    },
+    {
+      title: "Kimyo asoslari",
+      author: "Prof. S. Toshmatov",
+      category: "Tabiiy fanlar",
+      price: "42,000 so'm",
+      originalPrice: "55,000 so'm",
+      discount: "23%",
+      image: "/chemistry-textbook-academic-book-cover-green-molec.png",
+      isPopular: false,
+      badge: "Aksiya",
+      youtubeId: "dQw4w9WgXcQ",
+      thumbnail: "/chemistry-lab-video-thumbnail.png",
+    },
+    {
+      title: "Adabiyot tarixi",
+      author: "Dr. M. Qosimova",
+      category: "Gumanitar fanlar",
+      price: "35,000 so'm",
+      originalPrice: "45,000 so'm",
+      discount: "22%",
+      image: "/literature-history-textbook-academic-book-cover-pu.png",
+      isPopular: true,
+      badge: "Yangi nashr",
+      youtubeId: "dQw4w9WgXcQ",
+      thumbnail: "/literature-discussion-video-thumbnail.png",
+    },
+    {
+      title: "Iqtisodiyot nazariyasi",
+      author: "Prof. N. Abdullayev",
+      category: "Iqtisodiy fanlar",
+      price: "48,000 so'm",
+      originalPrice: "65,000 so'm",
+      discount: "26%",
+      image: "/economics-theory-textbook-academic-book-cover-gold.png",
+      isPopular: false,
+      badge: "Maxsus taklif",
+      youtubeId: "dQw4w9WgXcQ",
+      thumbnail: "/economics-analysis-video-thumbnail.png",
+    },
+    {
+      title: "Tarix metodologiyasi",
+      author: "Dr. F. Ismoilova",
+      category: "Gumanitar fanlar",
+      price: "40,000 so'm",
+      originalPrice: "52,000 so'm",
+      discount: "23%",
+      image: "/history-methodology-textbook-academic-book-cover-b.png",
+      isPopular: true,
+      badge: "Top reyting",
+      youtubeId: "dQw4w9WgXcQ",
+      thumbnail: "/history-research-video-thumbnail.png",
+    },
+  ]
+
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length)
@@ -60,8 +144,28 @@ export default function HomePage() {
     return () => clearInterval(timer)
   }, [slides.length])
 
+  useEffect(() => {
+    const videoTimer = setInterval(() => {
+      setCurrentVideoSlide((prev) => (prev + 1) % bookSlides.length)
+    }, 5000)
+    return () => clearInterval(videoTimer)
+  }, [bookSlides.length])
+
+  useEffect(() => {
+    const bookTimer = setInterval(() => {
+      setCurrentBookSlide((prev) => (prev + 1) % bookSlides.length)
+    }, 4000)
+    return () => clearInterval(bookTimer)
+  }, [bookSlides.length])
+
   const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % slides.length)
   const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length)
+
+  const nextVideoSlide = () => setCurrentVideoSlide((prev) => (prev + 1) % bookSlides.length)
+  const prevVideoSlide = () => setCurrentVideoSlide((prev) => (prev - 1 + bookSlides.length) % bookSlides.length)
+
+  const nextBookSlide = () => setCurrentBookSlide((prev) => (prev + 1) % bookSlides.length)
+  const prevBookSlide = () => setCurrentBookSlide((prev) => (prev - 1 + bookSlides.length) % bookSlides.length)
 
   const sections = [
     {
@@ -89,231 +193,250 @@ export default function HomePage() {
 
   const handlePdfView = (language: string) => {
     const pdfUrls = {
-      uzbek: "/documents/rector-info-uz.pdf",
-      russian: "/documents/rector-info-ru.pdf",
-      english: "/documents/rector-info-en.pdf",
+      uzbek: "/rector-info-uz.pdf",
+      russian: "/rector-info-ru.pdf",
+      english: "/rector-info-en.pdf",
     }
 
     const url = pdfUrls[language as keyof typeof pdfUrls] || pdfUrls.uzbek
     window.open(url, "_blank")
   }
 
-  const handleVideoClick = () => {
+  const handleVideoPlay = (youtubeId: string) => {
+    setSelectedVideoId(youtubeId)
     setShowVideoModal(true)
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen" style={{ backgroundColor: "#DCE3F8" }}>
       <Navbar />
 
-<section className="py-8 bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="w-full px-2">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+      <section className="py-8">
+        <div className="w-full px-2">
+          <div className="grid grid-cols-1 lg:grid-cols-12">
+ {/* Chap Card - RASMIY E'LON */}
+<div className="lg:col-span-3">
+  <Card className="h-[600px] bg-white/20 backdrop-blur-md border-white/30 shadow-2xl rounded-l-lg rounded-r-none lg:rounded-r-none overflow-hidden">
+    <CardContent className="p-0 h-full flex flex-col">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-white/30 to-white/20 p-4 flex items-center justify-center border-b">
+        <Bell className="w-5 h-5 mr-2" />
+        <h3 className="font-bold text-sm">RASMIY E'LON</h3>
+      </div>
 
-          {/* Chap Card - RASMIY E’LON */}
-          <div className="lg:col-span-3">
-            <Card className="h-[600px] bg-white/20 backdrop-blur-md border-white/30 shadow-2xl rounded-lg overflow-hidden">
-              <CardContent className="p-0 h-full flex flex-col">
-                <div className="bg-gradient-to-r from-white/30 to-white/20 p-4 flex items-center justify-center border-b">
-                  <Bell className="w-5 h-5 mr-2" />
-                  <h3 className="font-bold text-sm">RASMIY E'LON</h3>
-                </div>
-                <div className="flex-1 p-4 space-y-3 overflow-y-auto">
-                  
-                  {/* Hikmat */}
-                  <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border-l-4 border-amber-400 p-3 mb-4 rounded-r-lg">
-                    <div className="flex items-center mb-2">
-                      <Lightbulb className="w-4 h-4 text-amber-600 mr-2" />
-                      <span className="text-xs font-semibold text-amber-800">Konfutsiy hikmati</span>
-                    </div>
-                    <p className="text-xs italic text-amber-700 leading-relaxed">
-                      "Bilim olish - hayotning eng katta boyligi"
-                    </p>
-                  </div>
-
-                  {/* Rektor */}
-                  <div className="text-center mb-4">
-                    <div className="w-20 h-20 mx-auto mb-3 rounded-full overflow-hidden border-2 border-white/50">
-                      <img src="/rector-photo.jpg" alt="Rektor" className="w-full h-full object-cover" />
-                    </div>
-                    <h4 className="text-sm font-bold text-gray-900 mb-1">NODIRBEK SAYFULLAYEV</h4>
-                    <p className="text-xs text-gray-700 leading-relaxed">
-                      Universitetimiz rektori, ilmiy faoliyat va ta'lim sohasi bo'yicha mutaxassis
-                    </p>
-                  </div>
-
-                  {/* Maqola tugmalari */}
-                  <div className="space-y-2">
-                    <p className="text-xs font-semibold text-gray-800 mb-2">Maqolasi:</p>
-                    <Button
-                      size="sm"
-                      onClick={() => handlePdfView("uzbek")}
-                      className="w-full bg-[#003D7F] hover:bg-[#002B5A] text-white text-xs flex items-center justify-center gap-1"
-                    >
-                      <Eye className="w-3 h-3" />
-                      O'zbek tilida
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => handlePdfView("russian")}
-                      className="w-full bg-[#003D7F] hover:bg-[#002B5A] text-white text-xs flex items-center justify-center gap-1"
-                    >
-                      <Eye className="w-3 h-3" />
-                      Rus tilida
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => handlePdfView("english")}
-                      className="w-full bg-[#003D7F] hover:bg-[#002B5A] text-white text-xs flex items-center justify-center gap-1"
-                    >
-                      <Eye className="w-3 h-3" />
-                      English
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+      {/* Content (centered) */}
+      <div className="flex-1 p-4 flex flex-col justify-center items-center space-y-6 text-center">
+        
+        {/* Rektor */}
+        <div>
+          <div className="w-24 h-24 mx-auto mb-3 rounded-full overflow-hidden border-2 border-white/50">
+            <img src="/rector-photo.jpg" alt="Rektor" className="w-full h-full object-cover" />
           </div>
+          <h4 className="text-base font-bold text-gray-900 mb-1">NODIRBEK SAYFULLAYEV</h4>
+          <p className="text-sm text-gray-700 leading-relaxed max-w-[200px] mx-auto">
+            Universitetimiz rektori, ilmiy faoliyat va ta'lim sohasi bo'yicha mutaxassis
+          </p>
+        </div>
 
-          {/* O‘rta Swiper */}
-          <div className="lg:col-span-6">
-            <div className="relative bg-white shadow-xl overflow-hidden rounded-lg">
-              <div className="relative h-[600px]">
-                {slides.map((slide, index) => (
-                  <div
-                    key={index}
-                    className={`absolute inset-0 transition-opacity duration-500 ${
-                      index === currentSlide ? "opacity-100" : "opacity-0"
-                    }`}
-                  >
-                    <img
-                      src={slide.image || "/placeholder.svg"}
-                      alt={slide.title}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                      <div className="text-center text-white px-8">
-                        <h2 className="text-3xl md:text-4xl font-bold mb-4">{slide.title}</h2>
-                        <p className="text-lg mb-6 max-w-2xl">{slide.description}</p>
-                        <Button size="lg" asChild className="bg-primary hover:bg-primary/90">
-                          <Link href={slide.href}>{slide.buttonText}</Link>
-                        </Button>
+        {/* Maqola tugmalari */}
+        <div className="w-full space-y-2">
+          <p className="text-xs font-semibold text-gray-800 mb-2">Maqolasi:</p>
+          <Button
+            size="sm"
+            onClick={() => handlePdfView("uzbek")}
+            className="w-full bg-[#003D7F] hover:bg-[#002B5A] text-white text-xs flex items-center justify-center gap-1"
+          >
+            <Eye className="w-3 h-3" />
+            O'zbek tilida
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => handlePdfView("russian")}
+            className="w-full bg-[#003D7F] hover:bg-[#002B5A] text-white text-xs flex items-center justify-center gap-1"
+          >
+            <Eye className="w-3 h-3" />
+            Rus tilida
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => handlePdfView("english")}
+            className="w-full bg-[#003D7F] hover:bg-[#002B5A] text-white text-xs flex items-center justify-center gap-1"
+          >
+            <Eye className="w-3 h-3" />
+            English
+          </Button>
+        </div>
+
+        {/* Hikmat */}
+        <div className="w-full bg-gradient-to-r from-amber-50 to-yellow-50 border-l-4 border-amber-400 p-3 mb-4 rounded-r-lg">
+          <div className="flex items-center mb-2">
+            <Lightbulb className="w-4 h-4 text-amber-600 mr-2" />
+            <span className="text-xs font-semibold text-amber-800">
+              Konfutsiy hikmati
+            </span>
+          </div>
+          <p className="text-xs italic text-amber-700 leading-relaxed text-left">
+            "Bilim olish - hayotning eng katta boyligi"
+          </p>
+        </div>
+
+
+
+
+
+      </div>
+    </CardContent>
+  </Card>
+</div>
+
+
+            {/* O'rta Swiper */}
+            <div className="lg:col-span-6">
+              <div className="relative bg-white shadow-xl overflow-hidden rounded-none">
+                <div className="relative h-[600px]">
+                  {slides.map((slide, index) => (
+                    <div
+                      key={index}
+                      className={`absolute inset-0 transition-opacity duration-500 ${
+                        index === currentSlide ? "opacity-100" : "opacity-0"
+                      }`}
+                    >
+                      <img
+                        src={slide.image || "/placeholder.svg"}
+                        alt={slide.title}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                        <div className="text-center text-white px-8">
+                          <h2 className="text-3xl md:text-4xl font-bold mb-4">{slide.title}</h2>
+                          <p className="text-lg mb-6 max-w-2xl">{slide.description}</p>
+                          <Button size="lg" asChild className="bg-primary hover:bg-primary/90">
+                            <Link href={slide.href}>{slide.buttonText}</Link>
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
 
-              {/* Navigation */}
-              <button
-                onClick={prevSlide}
-                className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 text-white p-2 rounded-full"
-              >
-                <ChevronLeft className="w-6 h-6" />
-              </button>
-              <button
-                onClick={nextSlide}
-                className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 text-white p-2 rounded-full"
-              >
-                <ChevronRight className="w-6 h-6" />
-              </button>
+                {/* Navigation */}
+                <button
+                  onClick={prevSlide}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 text-white p-2 rounded-full"
+                >
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
+                <button
+                  onClick={nextSlide}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 text-white p-2 rounded-full"
+                >
+                  <ChevronRight className="w-6 h-6" />
+                </button>
 
-              {/* Dots */}
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2">
-                {slides.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentSlide(index)}
-                    className={`w-3 h-3 rounded-full ${
-                      index === currentSlide ? "bg-white" : "bg-white/50"
-                    }`}
-                  />
-                ))}
+                {/* Dots */}
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2">
+                  {slides.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentSlide(index)}
+                      className={`w-3 h-3 rounded-full ${index === currentSlide ? "bg-white" : "bg-white/50"}`}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* O‘ng Card - REKLAMA */}
-          <div className="lg:col-span-3">
-            <Card className="h-[600px] bg-white/20 backdrop-blur-md border-white/30 shadow-2xl rounded-lg overflow-hidden">
-              <CardContent className="p-0 h-full flex flex-col">
-                <div className="bg-gradient-to-r from-white/30 to-white/20 p-4 flex items-center justify-center border-b">
-                  <Megaphone className="w-5 h-5 mr-2" />
-                  <h3 className="font-bold text-sm">REKLAMA</h3>
-                </div>
-                <div className="flex-1 p-4 space-y-3 overflow-y-auto">
-                  
-                  {/* Maxsus taklif */}
-                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-3 mb-3">
-                    <div className="flex items-center mb-2">
-                      <Star className="w-4 h-4 text-green-600 mr-2" />
-                      <span className="text-xs font-bold text-green-800">MAXSUS TAKLIF</span>
-                    </div>
-                    <p className="text-xs text-green-700 font-medium mb-2">Ilmiy nashrlar uchun 50% chegirma!</p>
-                    <p className="text-xs text-green-600">Birinchi maqolangizni nashr qilish uchun maxsus narx</p>
+            {/* O'ng Card - REKLAMA */}
+            <div className="lg:col-span-3">
+              <Card className="h-[600px] bg-white/20 backdrop-blur-md border-white/30 shadow-2xl rounded-r-lg rounded-l-none lg:rounded-l-none overflow-hidden">
+                <CardContent className="p-0 h-full flex flex-col">
+                  <div className="bg-gradient-to-r from-white/30 to-white/20 p-4 flex items-center justify-center border-b">
+                    <Megaphone className="w-5 h-5 mr-2" />
+                    <h3 className="font-bold text-sm">REKLAMA</h3>
                   </div>
+                  <div className="flex-1 p-4 space-y-3 overflow-y-auto">
 
-                  {/* Video reklama */}
-                  <div className="bg-gradient-to-br from-[#003D7F]/20 to-[#0059B2]/20 rounded-xl p-4 border shadow-lg hover:shadow-xl transition-all">
-                    <div className="relative mb-3">
-                      <div
-                        className="aspect-video bg-black/80 rounded-lg overflow-hidden relative group cursor-pointer"
-                        onClick={handleVideoClick}
-                      >
-                        <img src="/video-poster.jpg" alt="Video reklama" className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center group-hover:bg-black/30 transition-all">
-                          <div className="w-14 h-14 bg-white/90 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
-                            <Play className="w-7 h-7 text-gray-800 ml-1" />
+
+                    {/* Video reklama */}
+                    <div className="bg-gradient-to-br from-[#003D7F]/20 to-[#0059B2]/20 rounded-xl p-4 border shadow-lg hover:shadow-xl transition-all">
+                      <div className="relative mb-3">
+                        <div
+                          className="aspect-video bg-black/80 rounded-lg overflow-hidden relative group cursor-pointer"
+                          onClick={() => handleVideoPlay(bookSlides[currentVideoSlide].youtubeId)}
+                        >
+                          <img
+                            src={bookSlides[currentVideoSlide].thumbnail || "/placeholder.svg"}
+                            alt="Video reklama"
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center group-hover:bg-black/30 transition-all">
+                            <div className="w-14 h-14 bg-white/90 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
+                              <Play className="w-7 h-7 text-gray-800 ml-1" />
+                            </div>
+                          </div>
+                          <div className="absolute bottom-2 right-2">
+                            <Volume2 className="w-4 h-4 text-white" />
+                          </div>
+                          <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">
+                            LIVE
                           </div>
                         </div>
-                        <div className="absolute bottom-2 right-2">
-                          <Volume2 className="w-4 h-4 text-white" />
-                        </div>
-                        <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">
-                          LIVE
-                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center mb-2">
-                      <div className="w-6 h-6 bg-gradient-to-r from-[#003D7F] to-[#0059B2] rounded-full flex items-center justify-center mr-2">
-                        <Star className="w-3 h-3 text-white" />
+                      <div className="flex items-center mb-2">
+                        <div className="w-6 h-6 bg-gradient-to-r from-[#003D7F] to-[#0059B2] rounded-full flex items-center justify-center mr-2">
+                          <Star className="w-3 h-3 text-white" />
+                        </div>
+                        <span className="text-xs font-bold text-gray-800">Premium Kurs</span>
                       </div>
-                      <span className="text-xs font-bold text-gray-800">Premium Kurs</span>
+                      <p className="text-xs text-gray-700 mb-3 leading-relaxed">
+                        Ilmiy tadqiqot metodlari bo'yicha professional treninglar
+                      </p>
+                      <Button
+                        size="sm"
+                        onClick={() => handleVideoPlay(bookSlides[currentVideoSlide].youtubeId)}
+                        className="w-full bg-gradient-to-r from-[#003D7F] to-[#0059B2] hover:from-[#002B5A] hover:to-[#004080] text-white text-xs"
+                      >
+                        Videoni ko'rish
+                      </Button>
                     </div>
-                    <p className="text-xs text-gray-700 mb-3 leading-relaxed">
-                      Ilmiy tadqiqot metodlari bo'yicha professional treninglar
-                    </p>
-                    <Button
-                      size="sm"
-                      onClick={handleVideoClick}
-                      className="w-full bg-gradient-to-r from-[#003D7F] to-[#0059B2] hover:from-[#002B5A] hover:to-[#004080] text-white text-xs"
-                    >
-                      Videoni ko'rish
-                    </Button>
+                    {/* Maxsus taklif */}
+                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-3 mb-3">
+                      <div className="flex items-center mb-2">
+                        <Star className="w-4 h-4 text-green-600 mr-2" />
+                        <span className="text-xs font-bold text-green-800">MAXSUS TAKLIF</span>
+                      </div>
+                      <p className="text-xs text-green-700 font-medium mb-2">Ilmiy nashrlar uchun 50% chegirma!</p>
+                      <p className="text-xs text-green-600">Birinchi maqolangizni nashr qilish uchun maxsus narx</p>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           </div>
-
         </div>
-      </div>
-    </section>
+      </section>
 
-      {showVideoModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-          <div className="relative w-full max-w-4xl mx-4">
+      {showVideoModal && selectedVideoId && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="relative w-full max-w-4xl">
             <button
-              onClick={() => setShowVideoModal(false)}
-              className="absolute -top-10 right-0 text-white hover:text-gray-300"
+              onClick={() => {
+                setShowVideoModal(false)
+                setSelectedVideoId(null)
+              }}
+              className="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors"
             >
               <X className="w-8 h-8" />
             </button>
             <div className="aspect-video bg-black rounded-lg overflow-hidden">
-              <video controls autoPlay className="w-full h-full" poster="/video-poster.jpg">
-                <source src="/Reklama_1.mp4" type="video/mp4" />
-                Brauzeringiz video formatini qo'llab-quvvatlamaydi.
-              </video>
+              <iframe
+                src={`https://www.youtube.com/embed/${selectedVideoId}?autoplay=1`}
+                title="YouTube video player"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="w-full h-full"
+              ></iframe>
             </div>
           </div>
         </div>
@@ -355,8 +478,10 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Why Choose Us */}
-      <section className="py-12 sm:py-16 bg-primary/5">
+
+
+      {/* Why Choose Us Section */}
+      <section className="py-12 sm:py-16">
         <div className="container mx-auto">
           <div className="text-center mb-8 sm:mb-12">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">Nima uchun bizni tanlaysiz?</h2>
@@ -396,6 +521,120 @@ export default function HomePage() {
               </div>
               <h3 className="text-xl font-semibold">Innovatsiya</h3>
               <p className="text-muted-foreground">Zamonaviy texnologiyalar va yondashuvlar</p>
+            </div>
+          </div>
+        </div>
+      </section>
+            {/* Book Advertisement Carousel */}
+      <section className="py-16">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4 text-slate-800">Tavsiya etilgan kitoblar</h2>
+            <p className="text-slate-600 max-w-2xl mx-auto">Eng mashhur va foydali akademik adabiyotlar to'plami</p>
+          </div>
+
+          <div className="relative max-w-5xl mx-auto">
+            {/* Navigation Arrows */}
+            <button
+              onClick={prevBookSlide}
+              className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white hover:bg-slate-50 border border-slate-200 rounded-full flex items-center justify-center transition-all shadow-md hover:shadow-lg"
+            >
+              <ChevronLeft className="w-5 h-5 text-slate-600" />
+            </button>
+
+            <button
+              onClick={nextBookSlide}
+              className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white hover:bg-slate-50 border border-slate-200 rounded-full flex items-center justify-center transition-all shadow-md hover:shadow-lg"
+            >
+              <ChevronRight className="w-5 h-5 text-slate-600" />
+            </button>
+
+            <div className="overflow-hidden rounded-2xl mx-12">
+              <div
+                className="flex transition-transform duration-500 ease-out"
+                style={{
+                  transform: `translateX(-${currentBookSlide * 100}%)`,
+                }}
+              >
+                {bookSlides.map((book, index) => (
+                  <div key={index} className="w-full flex-shrink-0">
+                    <div className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden mx-4">
+                      <div className="grid md:grid-cols-5 gap-0">
+                        {/* Book Image - Left Side */}
+                        <div className="md:col-span-2 bg-gradient-to-br from-blue-100 to-indigo-100 p-8 flex items-center justify-center">
+                          <div className="relative">
+                            <img
+                              src={
+                                book.image ||
+                                `/placeholder.svg?height=280&width=200&query=${encodeURIComponent(book.title + " book cover") || "/placeholder.svg"}`
+                              }
+                              alt={book.title}
+                              className="w-40 h-56 object-cover rounded-lg shadow-lg"
+                            />
+                            {book.discount && (
+                              <div className="absolute -top-2 -right-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold">
+                                -{book.discount}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Book Details - Right Side */}
+                        <div className="md:col-span-3 p-8 flex flex-col justify-center">
+                          <div className="mb-3">
+                            <span className="inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                              {book.category}
+                            </span>
+                          </div>
+
+                          <h3 className="text-2xl font-bold text-slate-800 mb-2 leading-tight">{book.title}</h3>
+
+                          <p className="text-slate-600 mb-4">{book.author}</p>
+
+                          <div className="flex items-center gap-2 mb-4">
+                            <div className="flex items-center">
+                              {[...Array(5)].map((_, i) => (
+                                <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                              ))}
+                            </div>
+                            <span className="text-sm text-slate-500">(4.8)</span>
+                          </div>
+
+                          <div className="flex items-baseline gap-3 mb-6">
+                            <span className="text-2xl font-bold text-green-600">{book.price}</span>
+                            {book.originalPrice && (
+                              <span className="text-slate-400 line-through">{book.originalPrice}</span>
+                            )}
+                          </div>
+
+                          <div className="flex gap-3">
+                            <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6">Xarid qilish</Button>
+                            <Button
+                              variant="outline"
+                              className="border-blue-600 text-blue-600 hover:bg-blue-50 bg-transparent"
+                            >
+                              Batafsil
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Dots Navigation */}
+            <div className="flex justify-center mt-8 space-x-2">
+              {bookSlides.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentBookSlide(index)}
+                  className={`w-3 h-3 rounded-full transition-all ${
+                    index === currentBookSlide ? "bg-blue-600 scale-125" : "bg-slate-300 hover:bg-slate-400"
+                  }`}
+                />
+              ))}
             </div>
           </div>
         </div>
