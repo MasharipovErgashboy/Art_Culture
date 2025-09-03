@@ -67,7 +67,7 @@ export function Navbar() {
           100% { color: white; }
         }
         .art-culture-blink {
-          animation: blink-yellow 10s infinite;
+          animation: blink-yellow 4s infinite;
         }
       `}</style>
 
