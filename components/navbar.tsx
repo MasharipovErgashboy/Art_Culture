@@ -75,7 +75,7 @@ export function Navbar() {
         className="sticky top-0 z-50 w-full border-b backdrop-blur supports-[backdrop-filter]:bg-[#003D7F]/95"
         style={{ backgroundColor: "#003D7F" }}
       >
-        <div className="w-full px-4">
+        <div className="w-full px-8">
           <div className="flex h-20 items-center justify-between">
             <div className="flex items-center space-x-6">
               {leftNavItems.map((item) => (
@@ -91,12 +91,12 @@ export function Navbar() {
               <Link href="/" className="flex items-center space-x-3 ml-4">
                 <img src="/logo.jpg" alt="Art&Culture Logo" className="h-16 w-16 rounded" />
                 <span className="flex flex-col items-center font-bold leading-tight">
-                  <span className="text-2xl art-culture-blink">
+                  <span className="text-2xl text-yellow-400">
                     Art
-                    <span className="text-lg">&</span>
+                    <span className="text-lg text-white">&</span>
                     Culture
                   </span>
-                  <span className="text-sm text-blue-200">Publishing</span>
+                  <span className="text-lg text-blue-200">Publishing</span>
                 </span>
               </Link>
             </div>

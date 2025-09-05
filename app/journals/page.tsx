@@ -25,7 +25,7 @@ export default function JournalsPage() {
     },
     {
       id: "scientific-heritage",
-      title: "О‘zbekiston davlat san’at va madaniyat instituti xabarlari",
+      title: "O'zDSMI xabarlari",
       description:
         "Ilmiy meros va zamonaviy tadqiqotlar sohasidagi eng so'nggi ishlanmalar va kashfiyotlar haqida ma'lumotlar.",
       issn: "2181-8754",
