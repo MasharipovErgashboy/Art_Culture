@@ -242,7 +242,7 @@ export default function HomePage() {
                     {/* Rektor */}
                     <div>
                       <div className="w-24 h-24 mx-auto mb-3 rounded-full overflow-hidden border-2 border-white/50">
-                        <img src="/rector-photo.jpg" alt="Rektor" className="w-full h-full object-cover" />
+                        <img src="/rektor-photo.jpg" alt="Rektor" className="w-full h-full object-cover" />
                       </div>
                       <h4 className="text-base font-bold text-gray-900 mb-1">NODIRBEK SAYFULLAYEV</h4>
                       <p className="text-sm text-gray-700 leading-relaxed max-w-[200px] mx-auto">
