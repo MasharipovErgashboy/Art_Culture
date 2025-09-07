@@ -13,7 +13,7 @@ import { Eye, EyeOff, Mail, Lock, User } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 
-const AUTH_BASE = "https://a8e97f20273e.ngrok-free.app/auth"
+const AUTH_BASE = "http://10.20.1.89:8002/auth"
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)

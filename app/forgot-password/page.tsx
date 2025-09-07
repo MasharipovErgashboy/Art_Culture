@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
@@ -9,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Mail } from "lucide-react"
 
-const AUTH_BASE = "https://a8e97f20273e.ngrok-free.app//auth"
+const AUTH_BASE = "http://10.20.1.89:8002/auth"
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("")
@@ -38,7 +40,7 @@ export default function ForgotPasswordPage() {
         setError(data.detail || "Xatolik yuz berdi")
       }
     } catch (err: any) {
-      setError("Serverga ulanib bo‘lmadi")
+      setError("Serverga ulanib bo'lmadi")
     } finally {
       setIsLoading(false)
     }
