@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
@@ -14,6 +13,8 @@ import { Eye, EyeOff, Mail, Lock } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 
+const AUTH_BASE = "https://a8e97f20273e.ngrok-free.app/auth"
+
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({
@@ -21,30 +22,48 @@ export default function LoginPage() {
     password: "",
   })
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+    setError(null)
 
-    // Simulate API call
-    setTimeout(() => {
-      // Mock authentication - in real app this would be actual authentication
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
-          id: "1",
-          name: "Abdulla",
-          surname: "Karimov",
+    try {
+      const res = await fetch(`${AUTH_BASE}/login/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           email: formData.email,
-          avatar: "/placeholder.svg?key=user-avatar",
+          password: formData.password,
         }),
-      )
+      })
 
+      const data = await res.json()
+
+      if (res.ok) {
+        localStorage.setItem("access_token", data.access)
+        localStorage.setItem("refresh_token", data.refresh)
+
+        // User info (mock yoki keyinchalik API dan olish mumkin)
+        localStorage.setItem(
+          "user",
+          JSON.stringify({
+            email: formData.email,
+          }),
+        )
+
+        router.push("/")
+        window.location.reload()
+      } else {
+        setError(JSON.stringify(data))
+      }
+    } catch (err: any) {
+      setError(err.message || "Serverga ulanib bo‘lmadi")
+    } finally {
       setIsLoading(false)
-      router.push("/")
-      window.location.reload() // Refresh to update navbar state
-    }, 1000)
+    }
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -110,6 +129,8 @@ export default function LoginPage() {
                     </button>
                   </div>
                 </div>
+
+                {error && <p className="text-red-500 text-sm">{error}</p>}
 
                 <div className="flex items-center justify-between text-sm">
                   <label className="flex items-center space-x-2">

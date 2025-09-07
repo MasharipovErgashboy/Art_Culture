@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
@@ -14,15 +13,16 @@ import { Eye, EyeOff, Mail, Lock, User } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 
+const AUTH_BASE = "https://a8e97f20273e.ngrok-free.app/auth"
+
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [formData, setFormData] = useState({
-    name: "",
-    surname: "",
+    username: "",
     email: "",
     password: "",
-    confirmPassword: "",
+    password2: "",
   })
   const [isLoading, setIsLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -31,28 +31,30 @@ export default function RegisterPage() {
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
 
-    if (!formData.name.trim()) {
-      newErrors.name = "Ism kiritish majburiy"
-    }
-
-    if (!formData.surname.trim()) {
-      newErrors.surname = "Familiya kiritish majburiy"
+    if (!formData.username.trim()) {
+      newErrors.username = "Foydalanuvchi nomi majburiy"
+    } else {
+      const usernameRegex = /^[\w.@+-]+$/
+      if (!usernameRegex.test(formData.username)) {
+        newErrors.username =
+          "Faqat harflar, raqamlar va @/./+/-/_ belgilariga ruxsat beriladi"
+      }
     }
 
     if (!formData.email.trim()) {
-      newErrors.email = "Email manzil kiritish majburiy"
+      newErrors.email = "Email majburiy"
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Email manzil noto'g'ri formatda"
+      newErrors.email = "Email noto‘g‘ri formatda"
     }
 
     if (!formData.password) {
-      newErrors.password = "Parol kiritish majburiy"
+      newErrors.password = "Parol majburiy"
     } else if (formData.password.length < 6) {
-      newErrors.password = "Parol kamida 6 ta belgidan iborat bo'lishi kerak"
+      newErrors.password = "Parol kamida 6 ta belgidan iborat bo‘lishi kerak"
     }
 
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Parollar mos kelmaydi"
+    if (formData.password !== formData.password2) {
+      newErrors.password2 = "Parollar mos emas"
     }
 
     setErrors(newErrors)
@@ -61,31 +63,33 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    if (!validateForm()) {
-      return
-    }
+    if (!validateForm()) return
 
     setIsLoading(true)
 
-    // Simulate API call
-    setTimeout(() => {
-      // Mock registration - in real app this would be actual registration
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
-          id: "1",
-          name: formData.name,
-          surname: formData.surname,
-          email: formData.email,
-          avatar: "/placeholder.svg?key=user-avatar",
-        }),
-      )
+    try {
+      const res = await fetch(`${AUTH_BASE}/register/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData), // ✅ endi password2 ham backendga to‘g‘ri yuboriladi
+      })
 
+      const data = await res.json()
+
+      if (res.ok) {
+        router.push("/login")
+      } else {
+        if (data.email) setErrors({ email: data.email[0] })
+        else if (data.username) setErrors({ username: data.username[0] })
+        else if (data.password) setErrors({ password: data.password[0] })
+        else if (data.password2) setErrors({ password2: data.password2[0] })
+        else setErrors({ general: JSON.stringify(data) })
+      }
+    } catch (err: any) {
+      setErrors({ general: err.message || "Serverga ulanib bo‘lmadi" })
+    } finally {
       setIsLoading(false)
-      router.push("/")
-      window.location.reload() // Refresh to update navbar state
-    }, 1000)
+    }
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -94,12 +98,8 @@ export default function RegisterPage() {
       [e.target.name]: e.target.value,
     }))
 
-    // Clear error when user starts typing
     if (errors[e.target.name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [e.target.name]: "",
-      }))
+      setErrors((prev) => ({ ...prev, [e.target.name]: "" }))
     }
   }
 
@@ -111,56 +111,42 @@ export default function RegisterPage() {
         <div className="container mx-auto max-w-md">
           <Card className="shadow-lg">
             <CardHeader className="text-center">
-              <CardTitle className="text-2xl font-bold text-foreground">Ro'yxatdan o'tish</CardTitle>
+              <CardTitle className="text-2xl font-bold text-foreground">Ro‘yxatdan o‘tish</CardTitle>
               <CardDescription className="text-muted-foreground">
-                Art&Culture portalida hisob yaratish uchun ma'lumotlaringizni kiriting
+                Hisob yaratish uchun quyidagi formani to‘ldiring
               </CardDescription>
             </CardHeader>
 
             <CardContent className="space-y-6">
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Ism</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                      <Input
-                        id="name"
-                        name="name"
-                        type="text"
-                        placeholder="Ismingiz"
-                        value={formData.name}
-                        onChange={handleChange}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                    {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
-                  </div>
+                {errors.general && (
+                  <p className="text-sm text-destructive bg-destructive/10 p-2 rounded">{errors.general}</p>
+                )}
 
-                  <div className="space-y-2">
-                    <Label htmlFor="surname">Familiya</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                      <Input
-                        id="surname"
-                        name="surname"
-                        type="text"
-                        placeholder="Familiyangiz"
-                        value={formData.surname}
-                        onChange={handleChange}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                    {errors.surname && <p className="text-sm text-destructive">{errors.surname}</p>}
+                {/* Username */}
+                <div className="space-y-2">
+                  <Label htmlFor="username">Foydalanuvchi nomi</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                    <Input
+                      id="username"
+                      name="username"
+                      type="text"
+                      placeholder="Foydalanuvchi nomingiz"
+                      value={formData.username}
+                      onChange={handleChange}
+                      className="pl-10"
+                      required
+                    />
                   </div>
+                  {errors.username && <p className="text-sm text-destructive">{errors.username}</p>}
                 </div>
 
+                {/* Email */}
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email manzil</Label>
+                  <Label htmlFor="email">Email</Label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
                     <Input
                       id="email"
                       name="email"
@@ -175,15 +161,16 @@ export default function RegisterPage() {
                   {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
                 </div>
 
+                {/* Password */}
                 <div className="space-y-2">
                   <Label htmlFor="password">Parol</Label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
                     <Input
                       id="password"
                       name="password"
                       type={showPassword ? "text" : "password"}
-                      placeholder="Parolingizni kiriting"
+                      placeholder="Parol kiriting"
                       value={formData.password}
                       onChange={handleChange}
                       className="pl-10 pr-10"
@@ -192,7 +179,7 @@ export default function RegisterPage() {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
@@ -200,16 +187,17 @@ export default function RegisterPage() {
                   {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
                 </div>
 
+                {/* Confirm Password */}
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Parolni tasdiqlang</Label>
+                  <Label htmlFor="password2">Parolni tasdiqlang</Label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
                     <Input
-                      id="confirmPassword"
-                      name="confirmPassword"
+                      id="password2"
+                      name="password2"
                       type={showConfirmPassword ? "text" : "password"}
                       placeholder="Parolni qayta kiriting"
-                      value={formData.confirmPassword}
+                      value={formData.password2}
                       onChange={handleChange}
                       className="pl-10 pr-10"
                       required
@@ -217,31 +205,16 @@ export default function RegisterPage() {
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
                     >
                       {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
-                  {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword}</p>}
-                </div>
-
-                <div className="flex items-start space-x-2">
-                  <input type="checkbox" className="mt-1 rounded border-border" required />
-                  <p className="text-sm text-muted-foreground">
-                    Men{" "}
-                    <Link href="/terms" className="text-primary hover:underline">
-                      foydalanish shartlari
-                    </Link>{" "}
-                    va{" "}
-                    <Link href="/privacy" className="text-primary hover:underline">
-                      maxfiylik siyosati
-                    </Link>{" "}
-                    bilan tanishdim va roziman
-                  </p>
+                  {errors.password2 && <p className="text-sm text-destructive">{errors.password2}</p>}
                 </div>
 
                 <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
-                  {isLoading ? "Ro'yxatdan o'tilmoqda..." : "Ro'yxatdan o'tish"}
+                  {isLoading ? "Ro‘yxatdan o‘tilmoqda..." : "Ro‘yxatdan o‘tish"}
                 </Button>
               </form>
 
