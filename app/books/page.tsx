@@ -1,207 +1,380 @@
 "use client"
 
+import { useState, useEffect } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
+import Image from "next/image"
+import Link from "next/link"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { BookOpen, TrendingUp, Eye, Star } from "lucide-react"
-import Link from "next/link"
+import {
+  BookOpen,
+  User,
+  Building,
+  FileText,
+  Star,
+  ShoppingCart,
+  GraduationCap,
+  ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react"
 
-export default function BookCategoriesPage() {
-  const categories = [
-    {
-      id: "university-journals",
-      title: "Universitet jurnallari bo'limi",
-      description:
-        "Ilmiy tadqiqotlar, dissertatsiyalar va akademik maqolalar to'plami. Turli sohalardagi eng so'nggi ilmiy yutuqlar va kashfiyotlar.",
-      image: "/university-academic-journals-books-stack-blue.png",
-      bookCount: "150+",
-      color: "from-blue-500 to-indigo-600",
-      bgColor: "bg-blue-50",
-      href: "/books/university-journals",
-    },
-    {
-      id: "literary-books",
-      title: "Adabiy kitoblar bo'limi",
-      description:
-        "O'zbek va jahon adabiyotining eng yaxshi namunalari. Klassik asarlar, zamonaviy romanlar va she'riy to'plamlar.",
-      image: "/literary-books-poetry-novels-green.png",
-      bookCount: "200+",
-      color: "from-emerald-500 to-teal-600",
-      bgColor: "bg-emerald-50",
-      href: "/books/literary-books",
-    },
-    {
-      id: "historical-books",
-      title: "Tarixiy kitoblar bo'limi",
-      description:
-        "O'zbekiston va Markaziy Osiyo tarixiga oid fundamental asarlar. Qadimgi sivilizatsiyalardan zamonaviy davrgacha.",
-      image: "/historical-books-ancient-manuscripts-amber.png",
-      bookCount: "120+",
-      color: "from-amber-500 to-orange-600",
-      bgColor: "bg-amber-50",
-      href: "/books/historical-books",
-    },
-  ]
+interface Book {
+  id: number
+  name: string
+  slug: string
+  isbn?: string
+  year?: number
+  description: string
+  page_count?: number
+  tags?: string
+  category: number
+  category_name: string
+  author?: number
+  author_name?: string
+  pages: number
+  created_at: string
+}
 
-  const mostReadBooks = [
-    {
-      id: "uzbek-culture-history",
-      title: "O'zbekiston madaniyati tarixi",
-      views: "15,230",
-      rating: 4.9,
-      image: "/mathematics-textbook-academic-book-cover-blue-desi.png",
-      category: "Tarix",
-      author: "Prof. A. Karimov",
-    },
-    {
-      id: "central-asian-art",
-      title: "Markaziy Osiyo san'ati",
-      views: "12,840",
-      rating: 4.7,
-      image: "/physics-textbook-academic-book-cover-red-atoms-des.png",
-      category: "San'at",
-      author: "Dr. M. Rahimova",
-    },
-    {
-      id: "uzbek-literature",
-      title: "O'zbek adabiyoti antologiyasi",
-      views: "10,650",
-      rating: 4.8,
-      image: "/chemistry-textbook-academic-book-cover-green-molec.png",
-      category: "Adabiyot",
-      author: "Prof. S. Nazarov",
-    },
-  ]
+export default function BooksListPage() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const [books, setBooks] = useState<Book[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [categoryName, setCategoryName] = useState<string>("")
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const booksPerPage = 9
+
+  const category = searchParams.get("category") || ""
+
+  useEffect(() => {
+    const user = localStorage.getItem("user")
+    setIsLoggedIn(!!user)
+
+    const fetchBooks = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+
+        const response = await fetch("http://127.0.0.1:8000/{lang}/books/", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFTOKEN": "AqQlQKEJ75TDii8kAgBSuzGZWF1rM7rfm3KPWFyo5tcohX0bff6jgUUzcSAUvQfc",
+          },
+        })
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+
+        const data: Book[] = await response.json()
+
+        let filteredBooks = data
+        if (category) {
+          filteredBooks = data.filter(
+            (book) =>
+              book.category.toString() === category ||
+              book.category_name?.toLowerCase().replace(/\s+/g, "-") === category,
+          )
+        }
+
+        setBooks(filteredBooks)
+        if (filteredBooks.length > 0 && category) {
+          setCategoryName(filteredBooks[0].category_name)
+        } else {
+          setCategoryName("Barcha kitoblar")
+        }
+      } catch (err) {
+        console.error("API xatolik:", err)
+        setError("Kitoblarni yuklashda xatolik yuz berdi")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchBooks()
+  }, [category])
+
+  const totalPages = Math.ceil(books.length / booksPerPage)
+  const startIndex = (currentPage - 1) * booksPerPage
+  const endIndex = startIndex + booksPerPage
+  const currentBooks = books.slice(startIndex, endIndex)
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
+
+  const handlePurchaseClick = (bookId: string) => {
+    if (!isLoggedIn) {
+      router.push("/login")
+    } else {
+      router.push(`/checkout?type=book&id=${bookId}`)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen" style={{ backgroundColor: "#DCE3F8" }}>
+        <Navbar />
+        <div className="container mx-auto px-4 py-8">
+          <div className="mb-8">
+            <Skeleton className="h-8 w-64 mb-4" />
+            <Skeleton className="h-4 w-96" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 9 }).map((_, index) => (
+              <Card key={index} className="overflow-hidden">
+                <Skeleton className="h-48 w-full" />
+                <CardContent className="p-4">
+                  <Skeleton className="h-6 w-full mb-2" />
+                  <Skeleton className="h-4 w-24 mb-2" />
+                  <Skeleton className="h-16 w-full mb-4" />
+                  <Skeleton className="h-10 w-full" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+        <Footer />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen" style={{ backgroundColor: "#DCE3F8" }}>
+        <Navbar />
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <div className="text-red-500 text-6xl mb-4">⚠️</div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">Xatolik</h2>
+            <p className="text-gray-600">{error}</p>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#DCE3F8" }}>
       <Navbar />
 
-      <div className="flex">
-        {/* Left Sidebar */}
-        <aside className="w-80 min-h-screen sticky top-0" style={{ backgroundColor: "#DCE3F8" }}>
-          <div className="sticky top-4 bg-gradient-to-br from-primary/5 to-secondary/5 rounded-2xl p-6 border border-border/50 shadow-lg backdrop-blur-sm m-4">
-            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-border/30">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <TrendingUp className="h-5 w-5 text-primary" />
+      <section className="py-12 sm:py-16 lg:py-20">
+        <div className="container mx-auto px-4">
+          <div className="mb-8">
+            <Link
+              href="/books/categories"
+              className="inline-flex items-center gap-2 text-[#003D7F] hover:text-blue-600 transition-colors mb-6"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Kitoblar bo'limlariga qaytish
+            </Link>
+          </div>
+
+          <div className="text-center mb-12">
+            <div className="flex flex-col lg:flex-row items-center justify-center gap-8 mb-8 max-w-6xl mx-auto">
+              <div className="w-full lg:w-2/5">
+                <div className="relative overflow-hidden rounded-2xl shadow-2xl">
+                  <Image
+                    src="/university-academic-journals-books-stack-blue.png"
+                    alt={categoryName}
+                    width={500}
+                    height={400}
+                    className="w-full h-80 object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-blue-900/20 to-transparent"></div>
+                </div>
               </div>
-              <h2 className="text-xl font-bold text-[#003D7F]">Eng ko'p o'qilgan</h2>
-            </div>
-
-            <div className="space-y-4">
-              {mostReadBooks.map((book, index) => (
-                <div
-                  key={book.id}
-                  className="group cursor-pointer bg-background/60 backdrop-blur-sm rounded-xl p-4 border border-border/30 hover:border-primary/30 hover:shadow-md transition-all duration-300 hover:bg-background/80"
-                >
-                  <div className="flex gap-4">
-                    <div className="relative w-16 h-20 flex-shrink-0 rounded-lg overflow-hidden shadow-sm">
-                      <img
-                        src={book.image || "/placeholder.svg"}
-                        alt={book.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                      <div className="absolute -top-1 -left-1 bg-gradient-to-br from-[#003D7F] to-[#003D7F]/80 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-lg border-2 border-white">
-                        {index + 1}
+              <div className="w-full lg:w-3/5">
+                <div className="text-left lg:pl-8">
+                  <h1 className="text-4xl sm:text-5xl font-bold text-[#003D7F] mb-6">{categoryName}</h1>
+                  <div className="bg-white rounded-xl p-8 shadow-xl border border-blue-100">
+                    <p className="text-lg text-gray-700 leading-relaxed">
+                      {categoryName} bo'limi ilmiy tadqiqotlar, dissertatsiyalar va akademik maqolalar to'plamini o'z
+                      ichiga oladi. Bu bo'limda turli sohalardagi eng so'nggi ilmiy yutuqlar, kashfiyotlar va tadqiqot
+                      natijalari bilan tanishishingiz mumkin. Har bir kitob yuqori sifatli ilmiy materiallar bilan
+                      to'ldirilgan bo'lib, akademik jamoatchilik uchun mo'ljallangan.
+                    </p>
+                    <div className="mt-6 flex items-center gap-4 text-sm text-blue-600">
+                      <div className="flex items-center gap-2">
+                        <GraduationCap className="h-5 w-5" />
+                        <span className="font-medium">Akademik materiallar</span>
                       </div>
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-gray-800 text-sm line-clamp-2 group-hover:text-[#003D7F] transition-colors mb-2 leading-tight">
-                        {book.title}
-                      </h3>
-
-                      <div className="text-xs text-gray-600 mb-2">{book.author}</div>
-
-                      <div className="inline-block text-xs px-2 py-1 mb-3 bg-[#003D7F]/10 text-[#003D7F] border border-[#003D7F]/20 hover:border-[#003D7F] transition-all duration-300 font-medium rounded">
-                        {book.category}
+                      <div className="flex items-center gap-2">
+                        <BookOpen className="h-5 w-5" />
+                        <span className="font-medium">{books.length} kitob</span>
                       </div>
-
-                      <div className="flex items-center justify-between mb-3 text-xs">
-                        <div className="flex items-center gap-1 text-gray-600 bg-gray-100 px-2 py-1 rounded-md">
-                          <Eye className="h-3 w-3" />
-                          <span className="font-medium">{book.views}</span>
-                        </div>
-                        <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded-md">
-                          <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                          <span className="font-medium text-yellow-700">{book.rating}</span>
-                        </div>
-                      </div>
-
-                      <button className="w-full h-8 text-xs bg-[#003D7F]/10 hover:bg-[#003D7F] hover:text-white text-[#003D7F] border border-[#003D7F]/20 hover:border-[#003D7F] transition-all duration-300 font-medium rounded flex items-center justify-center gap-1">
-                        <BookOpen className="h-3 w-3" />
-                        O'qish
-                      </button>
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
-
-            <div className="mt-6 pt-4 border-t border-border/30">
-              <button className="w-full py-2 px-4 border border-[#003D7F]/20 hover:bg-[#003D7F] hover:text-white text-[#003D7F] transition-colors bg-transparent rounded font-medium">
-                Barchasini ko'rish
-              </button>
+              </div>
             </div>
           </div>
-        </aside>
 
-        {/* Main Content */}
-        <main className="flex-1">
-          {/* Header Section */}
-          <section className="py-12 sm:py-16 lg:py-20">
-            <div className="container mx-auto px-4">
-              <div className="text-center mb-12">
-                <h1 className="text-4xl sm:text-5xl font-bold text-[#003D7F] mb-4">Kitoblar bo'limlari</h1>
-                <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                  Turli sohalardagi eng sifatli kitoblar va ilmiy nashrlarni toping
-                </p>
-              </div>
+          {books.length === 0 ? (
+            <div className="text-center py-12">
+              <BookOpen className="mx-auto h-16 w-16 text-gray-400 mb-4" />
+              <h3 className="text-xl font-semibold text-gray-600 mb-2">Kitoblar topilmadi</h3>
+              <p className="text-gray-500">Ushbu kategoriyada hozircha kitoblar mavjud emas</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto mb-12">
+              {currentBooks.map((book) => (
+                <Card
+                  key={book.id}
+                  className="group hover:shadow-xl transition-all duration-500 overflow-hidden border-0 shadow-md hover:scale-[1.02] bg-white h-fit"
+                >
+                  <div className="aspect-[3/4] relative overflow-hidden">
+                    <Image
+                      src={`/abstract-geometric-shapes.png?height=400&width=300&query=${encodeURIComponent(book.name)}`}
+                      alt={book.name}
+                      fill
+                      className="object-cover group-hover:scale-110 transition-transform duration-700"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-              {/* Categories Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-                {categories.map((category) => (
-                  <Link key={category.id} href={category.href}>
-                    <Card className="group hover:shadow-2xl transition-all duration-500 overflow-hidden border-0 shadow-lg hover:scale-[1.02] bg-white h-full cursor-pointer">
-                      <div className={`h-2 bg-gradient-to-r ${category.color}`} />
+                    <div className="absolute top-4 left-4 right-4 flex justify-between">
+                      <Badge className="bg-blue-600 text-white border-0 shadow-lg">{book.category_name}</Badge>
+                      {book.year && (
+                        <Badge variant="outline" className="bg-background/95 border-0 shadow-lg">
+                          {book.year}
+                        </Badge>
+                      )}
+                    </div>
 
-                      <CardHeader className="pb-4">
-                        <div className="w-full h-32 mb-4 group-hover:scale-105 transition-transform duration-300 overflow-hidden rounded-lg">
-                          <img
-                            src={category.image || "/placeholder.svg"}
-                            alt={category.title}
-                            className="w-full h-full object-cover"
-                          />
+                    <div className="absolute bottom-4 left-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+                      <div className="flex items-center justify-between text-white text-sm">
+                        <div className="flex items-center gap-1">
+                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                          <span className="font-medium">4.8</span>
                         </div>
-
-                        <CardTitle className="text-xl font-bold text-[#003D7F] group-hover:text-blue-600 transition-colors text-center">
-                          {category.title}
-                        </CardTitle>
-
-                        <CardDescription className="text-gray-600 leading-relaxed text-center">
-                          {category.description}
-                        </CardDescription>
-                      </CardHeader>
-
-                      <CardContent className="pt-0">
-                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg group-hover:bg-blue-50 transition-colors">
-                          <div className="flex items-center gap-2">
-                            <BookOpen className="h-5 w-5 text-[#003D7F]" />
-                            <span className="font-semibold text-[#003D7F]">{category.bookCount} kitob</span>
-                          </div>
-                          <div className="text-sm text-gray-500 group-hover:text-blue-600 transition-colors">
-                            Ko'rish →
-                          </div>
+                        <div className="flex items-center gap-1">
+                          <BookOpen className="h-4 w-4" />
+                          <span>{book.page_count || 0} bet</span>
                         </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
+                      </div>
+                    </div>
+                  </div>
+
+                  <CardHeader className="pb-3 space-y-2">
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <span className="font-medium">ISBN: {book.isbn || "N/A"}</span>
+                      {book.year && (
+                        <span className="bg-blue-100 px-2 py-1 rounded text-blue-700 font-medium">{book.year}</span>
+                      )}
+                    </div>
+
+                    <CardTitle className="text-lg sm:text-xl font-bold text-foreground group-hover:text-[#003D7F] transition-colors line-clamp-2 leading-tight">
+                      {book.name}
+                    </CardTitle>
+
+                    <CardDescription className="text-muted-foreground line-clamp-2 text-sm leading-relaxed">
+                      <div dangerouslySetInnerHTML={{ __html: book.description || "" }} />
+                    </CardDescription>
+
+                    <div className="space-y-1 pt-1">
+                      {book.author_name && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <User className="h-4 w-4 text-[#003D7F]" />
+                          <span className="font-medium line-clamp-1">{book.author_name}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Building className="h-4 w-4 text-[#003D7F]" />
+                        <span className="line-clamp-1">Akademik nashriyot</span>
+                      </div>
+                    </div>
+                  </CardHeader>
+
+                  <CardContent className="pt-0 space-y-3">
+                    <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                      <div className="text-lg font-bold text-[#003D7F]">Bepul</div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <FileText className="h-4 w-4 text-[#003D7F]" />
+                        <span className="font-medium">{book.page_count || 0} sahifa</span>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button
+                        asChild
+                        className="flex-1 bg-[#003D7F] hover:bg-blue-700 group-hover:shadow-lg transition-all duration-300"
+                        size="default"
+                      >
+                        <Link href={`/books/${book.id}`}>
+                          <BookOpen className="mr-2 h-4 w-4" />
+                          Ko'rish
+                        </Link>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="default"
+                        className="px-4 hover:bg-[#003D7F] hover:text-white bg-transparent"
+                        onClick={() => handlePurchaseClick(book.id.toString())}
+                      >
+                        <ShoppingCart className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-12">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="bg-white hover:bg-[#003D7F] hover:text-white"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Oldingi
+              </Button>
+
+              <div className="flex gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <Button
+                    key={page}
+                    variant={currentPage === page ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handlePageChange(page)}
+                    className={
+                      currentPage === page
+                        ? "bg-[#003D7F] text-white hover:bg-blue-700"
+                        : "bg-white hover:bg-[#003D7F] hover:text-white"
+                    }
+                  >
+                    {page}
+                  </Button>
                 ))}
               </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="bg-white hover:bg-[#003D7F] hover:text-white"
+              >
+                Keyingi
+                <ChevronRight className="h-4 w-4" />
+              </Button>
             </div>
-          </section>
-        </main>
-      </div>
+          )}
+        </div>
+      </section>
 
       <Footer />
     </div>

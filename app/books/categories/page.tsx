@@ -7,26 +7,40 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { BookOpen, TrendingUp, Eye, Star } from "lucide-react"
 import Link from "next/link"
 
-interface BookCategory {
+interface Book {
   id: number
   name: string
   name_uz?: string
   name_en?: string
   name_ru?: string
   slug: string
-  slug_uz?: string
-  slug_en?: string
-  slug_ru?: string
+  isbn?: string
+  year?: number
   description: string
   description_uz?: string
   description_en?: string
   description_ru?: string
-  books_count: number
+  page_count?: number
+  tags?: string
+  category: number
+  category_name: string
+  author?: number
+  author_name?: string
+  pages: number
   created_at: string
 }
 
+interface Category {
+  id: number
+  name: string
+  description: string
+  books_count: number
+  slug: string
+}
+
 interface ApiData {
-  categories: BookCategory[]
+  books: Book[]
+  categories: Category[]
 }
 
 export default function BookCategoriesPage() {
@@ -40,11 +54,10 @@ export default function BookCategoriesPage() {
         setLoading(true)
         setError(null)
 
-        const response = await fetch("http://127.0.0.1:8000/book-categories/", {
+        const response = await fetch("http://127.0.0.1:8000/{lang}/book-categories/", {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            "X-CSRFTOKEN": "AqQlQKEJ75TDii8kAgBSuzGZWF1rM7rfm3KPWFyo5tcohX0bff6jgUUzcSAUvQfc",
           },
         })
 
@@ -53,7 +66,20 @@ export default function BookCategoriesPage() {
         }
 
         const categories = await response.json()
-        setApiData({ categories })
+        setApiData({ books: [] }) // Keep books empty for categories page
+
+        // Store categories data for display
+        if (categories && categories.length > 0) {
+          const categoryData = categories.map((cat: any) => ({
+            id: cat.id,
+            name: cat.name || cat.name_uz || cat.name_en || cat.name_ru,
+            description: cat.description || cat.description_uz || cat.description_en || cat.description_ru,
+            books_count: cat.books_count || 0,
+            slug: cat.slug || cat.name?.toLowerCase().replace(/\s+/g, "-"),
+          }))
+          // Update fallback categories with real data
+          setApiData({ books: [], categories: categoryData })
+        }
       } catch (err) {
         console.error("API xatolik:", err)
         setError(err instanceof Error ? err.message : "Xatolik yuz berdi")
@@ -93,13 +119,13 @@ export default function BookCategoriesPage() {
   ]
 
   const getDisplayCategories = () => {
-    if (apiData && apiData.categories.length > 0) {
-      return apiData.categories.map((category) => ({
+    if (apiData && (apiData as any).categories && (apiData as any).categories.length > 0) {
+      return (apiData as any).categories.map((category: any) => ({
         id: category.slug,
         title: category.name,
         description: category.description,
         bookCount: `${category.books_count}+`,
-        href: `/books/${category.slug}`,
+        href: `/books?category=${category.id}`, // Use category ID for filtering
         image: getImageForCategory(category.slug),
         color: getColorForCategory(category.slug),
         bgColor: getBgColorForCategory(category.slug),
@@ -111,7 +137,7 @@ export default function BookCategoriesPage() {
       title: category.name,
       description: category.description,
       bookCount: `${category.books_count}+`,
-      href: `/books/${category.slug}`,
+      href: `/books?category=${category.id}`,
       image: getImageForCategory(category.slug),
       color: getColorForCategory(category.slug),
       bgColor: getBgColorForCategory(category.slug),

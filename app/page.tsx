@@ -21,10 +21,52 @@ import {
   Play,
   Volume2,
   X,
+  Clock,
 } from "lucide-react"
 import Link from "next/link"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+
+interface RasmiyElon {
+  id: number
+  media: string | null
+  homepage_content: string | null
+  homepage_content_uz: string | null
+  homepage_content_en: string | null
+  homepage_content_ru: string | null
+  description: string | null
+  description_uz: string | null
+  description_en: string | null
+  description_ru: string | null
+}
+
+interface Reklama {
+  id: number
+  title: string
+  description: string
+  image?: string
+  company?: string
+  category?: string
+  price?: string
+  originalPrice?: string
+  discount?: string
+}
+
+interface Yangilik {
+  id: number
+  title: string
+  description: string
+  image?: string
+  date: string
+}
+
+interface ApiData {
+  rasmiy_elon: RasmiyElon
+  reklama: Reklama[]
+  yangiliklar: Yangilik[]
+}
+
+const API_BASE = "http://127.0.0.1:8000/${lang}"
 
 export default function HomePage() {
   const router = useRouter()
@@ -33,6 +75,40 @@ export default function HomePage() {
   const [currentBookSlide, setCurrentBookSlide] = useState(0)
   const [showVideoModal, setShowVideoModal] = useState(false)
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null)
+
+  const [apiData, setApiData] = useState<ApiData | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [apiError, setApiError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchApiData = async () => {
+      try {
+        setIsLoading(true)
+
+        const response = await fetch(`${API_BASE}/`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFTOKEN": "eJuCzMPXzuceRF25yOKmMxM4xf4mqGj35Y0XH5SmFgz83slSgqvKu3WpN7SfScL3",
+          },
+        })
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+
+        const data = await response.json()
+        setApiData(data)
+        setApiError(null)
+      } catch (error) {
+        setApiError(error instanceof Error ? error.message : "API xatolik yuz berdi")
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchApiData()
+  }, [])
 
   const slides = [
     {
@@ -160,11 +236,12 @@ export default function HomePage() {
   }, [adSlides.length])
 
   useEffect(() => {
+    const reklamaLength = apiData?.reklama?.length || adSlides.length
     const bookTimer = setInterval(() => {
-      setCurrentBookSlide((prev) => (prev + 1) % adSlides.length)
+      setCurrentBookSlide((prev) => (prev + 1) % reklamaLength)
     }, 4000)
     return () => clearInterval(bookTimer)
-  }, [adSlides.length])
+  }, [adSlides.length, apiData?.reklama?.length])
 
   const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % slides.length)
   const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length)
@@ -239,56 +316,78 @@ export default function HomePage() {
 
                   {/* Content (centered) */}
                   <div className="flex-1 p-4 flex flex-col justify-center items-center space-y-6 text-center">
-                    {/* Rektor */}
-                    <div>
-                      <div className="w-24 h-24 mx-auto mb-3 rounded-full overflow-hidden border-2 border-white/50">
-                        <img src="/rektor-photo.jpg" alt="Rektor" className="w-full h-full object-cover" />
+                    {isLoading ? (
+                      <div className="text-sm text-gray-600">Yuklanmoqda...</div>
+                    ) : apiData?.rasmiy_elon &&
+                      (apiData.rasmiy_elon.homepage_content_uz || apiData.rasmiy_elon.homepage_content) ? (
+                      <div className="w-full bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+                        <div className="flex items-center mb-2">
+                          <Bell className="w-4 h-4 text-blue-600 mr-2" />
+                          <span className="text-xs font-semibold text-blue-800">Rasmiy e'lon</span>
+                        </div>
+                        <div className="text-sm text-blue-700 leading-relaxed text-left">
+                          <div
+                            dangerouslySetInnerHTML={{
+                              __html:
+                                apiData.rasmiy_elon.homepage_content_uz || apiData.rasmiy_elon.homepage_content || "",
+                            }}
+                          />
+                        </div>
                       </div>
-                      <h4 className="text-base font-bold text-gray-900 mb-1">NODIRBEK SAYFULLAYEV</h4>
-                      <p className="text-sm text-gray-700 leading-relaxed max-w-[200px] mx-auto">
-                        Universitetimiz rektori, ilmiy faoliyat va ta'lim sohasi bo'yicha mutaxassis
-                      </p>
-                    </div>
+                    ) : (
+                      <>
+                        {/* Rektor */}
+                        <div>
+                          <div className="w-24 h-24 mx-auto mb-3 rounded-full overflow-hidden border-2 border-white/50">
+                            <img src="/rektor-photo.jpg" alt="Rektor" className="w-full h-full object-cover" />
+                          </div>
+                          <h4 className="text-base font-bold text-gray-900 mb-1">NODIRBEK SAYFULLAYEV</h4>
+                          <p className="text-sm text-gray-700 leading-relaxed max-w-[200px] mx-auto">
+                            Universitetimiz rektori, ilmiy faoliyat va ta'lim sohasi bo'yicha mutaxassis
+                          </p>
+                        </div>
 
-                    {/* Maqola tugmalari */}
-                    <div className="w-full space-y-2">
-                      <p className="text-xs font-semibold text-gray-800 mb-2">Maqolasi:</p>
-                      <Button
-                        size="sm"
-                        onClick={() => handlePdfView("uzbek")}
-                        className="w-full bg-[#003D7F] hover:bg-[#002B5A] text-white text-xs flex items-center justify-center gap-1"
-                      >
-                        <Eye className="w-3 h-3" />
-                        O'zbek tilida
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => handlePdfView("russian")}
-                        className="w-full bg-[#003D7F] hover:bg-[#002B5A] text-white text-xs flex items-center justify-center gap-1"
-                      >
-                        <Eye className="w-3 h-3" />
-                        Rus tilida
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => handlePdfView("english")}
-                        className="w-full bg-[#003D7F] hover:bg-[#002B5A] text-white text-xs flex items-center justify-center gap-1"
-                      >
-                        <Eye className="w-3 h-3" />
-                        English
-                      </Button>
-                    </div>
+                        {/* Maqola tugmalari */}
+                        <div className="w-full space-y-2">
+                          <p className="text-xs font-semibold text-gray-800 mb-2">Maqolasi:</p>
+                          <Button
+                            size="sm"
+                            onClick={() => handlePdfView("uzbek")}
+                            className="w-full bg-[#003D7F] hover:bg-[#002B5A] text-white text-xs flex items-center justify-center gap-1"
+                          >
+                            <Eye className="w-3 h-3" />
+                            O'zbek tilida
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => handlePdfView("russian")}
+                            className="w-full bg-[#003D7F] hover:bg-[#002B5A] text-white text-xs flex items-center justify-center gap-1"
+                          >
+                            <Eye className="w-3 h-3" />
+                            Rus tilida
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => handlePdfView("english")}
+                            className="w-full bg-[#003D7F] hover:bg-[#002B5A] text-white text-xs flex items-center justify-center gap-1"
+                          >
+                            <Eye className="w-3 h-3" />
+                            English
+                          </Button>
+                        </div>
 
-                    {/* Hikmat */}
-                    <div className="w-full bg-gradient-to-r from-amber-50 to-yellow-50 border-l-4 border-amber-400 p-3 mb-4 rounded-r-lg">
-                      <div className="flex items-center mb-2">
-                        <Lightbulb className="w-4 h-4 text-amber-600 mr-2" />
-                        <span className="text-xs font-semibold text-amber-800">Konfutsiy hikmati</span>
-                      </div>
-                      <p className="text-xs italic text-amber-700 leading-relaxed text-left">
-                        "Bilim olish - hayotning eng katta boyligi"
-                      </p>
-                    </div>
+                        {/* Hikmat */}
+                        <div className="w-full bg-gradient-to-r from-amber-50 to-yellow-50 border-l-4 border-amber-400 p-3 mb-4 rounded-r-lg">
+                          <div className="flex items-center mb-2">
+                            <Lightbulb className="w-4 h-4 text-amber-600 mr-2" />
+                            <span className="text-xs font-semibold text-amber-800">Konfutsiy hikmati</span>
+                          </div>
+                          <p className="text-xs italic text-amber-700 leading-relaxed text-left">
+                            "Bilim olish - hayotning eng katta boyligi"
+                          </p>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -359,69 +458,119 @@ export default function HomePage() {
                     <h3 className="font-bold text-sm">REKLAMA</h3>
                   </div>
                   <div className="flex-1 p-4 space-y-3 overflow-y-auto">
-                    {/* Video reklama */}
-                    <div className="bg-gradient-to-br from-[#003D7F]/20 to-[#0059B2]/20 rounded-xl p-4 border shadow-lg hover:shadow-xl transition-all duration-300">
-                      <div className="relative mb-3">
+                    {isLoading ? (
+                      <div className="text-sm text-gray-600 text-center">Reklamalar yuklanmoqda...</div>
+                    ) : apiData?.reklama && apiData.reklama.length > 0 ? (
+                      apiData.reklama.slice(0, 2).map((reklama, index) => (
                         <div
-                          className="aspect-video bg-black/80 rounded-lg overflow-hidden relative group cursor-pointer"
-                          onClick={() => handleVideoPlay(adSlides[currentVideoSlide].youtubeId)}
+                          key={reklama.id}
+                          className="bg-gradient-to-br from-[#003D7F]/20 to-[#0059B2]/20 rounded-xl p-4 border shadow-lg hover:shadow-xl transition-all duration-300"
                         >
-                          <img
-                            src={adSlides[currentVideoSlide].thumbnail || "/placeholder.svg"}
-                            alt="Video reklama"
-                            className="w-full h-full object-cover"
-                          />
-                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center group-hover:bg-black/30 transition-all">
-                            <div className="w-14 h-14 bg-white/90 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
-                              <Play className="w-7 h-7 text-gray-800 ml-1" />
+                          {reklama.image && (
+                            <div className="relative mb-3">
+                              <img
+                                src={reklama.image || "/placeholder.svg"}
+                                alt={reklama.title}
+                                className="w-full h-32 object-cover rounded-lg"
+                              />
+                            </div>
+                          )}
+                          <div className="flex items-center mb-2">
+                            <div className="w-6 h-6 bg-gradient-to-r from-[#003D7F] to-[#0059B2] rounded-full flex items-center justify-center mr-2">
+                              <Star className="w-3 h-3 text-white" />
+                            </div>
+                            <span className="text-xs font-bold text-gray-800">{reklama.title}</span>
+                          </div>
+                          <div className="text-xs text-gray-700 mb-3 leading-relaxed">
+                            <div dangerouslySetInnerHTML={{ __html: reklama.description }} />
+                          </div>
+                          {reklama.price && (
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="text-sm font-bold text-green-600">{reklama.price}</span>
+                              {reklama.originalPrice && (
+                                <span className="text-xs text-gray-400 line-through">{reklama.originalPrice}</span>
+                              )}
+                            </div>
+                          )}
+                          <Button
+                            size="sm"
+                            className="w-full text-xs font-medium border-0"
+                            style={{
+                              backgroundColor: "#003D7F",
+                              color: "#ffffff",
+                            }}
+                          >
+                            Batafsil
+                          </Button>
+                        </div>
+                      ))
+                    ) : (
+                      <>
+                        {/* Static reklama content as fallback */}
+                        <div className="bg-gradient-to-br from-[#003D7F]/20 to-[#0059B2]/20 rounded-xl p-4 border shadow-lg hover:shadow-xl transition-all duration-300">
+                          <div className="relative mb-3">
+                            <div
+                              className="aspect-video bg-black/80 rounded-lg overflow-hidden relative group cursor-pointer"
+                              onClick={() => handleVideoPlay(adSlides[currentVideoSlide].youtubeId)}
+                            >
+                              <img
+                                src={adSlides[currentVideoSlide].thumbnail || "/placeholder.svg"}
+                                alt="Video reklama"
+                                className="w-full h-full object-cover"
+                              />
+                              <div className="absolute inset-0 bg-black/40 flex items-center justify-center group-hover:bg-black/30 transition-all">
+                                <div className="w-14 h-14 bg-white/90 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
+                                  <Play className="w-7 h-7 text-gray-800 ml-1" />
+                                </div>
+                              </div>
+                              <div className="absolute bottom-2 right-2">
+                                <Volume2 className="w-4 h-4 text-white" />
+                              </div>
+                              <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">
+                                LIVE
+                              </div>
                             </div>
                           </div>
-                          <div className="absolute bottom-2 right-2">
-                            <Volume2 className="w-4 h-4 text-white" />
+                          <div className="flex items-center mb-2">
+                            <div className="w-6 h-6 bg-gradient-to-r from-[#003D7F] to-[#0059B2] rounded-full flex items-center justify-center mr-2">
+                              <Star className="w-3 h-3 text-white" />
+                            </div>
+                            <span className="text-xs font-bold text-gray-800">Premium Kurs</span>
                           </div>
-                          <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">
-                            LIVE
+                          <div className="text-xs text-gray-700 mb-3 leading-relaxed">
+                            Ilmiy tadqiqot metodlari bo'yicha professional treninglar
                           </div>
+                          <Button
+                            size="sm"
+                            onClick={() => handleVideoPlay(adSlides[currentVideoSlide].youtubeId)}
+                            className="w-full text-xs font-medium border-0"
+                            style={{
+                              backgroundColor: "#003D7F",
+                              color: "#ffffff",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = "#002B5A"
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = "#003D7F"
+                            }}
+                          >
+                            Videoni ko'rish
+                          </Button>
                         </div>
-                      </div>
-                      <div className="flex items-center mb-2">
-                        <div className="w-6 h-6 bg-gradient-to-r from-[#003D7F] to-[#0059B2] rounded-full flex items-center justify-center mr-2">
-                          <Star className="w-3 h-3 text-white" />
+                        {/* Maxsus taklif */}
+                        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-3 mb-3">
+                          <div className="flex items-center mb-2">
+                            <div className="w-6 h-6 bg-gradient-to-r from-[#003D7F] to-[#0059B2] rounded-full flex items-center justify-center mr-2">
+                              <Star className="w-3 h-3 text-white" />
+                            </div>
+                            <span className="text-xs font-bold text-gray-800">MAXSUS TAKLIF</span>
+                          </div>
+                          <p className="text-xs text-green-700 font-medium mb-2">Ilmiy nashrlar uchun 50% chegirma!</p>
+                          <p className="text-xs text-green-600">Birinchi maqolangizni nashr qilish uchun maxsus narx</p>
                         </div>
-                        <span className="text-xs font-bold text-gray-800">Premium Kurs</span>
-                      </div>
-                      <p className="text-xs text-gray-700 mb-3 leading-relaxed">
-                        Ilmiy tadqiqot metodlari bo'yicha professional treninglar
-                      </p>
-                      <Button
-                        size="sm"
-                        onClick={() => handleVideoPlay(adSlides[currentVideoSlide].youtubeId)}
-                        className="w-full text-xs font-medium border-0"
-                        style={{
-                          backgroundColor: "#003D7F",
-                          color: "#ffffff",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = "#002B5A"
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = "#003D7F"
-                        }}
-                      >
-                        Videoni ko'rish
-                      </Button>
-                    </div>
-                    {/* Maxsus taklif */}
-                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-3 mb-3">
-                      <div className="flex items-center mb-2">
-                        <div className="w-6 h-6 bg-gradient-to-r from-[#003D7F] to-[#0059B2] rounded-full flex items-center justify-center mr-2">
-                          <Star className="w-3 h-3 text-white" />
-                        </div>
-                        <span className="text-xs font-bold text-gray-800">MAXSUS TAKLIF</span>
-                      </div>
-                      <p className="text-xs text-green-700 font-medium mb-2">Ilmiy nashrlar uchun 50% chegirma!</p>
-                      <p className="text-xs text-green-600">Birinchi maqolangizni nashr qilish uchun maxsus narx</p>
-                    </div>
+                      </>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -538,6 +687,53 @@ export default function HomePage() {
         </div>
       </section>
 
+      {apiData?.yangiliklar && apiData.yangiliklar.length > 0 && (
+        <section className="py-16">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold mb-4 text-slate-800">So'nggi yangiliklar</h2>
+              <p className="text-slate-600 max-w-2xl mx-auto">
+                Eng muhim yangiliklar va tadbirlar haqida xabardor bo'ling
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-8">
+              {apiData.yangiliklar.slice(0, 3).map((yangilik) => (
+                <Card
+                  key={yangilik.id}
+                  className="group hover:shadow-lg transition-all duration-300 border hover:border-primary/30"
+                >
+                  {yangilik.image && (
+                    <div className="aspect-video overflow-hidden rounded-t-lg">
+                      <img
+                        src={yangilik.image || "/placeholder.svg"}
+                        alt={yangilik.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
+                  )}
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center text-sm text-muted-foreground mb-2">
+                      <Clock className="w-4 h-4 mr-1" />
+                      {new Date(yangilik.date).toLocaleDateString("uz-UZ")}
+                    </div>
+                    <CardTitle className="text-lg font-semibold line-clamp-2">{yangilik.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-muted-foreground text-sm line-clamp-3 mb-4">
+                      <div dangerouslySetInnerHTML={{ __html: yangilik.description }} />
+                    </div>
+                    <Button variant="outline" size="sm" className="w-full bg-transparent">
+                      Batafsil o'qish
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Advertisement Carousel */}
       <section className="py-16">
         <div className="container mx-auto px-4">
@@ -549,146 +745,157 @@ export default function HomePage() {
           </div>
 
           <div className="overflow-hidden rounded-2xl mx-0">
-            {/* Navigation Arrows */}
-            <button
-              onClick={prevBookSlide}
-              className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white hover:bg-slate-50 border border-slate-200 rounded-full flex items-center justify-center transition-all shadow-md hover:shadow-lg"
-            >
-              <ChevronLeft className="w-5 h-5 text-slate-600" />
-            </button>
+            {(() => {
+              const reklamaData = apiData?.reklama && apiData.reklama.length > 0 ? apiData.reklama : adSlides
+              const currentReklama = reklamaData[currentBookSlide]
 
-            <button
-              onClick={nextBookSlide}
-              className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white hover:bg-slate-50 border border-slate-200 rounded-full flex items-center justify-center transition-all shadow-md hover:shadow-lg"
-            >
-              <ChevronRight className="w-5 h-5 text-slate-600" />
-            </button>
+              return (
+                <>
+                  {/* Navigation Arrows */}
+                  <button
+                    onClick={prevBookSlide}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white hover:bg-slate-50 border border-slate-200 rounded-full flex items-center justify-center transition-all shadow-md hover:shadow-lg"
+                  >
+                    <ChevronLeft className="w-5 h-5 text-slate-600" />
+                  </button>
 
-            <div className="overflow-hidden rounded-2xl mx-12">
-              <div className="flex items-center justify-center gap-4">
-                {/* Previous slide (left) */}
-                <div className="w-1/4 opacity-50 scale-75 transition-all duration-500">
-                  <div className="bg-white rounded-xl shadow-md overflow-hidden">
-                    <div className="p-4">
-                      <img
-                        src={
-                          adSlides[(currentBookSlide - 1 + adSlides.length) % adSlides.length].image ||
-                          `/placeholder.svg?height=200&width=300&query=${encodeURIComponent(adSlides[(currentBookSlide - 1 + adSlides.length) % adSlides.length].title + " advertisement") || "/placeholder.svg"}`
-                        }
-                        alt={adSlides[(currentBookSlide - 1 + adSlides.length) % adSlides.length].title}
-                        className="w-full h-32 object-cover rounded-lg"
-                      />
-                      <h4 className="text-sm font-semibold mt-2 truncate">
-                        {adSlides[(currentBookSlide - 1 + adSlides.length) % adSlides.length].title}
-                      </h4>
-                    </div>
-                  </div>
-                </div>
+                  <button
+                    onClick={nextBookSlide}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white hover:bg-slate-50 border border-slate-200 rounded-full flex items-center justify-center transition-all shadow-md hover:shadow-lg"
+                  >
+                    <ChevronRight className="w-5 h-5 text-slate-600" />
+                  </button>
 
-                {/* Current slide (center) */}
-                <div className="w-1/2 scale-100 transition-all duration-500">
-                  <div className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
-                    <div className="grid md:grid-cols-5 gap-0">
-                      {/* Advertisement Image - Left Side */}
-                      <div className="md:col-span-2 bg-gradient-to-br from-blue-100 to-indigo-100 p-8 flex items-center justify-center">
-                        <div className="relative">
-                          <img
-                            src={
-                              adSlides[currentBookSlide].image ||
-                              `/placeholder.svg?height=280&width=200&query=${encodeURIComponent(adSlides[currentBookSlide].title + " advertisement") || "/placeholder.svg"}`
-                            }
-                            alt={adSlides[currentBookSlide].title}
-                            className="w-40 h-56 object-cover rounded-lg shadow-lg"
-                          />
-                          {adSlides[currentBookSlide].discount && (
-                            <div className="absolute -top-2 -right-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold">
-                              -{adSlides[currentBookSlide].discount}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Advertisement Details - Right Side */}
-                      <div className="md:col-span-3 p-8 flex flex-col justify-center">
-                        <div className="mb-3">
-                          <span className="inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                            {adSlides[currentBookSlide].category}
-                          </span>
-                        </div>
-
-                        <h3 className="text-2xl font-bold text-slate-800 mb-2 leading-tight">
-                          {adSlides[currentBookSlide].title}
-                        </h3>
-
-                        <p className="text-slate-600 mb-2">{adSlides[currentBookSlide].company}</p>
-
-                        <p className="text-slate-500 text-sm mb-4">{adSlides[currentBookSlide].description}</p>
-
-                        <div className="flex items-center gap-2 mb-4">
-                          <div className="flex items-center">
-                            {[...Array(5)].map((_, i) => (
-                              <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                            ))}
+                  <div className="overflow-hidden rounded-2xl mx-12">
+                    <div className="flex items-center justify-center gap-4">
+                      {/* Previous slide (left) */}
+                      <div className="w-1/4 opacity-50 scale-75 transition-all duration-500">
+                        <div className="bg-white rounded-xl shadow-md overflow-hidden">
+                          <div className="p-4">
+                            <img
+                              src={
+                                reklamaData[(currentBookSlide - 1 + reklamaData.length) % reklamaData.length].image ||
+                                `/placeholder.svg?height=200&width=300&query=${encodeURIComponent(reklamaData[(currentBookSlide - 1 + reklamaData.length) % reklamaData.length].title + " advertisement") || "/placeholder.svg"}`
+                              }
+                              alt={reklamaData[(currentBookSlide - 1 + reklamaData.length) % reklamaData.length].title}
+                              className="w-full h-32 object-cover rounded-lg"
+                            />
+                            <h4 className="text-sm font-semibold mt-2 truncate">
+                              {reklamaData[(currentBookSlide - 1 + reklamaData.length) % reklamaData.length].title}
+                            </h4>
                           </div>
-                          <span className="text-sm text-slate-500">(4.8)</span>
                         </div>
+                      </div>
 
-                        <div className="flex items-baseline gap-3 mb-6">
-                          <span className="text-2xl font-bold text-green-600">{adSlides[currentBookSlide].price}</span>
-                          {adSlides[currentBookSlide].originalPrice && (
-                            <span className="text-slate-400 line-through">
-                              {adSlides[currentBookSlide].originalPrice}
-                            </span>
-                          )}
+                      {/* Current slide (center) */}
+                      <div className="w-1/2 scale-100 transition-all duration-500">
+                        <div className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+                          <div className="grid md:grid-cols-5 gap-0">
+                            {/* Advertisement Image - Left Side */}
+                            <div className="md:col-span-2 bg-gradient-to-br from-blue-100 to-indigo-100 p-8 flex items-center justify-center">
+                              <div className="relative">
+                                <img
+                                  src={
+                                    currentReklama.image ||
+                                    `/placeholder.svg?height=280&width=200&query=${encodeURIComponent(currentReklama.title + " advertisement") || "/placeholder.svg"}`
+                                  }
+                                  alt={currentReklama.title}
+                                  className="w-40 h-56 object-cover rounded-lg shadow-lg"
+                                />
+                                {currentReklama.discount && (
+                                  <div className="absolute -top-2 -right-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold">
+                                    -{currentReklama.discount}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Advertisement Details - Right Side */}
+                            <div className="md:col-span-3 p-8 flex flex-col justify-center">
+                              <div className="mb-3">
+                                <span className="inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                                  {currentReklama.category || "Xizmat"}
+                                </span>
+                              </div>
+
+                              <h3 className="text-2xl font-bold text-slate-800 mb-2 leading-tight">
+                                {currentReklama.title}
+                              </h3>
+
+                              <p className="text-slate-600 mb-2">{currentReklama.company || "Kompaniya"}</p>
+
+                              <p className="text-slate-500 text-sm mb-4">{currentReklama.description}</p>
+
+                              <div className="flex items-center gap-2 mb-4">
+                                <div className="flex items-center">
+                                  {[...Array(5)].map((_, i) => (
+                                    <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                                  ))}
+                                </div>
+                                <span className="text-sm text-slate-500">(4.8)</span>
+                              </div>
+
+                              {currentReklama.price && (
+                                <div className="flex items-baseline gap-3 mb-6">
+                                  <span className="text-2xl font-bold text-green-600">{currentReklama.price}</span>
+                                  {currentReklama.originalPrice && (
+                                    <span className="text-slate-400 line-through">{currentReklama.originalPrice}</span>
+                                  )}
+                                </div>
+                              )}
+
+                              <div className="flex gap-3">
+                                <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6">
+                                  Buyurtma berish
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  className="border-blue-600 text-blue-600 hover:bg-blue-50 bg-transparent"
+                                >
+                                  Batafsil
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
                         </div>
+                      </div>
 
-                        <div className="flex gap-3">
-                          <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6">Buyurtma berish</Button>
-                          <Button
-                            variant="outline"
-                            className="border-blue-600 text-blue-600 hover:bg-blue-50 bg-transparent"
-                          >
-                            Batafsil
-                          </Button>
+                      {/* Next slide (right) */}
+                      <div className="w-1/4 opacity-50 scale-75 transition-all duration-500">
+                        <div className="bg-white rounded-xl shadow-md overflow-hidden">
+                          <div className="p-4">
+                            <img
+                              src={
+                                reklamaData[(currentBookSlide + 1) % reklamaData.length].image ||
+                                `/placeholder.svg?height=200&width=300&query=${encodeURIComponent(reklamaData[(currentBookSlide + 1) % reklamaData.length].title + " advertisement") || "/placeholder.svg"}`
+                              }
+                              alt={reklamaData[(currentBookSlide + 1) % reklamaData.length].title}
+                              className="w-full h-32 object-cover rounded-lg"
+                            />
+                            <h4 className="text-sm font-semibold mt-2 truncate">
+                              {reklamaData[(currentBookSlide + 1) % reklamaData.length].title}
+                            </h4>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Next slide (right) */}
-                <div className="w-1/4 opacity-50 scale-75 transition-all duration-500">
-                  <div className="bg-white rounded-xl shadow-md overflow-hidden">
-                    <div className="p-4">
-                      <img
-                        src={
-                          adSlides[(currentBookSlide + 1) % adSlides.length].image ||
-                          `/placeholder.svg?height=200&width=300&query=${encodeURIComponent(adSlides[(currentBookSlide + 1) % adSlides.length].title + " advertisement") || "/placeholder.svg"}`
-                        }
-                        alt={adSlides[(currentBookSlide + 1) % adSlides.length].title}
-                        className="w-full h-32 object-cover rounded-lg"
+                  {/* Dots Navigation */}
+                  <div className="flex justify-center mt-8 space-x-2">
+                    {reklamaData.map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setCurrentBookSlide(index)}
+                        className={`w-3 h-3 rounded-full transition-all ${
+                          index === currentBookSlide ? "bg-blue-600 scale-125" : "bg-slate-300 hover:bg-slate-400"
+                        }`}
                       />
-                      <h4 className="text-sm font-semibold mt-2 truncate">
-                        {adSlides[(currentBookSlide + 1) % adSlides.length].title}
-                      </h4>
-                    </div>
+                    ))}
                   </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Dots Navigation */}
-            <div className="flex justify-center mt-8 space-x-2">
-              {adSlides.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentBookSlide(index)}
-                  className={`w-3 h-3 rounded-full transition-all ${
-                    index === currentBookSlide ? "bg-blue-600 scale-125" : "bg-slate-300 hover:bg-slate-400"
-                  }`}
-                />
-              ))}
-            </div>
+                </>
+              )
+            })()}
           </div>
         </div>
       </section>

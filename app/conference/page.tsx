@@ -1,3 +1,6 @@
+"use client"
+
+import { useState, useEffect } from "react"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
@@ -8,90 +11,216 @@ import { Calendar, MapPin, Users } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 
+// TypeScript interfaces for API data
+interface Conference {
+  id: number
+  name: string
+  slug: string
+  date: string
+  manzil: string
+  tashkilotchi_hamkorlar?: string
+  description?: string
+}
+
+interface ApiData {
+  conferences: Conference[]
+}
+
 export default function ConferencePage() {
+  // State for API data, loading, and error handling
+  const [apiData, setApiData] = useState<ApiData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // API fetch function
+  useEffect(() => {
+    const fetchApiData = async () => {
+      try {
+        setLoading(true)
+        const response = await fetch("http://127.0.0.1:8000/{lang}/conferences/", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFTOKEN": "ge5LPjKk38e4pNY1WTpudaWQXJWCqrdOWLzZbu7ZWp0pjL3NwXE0L5XmY3u59VK1",
+          },
+        })
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+
+        const conferences = await response.json()
+        setApiData({ conferences })
+        setError(null)
+      } catch (err) {
+        console.error("API xatolik:", err)
+        setError(err instanceof Error ? err.message : "Ma'lumotlarni yuklashda xatolik")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchApiData()
+  }, [])
+
+  const apiConferences = apiData?.conferences || []
+
+  // Separate upcoming and past conferences based on date
+  const currentDate = new Date()
+  const upcomingApiConferences = apiConferences.filter((conf) => new Date(conf.date) >= currentDate)
+  const pastApiConferences = apiConferences.filter((conf) => new Date(conf.date) < currentDate)
+
   const upcomingConferences = [
-    {
-      id: "art-culture-2024",
-      title: "O'zbekiston madaniyati va san'ati: zamonaviy muammolar va yechimlar",
-      date: "2024-05-15",
-      endDate: "2024-05-17",
-      location: "Toshkent, O'zbekiston Madaniyat va San'at Instituti",
-      description:
-        "O'zbekiston madaniyati va san'atining zamonaviy holatini o'rganish, muammolarni aniqlash va yechim yo'llarini topishga bag'ishlangan xalqaro ilmiy-amaliy konferensiya.",
-      participants: "200+",
+    ...upcomingApiConferences.map((conf) => ({
+      id: conf.slug || conf.id.toString(),
+      title: conf.name,
+      date: conf.date,
+      endDate: conf.date, // Using same date as API doesn't provide end date
+      location: conf.manzil,
+      description: conf.description || "Konferensiya haqida qo'shimcha ma'lumot mavjud emas.",
+      participants: "100+", // Default value as API doesn't provide this
       status: "Ro'yxatdan o'tish ochiq",
       category: "Xalqaro",
-      organizer: "O'zbekiston Madaniyat va San'at Instituti",
+      organizer: conf.tashkilotchi_hamkorlar || "O'zbekiston Madaniyat va San'at Instituti",
       image: "/academic-conference-hall-with-people-presenting-cu.png",
-    },
-    {
-      id: "digital-heritage-2024",
-      title: "Raqamli meros: madaniy boyliklarni saqlash va tarqatish",
-      date: "2024-06-20",
-      endDate: "2024-06-22",
-      location: "O'zbekiston Madaniyat va San'at Instituti",
-      description:
-        "Madaniy merosni raqamlashtirish, saqlash va keng jamoatchilikka yetkazish bo'yicha zamonaviy texnologiyalar va usullar haqida konferensiya.",
-      participants: "150+",
-      status: "Tez orada",
-      category: "Milliy",
-      organizer: "O'zbekiston Madaniyat va San'at Instituti",
-      image: "/digital-technology-preserving-cultural-heritage-ar.png",
-    },
-    {
-      id: "folklore-studies-2024",
-      title: "Folklor tadqiqotlari: an'ana va innovatsiya",
-      date: "2024-07-10",
-      endDate: "2024-07-12",
-      location: "O'zbekiston Madaniyat va San'at Instituti",
-      description:
-        "O'zbek xalq og'zaki ijodini o'rganishda an'anaviy va zamonaviy yondashuvlar, folklor tadqiqotlarining istiqbollari haqida ilmiy konferensiya.",
-      participants: "120+",
-      status: "Abstrakt qabul qilinmoqda",
-      category: "Milliy",
-      organizer: "O'zbekiston Madaniyat va San'at Instituti",
-      image: "/traditional-uzbek-folklore-performance-with-musici.png",
-    },
+    })),
+    // Static fallback data when API is empty
+    ...(apiConferences.length === 0
+      ? [
+          {
+            id: "art-culture-2024",
+            title: "O'zbekiston madaniyati va san'ati: zamonaviy muammolar va yechimlar",
+            date: "2024-05-15",
+            endDate: "2024-05-17",
+            location: "Toshkent, O'zbekiston Madaniyat va San'at Instituti",
+            description:
+              "O'zbekiston madaniyati va san'atining zamonaviy holatini o'rganish, muammolarni aniqlash va yechim yo'llarini topishga bag'ishlangan xalqaro ilmiy-amaliy konferensiya.",
+            participants: "200+",
+            status: "Ro'yxatdan o'tish ochiq",
+            category: "Xalqaro",
+            organizer: "O'zbekiston Madaniyat va San'at Instituti",
+            image: "/academic-conference-hall-with-people-presenting-cu.png",
+          },
+          {
+            id: "digital-heritage-2024",
+            title: "Raqamli meros: madaniy boyliklarni saqlash va tarqatish",
+            date: "2024-06-20",
+            endDate: "2024-06-22",
+            location: "O'zbekiston Madaniyat va San'at Instituti",
+            description:
+              "Madaniy merosni raqamlashtirish, saqlash va keng jamoatchilikka yetkazish bo'yicha zamonaviy texnologiyalar va usullar haqida konferensiya.",
+            participants: "150+",
+            status: "Tez orada",
+            category: "Milliy",
+            organizer: "O'zbekiston Madaniyat va San'at Instituti",
+            image: "/digital-technology-preserving-cultural-heritage-ar.png",
+          },
+          {
+            id: "folklore-studies-2024",
+            title: "Folklor tadqiqotlari: an'ana va innovatsiya",
+            date: "2024-07-10",
+            endDate: "2024-07-12",
+            location: "O'zbekiston Madaniyat va San'at Instituti",
+            description:
+              "O'zbek xalq og'zaki ijodini o'rganishda an'anaviy va zamonaviy yondashuvlar, folklor tadqiqotlarining istiqbollari haqida ilmiy konferensiya.",
+            participants: "120+",
+            status: "Abstrakt qabul qilinmoqda",
+            category: "Milliy",
+            organizer: "O'zbekiston Madaniyat va San'at Instituti",
+            image: "/traditional-uzbek-folklore-performance-with-musici.png",
+          },
+        ]
+      : []),
   ]
 
   const pastConferences = [
-    {
-      id: "cultural-identity-2023",
-      title: "Madaniy o'ziga xoslik va globallashuv jarayonlari",
-      date: "2023-11-15",
-      endDate: "2023-11-17",
-      location: "Toshkent, Madaniyat va San'at Instituti",
-      description:
-        "Globallashuv sharoitida milliy madaniy o'ziga xoslikni saqlash va rivojlantirish masalalari bo'yicha xalqaro konferensiya.",
-      participants: "180",
+    ...pastApiConferences.map((conf) => ({
+      id: conf.slug || conf.id.toString(),
+      title: conf.name,
+      date: conf.date,
+      endDate: conf.date,
+      location: conf.manzil,
+      description: conf.description || "Konferensiya haqida qo'shimcha ma'lumot mavjud emas.",
+      participants: "100",
       status: "Yakunlangan",
       category: "Xalqaro",
-      organizer: "Madaniyat va San'at Instituti",
+      organizer: conf.tashkilotchi_hamkorlar || "O'zbekiston Madaniyat va San'at Instituti",
       materials: "Mavjud",
       image: "/international-conference-on-cultural-identity-with.png",
-    },
-    {
-      id: "traditional-crafts-2023",
-      title: "An'anaviy hunarmandchilik: meros va zamonaviylik",
-      date: "2023-09-20",
-      endDate: "2023-09-22",
-      location: "O'zbekiston Madaniyat va San'at Instituti",
-      description:
-        "O'zbekiston an'anaviy hunarmandchiligini zamonaviy sharoitda rivojlantirish va yoshlarga o'rgatish masalalari bo'yicha konferensiya.",
-      participants: "95",
-      status: "Yakunlangan",
-      category: "Milliy",
-      organizer: "O'zbekiston Madaniyat va San'at Instituti",
-      materials: "Mavjud",
-      image: "/traditional-uzbek-craftsmen-working-on-pottery-and.png",
-    },
+    })),
+    // Static fallback data when API is empty
+    ...(apiConferences.length === 0
+      ? [
+          {
+            id: "cultural-identity-2023",
+            title: "Madaniy o'ziga xoslik va globallashuv jarayonlari",
+            date: "2023-11-15",
+            endDate: "2023-11-17",
+            location: "Toshkent, Madaniyat va San'at Instituti",
+            description:
+              "Globallashuv sharoitida milliy madaniy o'ziga xoslikni saqlash va rivojlantirish masalalari bo'yicha xalqaro konferensiya.",
+            participants: "180",
+            status: "Yakunlangan",
+            category: "Xalqaro",
+            organizer: "Madaniyat va San'at Instituti",
+            materials: "Mavjud",
+            image: "/international-conference-on-cultural-identity-with.png",
+          },
+          {
+            id: "traditional-crafts-2023",
+            title: "An'anaviy hunarmandchilik: meros va zamonaviylik",
+            date: "2023-09-20",
+            endDate: "2023-09-22",
+            location: "O'zbekiston Madaniyat va San'at Instituti",
+            description:
+              "O'zbekiston an'anaviy hunarmandchiligini zamonaviy sharoitda rivojlantirish va yoshlarga o'rgatish masalalari bo'yicha konferensiya.",
+            participants: "95",
+            status: "Yakunlangan",
+            category: "Milliy",
+            organizer: "O'zbekiston Madaniyat va San'at Instituti",
+            materials: "Mavjud",
+            image: "/traditional-uzbek-craftsmen-working-on-pottery-and.png",
+          },
+        ]
+      : []),
   ]
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Konferensiyalar yuklanmoqda...</p>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
 
-
+      {/* Header Section */}
+      <section className="py-12 sm:py-16 lg:py-20 responsive-padding bg-gradient-to-b from-primary/5 to-background">
+        <div className="container mx-auto text-center">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-4 sm:mb-6 text-balance">
+            Ilmiy konferensiyalar
+          </h1>
+          <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto text-pretty">
+            Madaniyat, san'at va ilm-fan sohasidagi eng muhim tadbirlar va konferensiyalar haqida ma'lumot
+          </p>
+          {error && (
+            <div className="mt-4 p-3 bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-lg max-w-md mx-auto">
+              <p className="text-sm">API xatolik: {error}</p>
+              <p className="text-xs mt-1">Statik ma'lumotlar ko'rsatilmoqda</p>
+            </div>
+          )}
+        </div>
+      </section>
 
       {/* Conference Tabs */}
       <section className="py-12 sm:py-16 responsive-padding">
@@ -143,7 +272,7 @@ export default function ConferencePage() {
                             {conference.title}
                           </CardTitle>
                           <CardDescription className="text-muted-foreground line-clamp-2 text-sm leading-relaxed">
-                            {conference.description}
+                            <div dangerouslySetInnerHTML={{ __html: conference.description }} />
                           </CardDescription>
                         </CardHeader>
 
@@ -212,7 +341,7 @@ export default function ConferencePage() {
                             {conference.title}
                           </CardTitle>
                           <CardDescription className="text-muted-foreground line-clamp-2 text-sm leading-relaxed">
-                            {conference.description}
+                            <div dangerouslySetInnerHTML={{ __html: conference.description }} />
                           </CardDescription>
                         </CardHeader>
 

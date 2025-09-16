@@ -13,7 +13,7 @@ import { Eye, EyeOff, Mail, Lock } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 
-const AUTH_BASE = "http://10.20.1.89:8002/auth"
+const AUTH_BASE = "http://127.0.0.1:8000/auth"
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -55,12 +55,11 @@ export default function LoginPage() {
         )
 
         router.push("/")
-        window.location.reload()
       } else {
         setError(JSON.stringify(data))
       }
     } catch (err: any) {
-      setError(err.message || "Serverga ulanib bo‘lmadi")
+      setError(err.message || "Serverga ulanib bo'lmadi")
     } finally {
       setIsLoading(false)
     }

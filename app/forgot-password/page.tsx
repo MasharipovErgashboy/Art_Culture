@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Mail } from "lucide-react"
 
-const AUTH_BASE = "http://10.20.1.89:8002/auth"
+const AUTH_BASE = " http://127.0.0.1:8000/auth"
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("")

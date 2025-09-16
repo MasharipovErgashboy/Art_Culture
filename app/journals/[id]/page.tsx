@@ -6,13 +6,12 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Calendar, User, BookOpen, Download, ArrowLeft, ExternalLink, HelpCircle, ChevronDown, ChevronUp } from "lucide-react"
+import { Calendar, User, BookOpen, Download, ArrowLeft, ExternalLink, ChevronDown, ChevronUp } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { notFound } from "next/navigation"
 import { useState } from "react"
 
-// Mock data - in real app this would come from database
 const journalsData = {
   "uzbekistan-culture-art": {
     id: "uzbekistan-culture-art",
@@ -35,8 +34,7 @@ const journalsData = {
         id: "update-1",
         title: "4-son (2024) - Yangi maqolalar",
         date: "2024-03-15",
-        description:
-          "O'zbekiston xalq san'ati va zamonaviy madaniyat o'rtasidagi bog'liqlik haqida yangi tadqiqotlar",
+        description: "O'zbekiston xalq san'ati va zamonaviy madaniyat o'rtasidagi bog'liqlik haqida yangi tadqiqotlar",
       },
       {
         id: "update-2",
@@ -51,117 +49,116 @@ const journalsData = {
 const faqData = [
   {
     question: "Jurnal haqida",
-    answer: `Respublikamizda olib borilayotgan islohotlar, tub o‘zgarishlar, san’at va madaniyat sohasiga ham yangi innovatsion texnologiyalarning kirib kelishi va bu sohaga bo‘lgan e’tibor, milliy va umuminsoniy qadriyatlarimizga sodiqlik, kelajakka bo’lgan umid va ishonch, ilm-fanning turli jabhalaridagi yuksalishlar, muhtaram prezidentimizning yoshlarga yaratib berayotgan keng imkoniyatlarini, Yangi O‘zbekistonda yangicha dunyoqarash g‘oyalarining targ‘ibi sifatida O‘zbekiston davlat san’at va madaniyati instituti qoshida “O‘zbekiston madaniyati va san’ati” ilmiy-uslibiy, nazariy-amaliy elektron jurnal tashkil etildi.
+    answer: `Respublikamizda olib borilayotgan islohotlar, tub o'zgarishlar, san'at va madaniyat sohasiga ham yangi innovatsion texnologiyalarning kirib kelishi va bu sohaga bo'lgan e'tibor, milliy va umuminsoniy qadriyatlarimizga sodiqlik, kelajakka bo'lgan umid va ishonch, ilm-fanning turli jabhalaridagi yuksalishlar, muhtaram prezidentimizning yoshlarga yaratib berayotgan keng imkoniyatlarini, Yangi O'zbekistonda yangicha dunyoqarash g'oyalarining targ'ibi sifatida O'zbekiston davlat san'at va madaniyati instituti qoshida "O'zbekiston madaniyati va san'ati" ilmiy-uslibiy, nazariy-amaliy elektron jurnal tashkil etildi.
 
 Jurnalning maqsad va vazifalari:
--ilmiy yо‘nalishlarni;
--hukumatning ilm-fanni qо‘llab-quvvatlash va rivojlantirish borasidagi siyosatini keng targ‘ib qilish;
--respublikamizning oliy ta’lim va ilmiy-tadqiqot institutlari, ilmiy markazlari va xorijda bajarilgan ilmiy-tadqiqot ishlarining natijalarini nashr etish;
--talaba yoshlarning dunyoqarashini boyitish, qо‘lga kiritilayotgan yutuqlar va ilg‘or tajribalarni jamoatchilikka yetkazishda targ‘ibot va tashviqot ishlarini olib borish;
--ta’lim jarayonini, yangi pedagogik texnologiyalar va о‘qitish usullarini sifat jihatidan yangilash va zamonaviy tashkiliy shakllarini keng targ‘ib qilish;
--oliy ta’limda ilm-fanni yanada rivojlantirish, professor-о‘qituvchilarining ilmiy-tadqiqot faoliyati samaradorligi va natijadorligini oshirish, iqtidorli talaba-yoshlarni ilmiy faoliyat bilan shug‘ullanishga keng jalb etish;
--yuksak ma’naviyat va insoniylikning milliy an’analariga sodiqlik ruhini shakllantirish, jamiyatda yot g‘oya va mafkuralarga nisbatan immunitet va tahliliy tafakkurni mustahkamlash bо‘yicha keng kо‘lamli ma’rifiy va tarbiyaviy ishlarni yoritib borish.
+-ilmiy yо'nalishlarni;
+-hukumatning ilm-fanni qо'llab-quvvatlash va rivojlantirish borasidagi siyosatini keng targ'ib qilish;
+-respublikamizning oliy ta'lim va ilmiy-tadqiqot institutlari, ilmiy markazlari va xorijda bajarilgan ilmiy-tadqiqot ishlarining natijalarini nashr etish;
+-talaba yoshlarning dunyoqarashini boyitish, qо'lga kiritilayotgan yutuqlar va ilg'or tajribalarni jamoatchilikka yetkazishda targ'ibot va tashviqot ishlarini olib borish;
+-ta'lim jarayonini, yangi pedagogik texnologiyalar va о'qitish usullarini sifat jihatidan yangilash va zamonaviy tashkiliy shakllarini keng targ'ib qilish;
+-oliy ta'limda ilm-fanni yanada rivojlantirish, professor-о'qituvchilarining ilmiy-tadqiqot faoliyati samaradorligi va natijadorligini oshirish, iqtidorli talaba-yoshlarni ilmiy faoliyat bilan shug'ullanishga keng jalb etish;
+-yuksak ma'naviyat va insoniylikning milliy an'analariga sodiqlik ruhini shakllantirish, jamiyatda yot g'oya va mafkuralarga nisbatan immunitet va tahliliy tafakkurni mustahkamlash bо'yicha keng kо'lamli ma'rifiy va tarbiyaviy ishlarni yoritib borish.
 
-Jurnal nomi: “O‘zbekiston madaniyati va san’ati” ilmiy-uslibiy, nazariy-amaliy elektron jurnal. Muqovada jurnal nomi bitta o‘zbek (lotin) tilida yoziladi.
-Amal qiluvchi tillar: o‘zbek (lotin), rus, qoraqalpoq va ingliz tillarida.
+Jurnal nomi: "O'zbekiston madaniyati va san'ati" ilmiy-uslibiy, nazariy-amaliy elektron jurnal. Muqovada jurnal nomi bitta o'zbek (lotin) tilida yoziladi.
+Amal qiluvchi tillar: o'zbek (lotin), rus, qoraqalpoq va ingliz tillarida.
 Jurnalning nashr yili: 2025-yil, 14-iyun.
-Jurnalning davriyligi: Jurnal bir yilda olti marta chop etiladi (Keyinchalik rо‘yxatdan о‘tkazuvchi organni bir oy muddatda yozma shaklda xabardor qilgan holda davriyligiga о‘zgartirish kiritilishi mumkin).
-Jurnal muassisi: O‘zbekiston davlat san’at va madaniyati instituti (bundan buyon matnda “Muassis” deb yuritiladi) hisoblanadi
+Jurnalning davriyligi: Jurnal bir yilda olti marta chop etiladi (Keyinchalik rо'yxatdan о'tkazuvchi organni bir oy muddatda yozma shaklda xabardor qilgan holda davriyligiga о'zgartirish kiritilishi mumkin).
+Jurnal muassisi: O'zbekiston davlat san'at va madaniyati instituti (bundan buyon matnda "Muassis" deb yuritiladi) hisoblanadi
 
-Jurnal quyidagi ruknlar bo‘yicha ish olib boradi:
-1. Teatr va kino san’ati.
-2. Musiqa, raqs, tasviriy san’at.
+Jurnal quyidagi ruknlar bo'yicha ish olib boradi:
+1. Teatr va kino san'ati.
+2. Musiqa, raqs, tasviriy san'at.
 3. Madaniyatshunoslik, sotsiologiya, siyosatshunoslik.
 4. Filologiya, tarix, falsafa.
 5. Pedagogika, psixologiya, kutubxonashunoslik.
 
-Jurnalning ixtisoslashuvi: san’atshunoslik, filologiya, taix, falsafa, pedagogika, psixologiya, sotsiologiya, siyosatshunoslik fanlari bo‘yicha olib borilgan, ilmiy – nazariy hamda ilmiy – amaliy tadqiqotlar natijalarini chop etishga ixtisoslashgan ilmiy jurnal.
+Jurnalning ixtisoslashuvi: san'atshunoslik, filologiya, taix, falsafa, pedagogika, psixologiya, sotsiologiya, siyosatshunoslik fanlari bo'yicha olib borilgan, ilmiy – nazariy hamda ilmiy – amaliy tadqiqotlar natijalarini chop etishga ixtisoslashgan ilmiy jurnal.
 
-Tarqatish shakli: onlayn elektron kо‘rinishda (web sayt: https://dsmi.uz/).
+Tarqatish shakli: onlayn elektron kо'rinishda (web sayt: https://dsmi.uz/).
 
-Jurnal tahririyatining joylashgan manzili (pochta manzili): 100164. Toshkent shahar, Yalang‘och dahasi, 127-“a” uy. Tel: +998 973018084. Elektron pochta: sanatmadaniyat4@gmail.com. Telegram manzil: @m_s_jurnali`,
+Jurnal tahririyatining joylashgan manzili (pochta manzili): 100164. Toshkent shahar, Yalang'och dahasi, 127-"a" uy. Tel: +998 973018084. Elektron pochta: sanatmadaniyat4@gmail.com. Telegram manzil: @m_s_jurnali`,
   },
   {
     question: "Tahririyat jamoasi",
-    answer: `“O‘zbekiston madaniyati va san’ati” ilmiy-uslubiy, nazariy-amaliy elektron jurnali
+    answer: `"O'zbekiston madaniyati va san'ati" ilmiy-uslubiy, nazariy-amaliy elektron jurnali
 Bosh muharrir:
 Sayfullayev Nodirbek Baxtiyorovich
 Tarix fanlari nomzodi,professor
 
-Bosh muharrir o‘rinbosari:
+Bosh muharrir o'rinbosari:
 Yakubov Baxtiyor Choriyevich
 Sanʼatshunoslik fanlari boʻyicha falsafa doktori (PhD),dotsent
 
-Ma’sul kotib:
+Ma'sul kotib:
 Xolmuminova Nigora Xankulovna
 
 Texnik muharrir:
-Nematov Shuxratjon muxtor o‘g‘li
+Nematov Shuxratjon muxtor o'g'li
 
 Jamoatchilik kengashi:
 Ozodbek NAZARBEKOV
-O‘zbekiston Respublikasi Madaniyat vaziri,
-O‘zbekiston Respublikasi xalq artisti
+O'zbekiston Respublikasi Madaniyat vaziri,
+O'zbekiston Respublikasi xalq artisti
 Shuhratilla RIZAYEV
-О‘zbekiston Respublikasi Madaniyat vazirligi huzuridagi Kinematografiya agentligi direktori, filologiya fanlari nomzodi, professor,
-О‘zbekistonda xizmat kо‘rsatgan yoshlar murabbiysi
+О'zbekiston Respublikasi Madaniyat vazirligi huzuridagi Kinematografiya agentligi direktori, filologiya fanlari nomzodi, professor,
+О'zbekistonda xizmat kо'rsatgan yoshlar murabbiysi
 Sirojiddin SAYYID
-O‘zbekiston Yozuvchilar uyushmasi raisi,
-O‘zbekiston xalq shoiri
+O'zbekiston Yozuvchilar uyushmasi raisi,
+O'zbekiston xalq shoiri
 Otabek XASANOV
-Respublika ma’naviyat va ma’rifat markazi direktori,
+Respublika ma'naviyat va ma'rifat markazi direktori,
 siyosiy fanlari doktori (DSc)
 Umida TESHABOYEVA
-O‘zbekiston Respublikasi Prezidenti Administratsiyasi huzuridagi Axborot va ommaviy komunikatsiyalar agentligining Alisher Navoiy nomidagi O‘zbekiston milliy kutubxonasi direktori
+O'zbekiston Respublikasi Prezidenti Administratsiyasi huzuridagi Axborot va ommaviy komunikatsiyalar agentligining Alisher Navoiy nomidagi O'zbekiston milliy kutubxonasi direktori
 Rustam ABDULLAYEV
-O‘zbekiston Bastakorlar uyushmasi raisi,
-O‘zbekiston Respublikasi san’at arbobi
+O'zbekiston Bastakorlar uyushmasi raisi,
+O'zbekiston Respublikasi san'at arbobi
 Nodir KASIMOV
-O‘zbekiston Respublikasi Oliy ta’lim Oliy ta’lim, fan va innovatsiyalar vazirligi
-Yoshlar siyosati va ma’naviy tarbiyaviy ishlar boshqarmasi boshlig‘i
+O'zbekiston Respublikasi Oliy ta'lim Oliy ta'lim, fan va innovatsiyalar vazirligi
+Yoshlar siyosati va ma'naviy tarbiyaviy ishlar boshqarmasi boshlig'i
 
-Tahrir hay’ati:
+Tahrir hay'ati:
 Muhabbat TULYAXODJAYEVA
-San’atshunoslik fanlari doktori, professor
+San'atshunoslik fanlari doktori, professor
 Absalom UMAROV
 Sotsiologiya fanlari doktori, professor
 Abduxalil MAVRULOV
 Tarix fanlari doktori, professor
 Sarvinoz QODIROVA
-San’atshunoslik fanlari doktori,professor
-Sayyora TО‘YCHIYEVA
+San'atshunoslik fanlari doktori,professor
+Sayyora TО'YCHIYEVA
 Falsafa fanlari doktori,professor
 Temur RASHIDOV
-San’atshunoslik fanlari nomzodi, professor
-Go‘zalxon ISAKOVA
+San'atshunoslik fanlari nomzodi, professor
+Go'zalxon ISAKOVA
 Filologiya fanlari doktori (DSc), dotsent
-O‘rozali TOSHMATOV
+O'rozali TOSHMATOV
 Professor
-Go‘zal XALIKULOVA
-San’atshunoslik fanlari nomzodi, dotsent
+Go'zal XALIKULOVA
+San'atshunoslik fanlari nomzodi, dotsent
 Sabohat HAYTMATOVA
-San’atshunoslik fanlari nomzodi, dotsent
-G‘ani XUDOYEV
-San’atshunoslik fanlari bо‘yicha falsafa doktori (PhD), dotsent
-Zulfiya MA’RUFOVA
-Filologiya fanlari bo‘yicha falsafa doktori (PhD), dotsent
+San'atshunoslik fanlari nomzodi, dotsent
+G'ani XUDOYEV
+San'atshunoslik fanlari bо'yicha falsafa doktori (PhD), dotsent
+Zulfiya MA'RUFOVA
+Filologiya fanlari bo'yicha falsafa doktori (PhD), dotsent
 Musallam ABDUJABBOROVA
 Pedagogika fanlari nomzodi, dotsent
 Oybek DAVLATOV
-Pedagogika fanlari bо‘yicha falsafa doktori (PhD), dotsent
+Pedagogika fanlari bо'yicha falsafa doktori (PhD), dotsent
 Ziyodulla ISOQOV
 Tarix fanlari nomzodi, dotsent
 Mirali MAXMUDOV
 Pedagogika fanlari nomzodi,dotsent
 Feruza ABDIRAHMONOVA
-Filologiya fanlari bo‘yicha falsafa doktori (PhD), dotsent`,
+Filologiya fanlari bo'yicha falsafa doktori (PhD), dotsent`,
   },
   {
     question: "Jurnalda maqola chop etish",
-    answer: `“O‘zbekiston madaniyati va san’ati” ilmiy-uslubiy, nazariy-amaliy jurnal materiallari to‘plam holida nashr etiladi. Ekspertlar xulosasiga ko‘ra talabga javob bermaydigan materiallar qabul qilinmaydi. Tashkiliy qo‘mita materiallarni texnik tahrir qilish, shuningdek, maqola qabul qilinmaganda bu bo‘yicha izoh bermaslik huquqiga ega.`,
+    answer: `"O'zbekiston madaniyati va san'ati" ilmiy-uslubiy, nazariy-amaliy jurnal materiallari to'plam holida nashr etiladi. Ekspertlar xulosasiga ko'ra talabga javob bermaydigan materiallar qabul qilinmaydi. Tashkiliy qo'mita materiallarni texnik tahrir qilish, shuningdek, maqola qabul qilinmaganda bu bo'yicha izoh bermaslik huquqiga ega.`,
   },
 ]
-
 
 export default function JournalDetailPage({ params }: { params: { id: string } }) {
   const journal = journalsData[params.id as keyof typeof journalsData]
@@ -281,14 +278,13 @@ export default function JournalDetailPage({ params }: { params: { id: string } }
             <div className="lg:col-span-2 space-y-8">
               <div>
                 <Button variant="ghost" asChild className="mb-6 p-0 h-auto">
-                  <Link href="/journals" className="flex items-center text-muted-foreground ">
+                  <Link href="/journals" className="flex items-center text-muted-foreground hover:text-primary">
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Jurnallarga qaytish
                   </Link>
                 </Button>
               </div>
 
-              {/* FAQ Section */}
               <div>
                 <div className="text-center mb-8 sm:mb-12">
                   <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-4">
