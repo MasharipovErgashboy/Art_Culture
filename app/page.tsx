@@ -1,7 +1,6 @@
 "use client"
 
 import { Navbar } from "@/components/navbar"
-import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -17,15 +16,12 @@ import {
   Megaphone,
   Star,
   Bell,
-  Eye,
-  Play,
-  Volume2,
-  X,
-  Clock,
 } from "lucide-react"
 import Link from "next/link"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { Footer } from "@/components/footer"
+import { fetchConferences, type Conference, getSlugForLang } from "@/lib/api"
 
 interface RasmiyElon {
   id: number
@@ -38,6 +34,8 @@ interface RasmiyElon {
   description_uz: string | null
   description_en: string | null
   description_ru: string | null
+  title?: string
+  slug?: string
 }
 
 interface Reklama {
@@ -50,14 +48,17 @@ interface Reklama {
   price?: string
   originalPrice?: string
   discount?: string
+  media?: string
+  homepage_content?: string
 }
 
 interface Yangilik {
   id: number
   title: string
   description: string
-  image?: string
+  media?: string // Changed from image to media to match API response
   date: string
+  slug?: string
 }
 
 interface ApiData {
@@ -66,7 +67,7 @@ interface ApiData {
   yangiliklar: Yangilik[]
 }
 
-const API_BASE = "http://127.0.0.1:8000/${lang}"
+const API_BASE = "http://127.0.0.1:8000"
 
 export default function HomePage() {
   const router = useRouter()
@@ -79,213 +80,256 @@ export default function HomePage() {
   const [apiData, setApiData] = useState<ApiData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [apiError, setApiError] = useState<string | null>(null)
+  const [lang, setLang] = useState<"uz" | "ru" | "en">("uz")
+
+  const [conferences, setConferences] = useState<Conference[]>([])
+  const [conferencesLoading, setConferencesLoading] = useState(true)
+
+  const handleReklamaDetail = (reklamaId: number, slug?: string) => {
+    // Create a proper slug from title or use ID
+    const properSlug = slug
+      ? slug
+          .toLowerCase()
+          .replace(/[^\w\s-]/g, "") // Remove special characters
+          .replace(/\s+/g, "-") // Replace spaces with hyphens
+          .trim()
+      : reklamaId.toString()
+
+    console.log("[v0] Navigating to reklama detail:", { reklamaId, originalSlug: slug, properSlug, lang })
+    router.push(`/${lang}/reklama/${properSlug}`)
+  }
+
+  const handleRasmiyElonDetail = (slug?: string) => {
+    const properSlug = slug || "rasmiy"
+    console.log("[v0] Navigating to rasmiy elon detail:", { originalSlug: slug, properSlug, lang })
+    router.push(`/${lang}/rasmiy-elon/${properSlug}`)
+  }
+
+  useEffect(() => {
+    const fetchLatestConferences = async () => {
+      try {
+        setConferencesLoading(true)
+        console.log("[v0] Fetching latest conferences for lang:", lang)
+
+        const response = await fetchConferences(lang, 1)
+        console.log("[v0] Conferences response:", response)
+
+        if (response && response.results && Array.isArray(response.results)) {
+          const today = new Date()
+          today.setHours(0, 0, 0, 0) // Set to start of day for comparison
+
+          const upcomingConferences = response.results.filter((conference) => {
+            const conferenceDate = new Date(conference.date)
+            conferenceDate.setHours(0, 0, 0, 0) // Set to start of day for comparison
+            return conferenceDate >= today
+          })
+
+          const sortedConferences = upcomingConferences.sort((a, b) => {
+            const dateA = new Date(a.date)
+            const dateB = new Date(b.date)
+            return dateB.getTime() - dateA.getTime() // Sort by newest first
+          })
+
+          // Get the latest 3 upcoming conferences
+          const latestConferences = sortedConferences.slice(0, 3)
+          setConferences(latestConferences)
+          console.log("[v0] Latest 3 newest upcoming conferences:", latestConferences)
+        } else {
+          console.log("[v0] No conferences data received")
+          setConferences([])
+        }
+      } catch (error) {
+        console.error("[v0] Error fetching conferences:", error)
+        // Keep empty array if fetch fails
+        setConferences([])
+      } finally {
+        setConferencesLoading(false)
+      }
+    }
+
+    if (typeof window !== "undefined") {
+      fetchLatestConferences()
+    }
+  }, [lang])
 
   useEffect(() => {
     const fetchApiData = async () => {
       try {
         setIsLoading(true)
+        console.log("[v0] Fetching data from:", `${API_BASE}/${lang}`)
 
-        const response = await fetch(`${API_BASE}/`, {
+        const response = await fetch(`${API_BASE}/${lang}`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            "X-CSRFTOKEN": "eJuCzMPXzuceRF25yOKmMxM4xf4mqGj35Y0XH5SmFgz83slSgqvKu3WpN7SfScL3",
+            Accept: "application/json",
+            "Accept-Language": lang,
           },
+          mode: "cors",
         })
+
+        console.log("[v0] Response status:", response.status)
+        console.log("[v0] Response headers:", Object.fromEntries(response.headers.entries()))
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`)
         }
 
         const data = await response.json()
+        console.log("[v0] API data received:", data)
         setApiData(data)
         setApiError(null)
       } catch (error) {
-        setApiError(error instanceof Error ? error.message : "API xatolik yuz berdi")
+        console.error("[v0] API Error:", error)
+        console.log("[v0] Error type:", error.constructor.name)
+        console.log("[v0] Error message:", error.message)
+
+        if (error instanceof TypeError && error.message.includes("fetch")) {
+          setApiError(`Django server bilan bog'lanish xatoligi.
+            Server ${API_BASE} manzilida ishlamayapti yoki CORS sozlamalari noto'g'ri.
+            Tekshiring:
+            1. Django server ishlamoqdami?
+            2. CORS sozlamalari to'g'rimi?
+            3. Server ${API_BASE} portida ishlamoqdami?`)
+        } else if (error instanceof TypeError && error.message.includes("NetworkError")) {
+          setApiError("Tarmoq xatoligi: Internet ulanishini tekshiring")
+        } else if (error.message.includes("404")) {
+          setApiError(`API endpoint topilmadi: ${API_BASE}/${lang}`)
+        } else if (error.message.includes("500")) {
+          setApiError("Server ichki xatoligi (500)")
+        } else {
+          setApiError(error instanceof Error ? error.message : "API xatolik yuz berdi")
+        }
       } finally {
         setIsLoading(false)
       }
     }
 
-    fetchApiData()
-  }, [])
+    // Only fetch if we're in browser environment
+    if (typeof window !== "undefined") {
+      fetchApiData()
+    }
+  }, [lang])
 
-  const slides = [
-    {
-      title: "Yangi ilmiy jurnallar",
-      description: "2024-yilning eng so'nggi tadqiqot natijalari va ilmiy maqolalar",
-      image: "/scientific-research-books-and-journals.jpg",
-      buttonText: "Batafsil",
-      href: "/journals",
-    },
-    {
-      title: "Xalqaro konferensiya",
-      description: "Zamonaviy texnologiyalar va innovatsiyalar bo'yicha xalqaro anjuman",
-      image: "/swiper_konferensiya.jpg",
-      buttonText: "Ro'yxatdan o'tish",
-      href: "/conference",
-    },
-    {
-      title: "Akademik kitoblar",
-      description: "Oliy ta'lim muassasalari uchun maxsus tayyorlangan darsliklar",
-      image: "/swiper_konferensiya2.jpg",
-      buttonText: "Kitoblarni ko'rish",
-      href: "/books",
-    },
-  ]
+  const slides =
+    conferences && conferences.length > 0
+      ? conferences.map((conference, index) => ({
+          title: conference.name,
+          description:
+            conference.description && conference.description.length > 100
+              ? conference.description.replace(/<[^>]*>/g, "").substring(0, 100) + "..." // Remove HTML tags
+              : conference.description?.replace(/<[^>]*>/g, "") || "", // Remove HTML tags
+          image: conference.image ? `${API_BASE}${conference.image}` : "/swiper_konferensiya.jpg",
+          buttonText: "Konferensiyani ko'rish", // Changed button text
+          href: `/${lang}/conferences/${getSlugForLang(conference, lang)}`,
+          date: conference.date,
+          location: conference.manzil,
+        }))
+      : [
+          {
+            title: "Yangi ilmiy jurnallar",
+            description: "2024-yilning eng so'nggi tadqiqot natijalari va ilmiy maqolalar",
+            image: "/scientific-research-books-and-journals.jpg",
+            buttonText: "Batafsil",
+            href: `/${lang}/jurnals`,
+          },
+          {
+            title: "Xalqaro konferensiya",
+            description: "Zamonaviy texnologiyalar va innovatsiyalar bo'yicha xalqaro anjuman",
+            image: "/swiper_konferensiya.jpg",
+            buttonText: "Konferensiyani ko'rish", // Changed button text
+            href: `/${lang}/conferences`,
+          },
+          {
+            title: "Akademik kitoblar",
+            description: "Oliy ta'lim muassasalari uchun maxsus tayyorlangan darsliklar",
+            image: "/swiper_konferensiya2.jpg",
+            buttonText: "Kitoblarni ko'rish",
+            href: `/${lang}/books`,
+          },
+        ]
 
   const adSlides = [
     {
-      title: "Premium Kurs Dasturi",
-      company: "EduTech Academy",
-      category: "Ta'lim xizmatlari",
-      price: "299,000 so'm",
-      originalPrice: "450,000 so'm",
-      discount: "33%",
-      image: "/premium-course-advertisement-modern-education.jpg",
-      isPopular: true,
-      badge: "Eng mashhur",
       youtubeId: "dQw4w9WgXcQ",
-      thumbnail: "/premium-course-video-thumbnail.jpg",
-      description: "Zamonaviy ta'lim texnologiyalari bo'yicha professional treninglar",
+      thumbnail: "/rickroll_thumbnail.jpg",
     },
     {
-      title: "Ilmiy Tadqiqot Vositalari",
-      company: "Research Pro",
-      category: "Dasturiy ta'minot",
-      price: "150,000 so'm",
-      originalPrice: "200,000 so'm",
-      discount: "25%",
-      image: "/research-tools-software-advertisement-analytics.jpg",
-      isPopular: true,
-      badge: "Bestseller",
       youtubeId: "dQw4w9WgXcQ",
-      thumbnail: "/research-software-demo-thumbnail.jpg",
-      description: "Ilmiy tadqiqotlar uchun professional tahlil dasturlari",
-    },
-    {
-      title: "Onlayn Konferensiya Platformasi",
-      company: "ConferenceHub",
-      category: "Texnologiya xizmatlari",
-      price: "89,000 so'm",
-      originalPrice: "120,000 so'm",
-      discount: "26%",
-      image: "/online-conference-platform-advertisement-virtual.jpg",
-      isPopular: false,
-      badge: "Yangi xizmat",
-      youtubeId: "dQw4w9WgXcQ",
-      thumbnail: "/conference-platform-demo-thumbnail.jpg",
-      description: "Virtual konferensiyalar va vebinarlar uchun professional platforma",
-    },
-    {
-      title: "Akademik Yozuv Kursi",
-      company: "WriteAcademic",
-      category: "Skill Development",
-      price: "199,000 so'm",
-      originalPrice: "280,000 so'm",
-      discount: "29%",
-      image: "/academic-writing-course-advertisement-professional.jpg",
-      isPopular: true,
-      badge: "Top reyting",
-      youtubeId: "dQw4w9WgXcQ",
-      thumbnail: "/academic-writing-tutorial-thumbnail.jpg",
-      description: "Ilmiy maqolalar va dissertatsiyalar yozish bo'yicha kurs",
-    },
-    {
-      title: "Statistik Tahlil Dasturi",
-      company: "DataAnalytics Pro",
-      category: "Dasturiy ta'minot",
-      price: "320,000 so'm",
-      originalPrice: "450,000 so'm",
-      discount: "29%",
-      image: "/statistical-analysis-software-advertisement-data.jpg",
-      isPopular: false,
-      badge: "Professional",
-      youtubeId: "dQw4w9WgXcQ",
-      thumbnail: "/statistics-software-demo-thumbnail.jpg",
-      description: "Ilmiy tadqiqotlar uchun kuchli statistik tahlil vositalari",
-    },
-    {
-      title: "Nashriyot Xizmatlari",
-      company: "PublishExpert",
-      category: "Nashriyot xizmatlari",
-      price: "250,000 so'm",
-      originalPrice: "350,000 so'm",
-      discount: "28%",
-      image: "/publishing-services-advertisement-academic-journal.jpg",
-      isPopular: true,
-      badge: "Kafolat bilan",
-      youtubeId: "dQw4w9WgXcQ",
-      thumbnail: "/publishing-process-video-thumbnail.jpg",
-      description: "Ilmiy maqolalar va kitoblarni nashr qilish xizmatlari",
+      thumbnail: "/rickroll_thumbnail.jpg",
     },
   ]
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slides.length)
-    }, 5000)
-    return () => clearInterval(timer)
-  }, [slides.length])
+    if (slides && slides.length > 0) {
+      const timer = setInterval(() => {
+        setCurrentSlide((prev) => (prev + 1) % slides.length)
+      }, 5000) // Auto-rotation every 5 seconds
+      return () => clearInterval(timer)
+    }
+  }, [slides]) // Use slides for better dependency tracking
 
   useEffect(() => {
     const videoTimer = setInterval(() => {
       setCurrentVideoSlide((prev) => (prev + 1) % adSlides.length)
     }, 5000)
     return () => clearInterval(videoTimer)
-  }, [adSlides.length])
+  }, [adSlides])
 
   useEffect(() => {
-    const reklamaLength = apiData?.reklama?.length || adSlides.length
+    const yangiliklarLength = apiData?.yangiliklar?.length || adSlides.length
     const bookTimer = setInterval(() => {
-      setCurrentBookSlide((prev) => (prev + 1) % reklamaLength)
+      setCurrentBookSlide((prev) => (prev + 1) % yangiliklarLength)
     }, 4000)
     return () => clearInterval(bookTimer)
-  }, [adSlides.length, apiData?.reklama?.length])
+  }, [adSlides, apiData?.yangiliklar])
 
-  const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % slides.length)
-  const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length)
+  const nextSlide = () => {
+    if (slides && slides.length > 0) {
+      setCurrentSlide((prev) => (prev + 1) % slides.length)
+    }
+  }
+  const prevSlide = () => {
+    if (slides && slides.length > 0) {
+      setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length)
+    }
+  }
 
   const nextVideoSlide = () => setCurrentVideoSlide((prev) => (prev + 1) % adSlides.length)
   const prevVideoSlide = () => setCurrentVideoSlide((prev) => (prev - 1 + adSlides.length) % adSlides.length)
 
-  const nextBookSlide = () => setCurrentBookSlide((prev) => (prev + 1) % adSlides.length)
-  const prevBookSlide = () => setCurrentBookSlide((prev) => (prev - 1 + adSlides.length) % adSlides.length)
+  const nextBookSlide = () => {
+    const length = apiData?.yangiliklar?.length || 1
+    setCurrentBookSlide((prev) => (prev + 1) % length)
+  }
+  const prevBookSlide = () => {
+    const length = apiData?.yangiliklar?.length || 1
+    setCurrentBookSlide((prev) => (prev - 1 + length) % length)
+  }
 
   const sections = [
     {
       title: "Jurnallar",
       description: "Ilmiy jurnallar va maqolalar to'plami",
       icon: FileText,
-      href: "/journals",
+      href: `/${lang}/jurnals`,
       color: "text-primary",
     },
     {
       title: "Kitoblar",
       description: "Akademik kitoblar va darsliklar",
       icon: BookOpen,
-      href: "/books",
+      href: `/${lang}/books`,
       color: "text-secondary",
     },
     {
       title: "Konferensiya",
       description: "Ilmiy konferensiyalar va tadbirlar",
       icon: Calendar,
-      href: "/conference",
+      href: `/${lang}/conferences`,
       color: "text-primary",
     },
   ]
-
-  const handlePdfView = (language: string) => {
-    const pdfUrls = {
-      uzbek: "/rector-info-uz.pdf",
-      russian: "/rector-info-ru.pdf",
-      english: "/rector-info-en.pdf",
-    }
-
-    const url = pdfUrls[language as keyof typeof pdfUrls] || pdfUrls.uzbek
-    window.open(url, "_blank")
-  }
 
   const handleVideoPlay = (youtubeId: string) => {
     setSelectedVideoId(youtubeId)
@@ -293,328 +337,360 @@ export default function HomePage() {
   }
 
   const handleSubscriptionClick = (planType: string) => {
-    // Redirect to login page since user is not authenticated
     router.push("/login")
   }
 
+  useEffect(() => {
+    const storedLang = (localStorage.getItem("language") as "uz" | "ru" | "en") || "uz"
+    setLang(storedLang)
+  }, [])
+
   return (
-    <div className="min-h-screen" style={{ backgroundColor: "#DCE3F8" }}>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <Navbar />
 
-      <section className="py-8">
-        <div className="w-full px-2">
-          <div className="grid grid-cols-1 lg:grid-cols-12">
-            {/* Chap Card - RASMIY E'LON */}
-            <div className="lg:col-span-3">
-              <Card className="h-[600px] bg-white/20 backdrop-blur-md border-white/30 shadow-2xl rounded-l-lg rounded-r-none lg:rounded-r-none overflow-hidden">
-                <CardContent className="p-0 h-full flex flex-col">
-                  {/* Header */}
-                  <div className="bg-gradient-to-r from-white/30 to-white/20 p-4 flex items-center justify-center border-b">
-                    <Bell className="w-5 h-5 mr-2" />
-                    <h3 className="font-bold text-sm">RASMIY E'LON</h3>
+      {/* Header section - Enhanced mobile responsive design */}
+      <section className="relative bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 py-4 sm:py-6 lg:py-8 px-0">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 h-[400px] sm:h-[450px] lg:h-[500px] w-full">
+          {/* Chap Card - RASMIY E'LON - Mobile responsive */}
+          <div className="lg:col-span-3 order-1 lg:order-1">
+            <div className="h-[400px] sm:h-[450px] lg:h-[500px] bg-gradient-to-br from-white via-blue-50/50 to-indigo-100/60 backdrop-blur-xl border border-white/60 shadow-2xl rounded-t-2xl lg:rounded-l-2xl lg:rounded-t-none lg:rounded-r-none overflow-hidden relative group hover:shadow-3xl transition-all duration-500">
+              {/* Enhanced modern header with responsive sizing */}
+              <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-[#003D7F] via-[#0059B2] to-[#007ACC] backdrop-blur-md p-3 sm:p-4 z-10 shadow-lg">
+                <div className="flex items-center justify-center space-x-2 sm:space-x-3">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                    <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                   </div>
+                  <h3 className="font-bold text-xs sm:text-sm text-white tracking-wide">RASMIY E'LON</h3>
+                </div>
+              </div>
 
-                  {/* Content (centered) */}
-                  <div className="flex-1 p-4 flex flex-col justify-center items-center space-y-6 text-center">
-                    {isLoading ? (
-                      <div className="text-sm text-gray-600">Yuklanmoqda...</div>
-                    ) : apiData?.rasmiy_elon &&
-                      (apiData.rasmiy_elon.homepage_content_uz || apiData.rasmiy_elon.homepage_content) ? (
-                      <div className="w-full bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
-                        <div className="flex items-center mb-2">
-                          <Bell className="w-4 h-4 text-blue-600 mr-2" />
-                          <span className="text-xs font-semibold text-blue-800">Rasmiy e'lon</span>
+              {/* Enhanced content area with responsive padding */}
+              <div className="pt-16 sm:pt-20 p-4 sm:p-6 h-full overflow-y-auto">
+                {isLoading ? (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="text-center">
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-[#003D7F] to-[#0059B2] rounded-3xl flex items-center justify-center mx-auto mb-4 sm:mb-6 animate-pulse shadow-xl">
+                        <Bell className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+                      </div>
+                      <p className="text-xs sm:text-sm text-gray-600 font-medium">E'lonlar yuklanmoqda...</p>
+                    </div>
+                  </div>
+                ) : apiData?.rasmiy_elon ? (
+                  <div className="bg-white/90 backdrop-blur-sm rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xl border border-white/70 hover:shadow-2xl transition-all duration-500 hover:bg-white group-inner">
+                    {apiData.rasmiy_elon.media && (
+                      <div className="relative mb-4 sm:mb-6 overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 shadow-inner">
+                        <img
+                          src={`${API_BASE}${apiData.rasmiy_elon.media}`}
+                          alt={apiData.rasmiy_elon.title || "Rasmiy E'lon"}
+                          className="w-full h-32 sm:h-40 object-contain p-2 sm:p-3 group-inner-hover:scale-105 transition-transform duration-500"
+                          onError={(e) => {
+                            console.log("[v0] Rasmiy elon image failed to load:", apiData.rasmiy_elon.media)
+                            e.currentTarget.style.display = "none"
+                          }}
+                          onLoad={() => {
+                            console.log("[v0] Rasmiy elon image loaded successfully:", apiData.rasmiy_elon.media)
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    <div className="space-y-4 sm:space-y-5">
+                      <div className="flex items-start space-x-3 sm:space-x-4">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-[#003D7F] to-[#0059B2] rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
+                          <Bell className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                         </div>
-                        <div className="text-sm text-blue-700 leading-relaxed text-left">
-                          <div
-                            dangerouslySetInnerHTML={{
-                              __html:
-                                apiData.rasmiy_elon.homepage_content_uz || apiData.rasmiy_elon.homepage_content || "",
-                            }}
-                          />
+                        <div className="flex-1">
+                          <h4 className="font-bold text-gray-800 text-sm sm:text-base leading-tight mb-2 sm:mb-3">
+                            {apiData.rasmiy_elon.title || "Rasmiy E'lon"}
+                          </h4>
+                          <div className="text-xs sm:text-sm text-gray-600 leading-relaxed line-clamp-3 sm:line-clamp-4">
+                            <div
+                              dangerouslySetInnerHTML={{
+                                __html: apiData.rasmiy_elon.homepage_content || apiData.rasmiy_elon.description || "",
+                              }}
+                            />
+                          </div>
                         </div>
                       </div>
-                    ) : (
-                      <>
-                        {/* Rektor */}
-                        <div>
-                          <div className="w-24 h-24 mx-auto mb-3 rounded-full overflow-hidden border-2 border-white/50">
-                            <img src="/rektor-photo.jpg" alt="Rektor" className="w-full h-full object-cover" />
-                          </div>
-                          <h4 className="text-base font-bold text-gray-900 mb-1">NODIRBEK SAYFULLAYEV</h4>
-                          <p className="text-sm text-gray-700 leading-relaxed max-w-[200px] mx-auto">
-                            Universitetimiz rektori, ilmiy faoliyat va ta'lim sohasi bo'yicha mutaxassis
-                          </p>
-                        </div>
 
-                        {/* Maqola tugmalari */}
-                        <div className="w-full space-y-2">
-                          <p className="text-xs font-semibold text-gray-800 mb-2">Maqolasi:</p>
-                          <Button
-                            size="sm"
-                            onClick={() => handlePdfView("uzbek")}
-                            className="w-full bg-[#003D7F] hover:bg-[#002B5A] text-white text-xs flex items-center justify-center gap-1"
-                          >
-                            <Eye className="w-3 h-3" />
-                            O'zbek tilida
-                          </Button>
-                          <Button
-                            size="sm"
-                            onClick={() => handlePdfView("russian")}
-                            className="w-full bg-[#003D7F] hover:bg-[#002B5A] text-white text-xs flex items-center justify-center gap-1"
-                          >
-                            <Eye className="w-3 h-3" />
-                            Rus tilida
-                          </Button>
-                          <Button
-                            size="sm"
-                            onClick={() => handlePdfView("english")}
-                            className="w-full bg-[#003D7F] hover:bg-[#002B5A] text-white text-xs flex items-center justify-center gap-1"
-                          >
-                            <Eye className="w-3 h-3" />
-                            English
-                          </Button>
-                        </div>
-
-                        {/* Hikmat */}
-                        <div className="w-full bg-gradient-to-r from-amber-50 to-yellow-50 border-l-4 border-amber-400 p-3 mb-4 rounded-r-lg">
-                          <div className="flex items-center mb-2">
-                            <Lightbulb className="w-4 h-4 text-amber-600 mr-2" />
-                            <span className="text-xs font-semibold text-amber-800">Konfutsiy hikmati</span>
-                          </div>
-                          <p className="text-xs italic text-amber-700 leading-relaxed text-left">
-                            "Bilim olish - hayotning eng katta boyligi"
-                          </p>
-                        </div>
-                      </>
-                    )}
+                      <Button
+                        size="sm"
+                        className="w-full bg-gradient-to-r from-[#003D7F] via-[#0059B2] to-[#007ACC] hover:from-[#002B5A] hover:via-[#004494] hover:to-[#005A99] text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold rounded-xl sm:rounded-2xl py-3 sm:py-4 group-button hover:scale-105 transform text-xs sm:text-sm"
+                        onClick={() => handleRasmiyElonDetail(apiData.rasmiy_elon.slug)}
+                      >
+                        <span className="flex items-center justify-center space-x-2">
+                          <span>Batafsil</span>
+                          <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 group-button-hover:translate-x-1 transition-transform duration-300" />
+                        </span>
+                      </Button>
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="bg-white/90 backdrop-blur-sm rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-xl text-center max-w-sm">
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-gray-200 to-gray-300 rounded-3xl flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                        <Bell className="w-8 h-8 sm:w-10 sm:h-10 text-gray-500" />
+                      </div>
+                      <h4 className="font-bold text-gray-800 text-base mb-2 sm:mb-3">Rasmiy E'lon</h4>
+                      <p className="text-sm text-gray-600 leading-relaxed mb-4 sm:mb-6">
+                        Hozircha rasmiy e'lonlar mavjud emas. Yangi e'lonlar tez orada e'lon qilinadi.
+                      </p>
+                      <Button
+                        size="sm"
+                        className="w-full bg-gradient-to-r from-gray-400 to-gray-500 text-white border-0 rounded-xl sm:rounded-2xl py-3 sm:py-4 text-xs sm:text-sm"
+                        disabled
+                      >
+                        Batafsil
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
+          </div>
 
-            {/* O'rta Swiper */}
-            <div className="lg:col-span-6">
-              <div className="relative bg-white shadow-xl overflow-hidden rounded-none">
-                <div className="relative h-[600px]">
-                  {slides.map((slide, index) => (
+          {/* O'rta Swiper - Mobile responsive design */}
+          <div className="lg:col-span-6 order-3 lg:order-2">
+            <div className="relative bg-white shadow-2xl overflow-hidden border-y border-white/20 lg:border-none">
+              <div className="relative h-[400px] sm:h-[450px] lg:h-[500px]">
+                {conferencesLoading ? (
+                  <div className="absolute inset-0 bg-gradient-to-br from-slate-100 via-blue-100 to-indigo-100 flex items-center justify-center">
+                    <div className="text-center text-slate-600 px-4">
+                      <Calendar className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 animate-pulse text-[#003D7F]" />
+                      <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-2 sm:mb-3 text-[#003D7F]">
+                        Konferensiyalar yuklanmoqda...
+                      </h2>
+                      <p className="text-sm sm:text-base lg:text-lg text-slate-600">Iltimos, kuting...</p>
+                    </div>
+                  </div>
+                ) : (
+                  slides &&
+                  slides.length > 0 &&
+                  slides.map((slide, index) => (
                     <div
                       key={index}
-                      className={`absolute inset-0 transition-opacity duration-500 ${
+                      className={`absolute inset-0 transition-opacity duration-700 ${
                         index === currentSlide ? "opacity-100" : "opacity-0"
                       }`}
                     >
-                      <img
-                        src={slide.image || "/placeholder.svg"}
-                        alt={slide.title}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                        <div className="text-center text-white px-8">
-                          <h2 className="text-3xl md:text-4xl font-bold mb-4">{slide.title}</h2>
-                          <p className="text-lg mb-6 max-w-2xl">{slide.description}</p>
-                          <Button size="lg" asChild className="bg-primary hover:bg-primary/90">
-                            <Link href={slide.href}>{slide.buttonText}</Link>
-                          </Button>
+                      <div className="flex flex-col lg:flex-row h-full">
+                        {/* Image section - Full width on mobile, 70% on desktop */}
+                        <div className="w-full lg:w-[70%] h-1/2 lg:h-full relative overflow-hidden">
+                          <img
+                            src={slide.image || "/placeholder.svg"}
+                            alt={slide.title}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              console.log("[v0] Slide image failed to load:", slide.image)
+                              e.currentTarget.src = "/swiper_konferensiya.jpg"
+                            }}
+                          />
+                          {/* Subtle overlay */}
+                          <div className="absolute inset-0 bg-gradient-to-b lg:bg-gradient-to-r from-transparent via-transparent to-blue-500/10"></div>
+                        </div>
+
+                        {/* Content section - Full width on mobile, 30% on desktop */}
+                        <div className="w-full lg:w-[30%] h-1/2 lg:h-full bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 p-4 sm:p-6 flex flex-col justify-center relative overflow-hidden">
+                          {/* Background pattern */}
+                          <div className="absolute inset-0 opacity-10">
+                            <div className="absolute top-0 right-0 w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-full transform translate-x-8 sm:translate-x-10 -translate-y-8 sm:-translate-y-10"></div>
+                            <div className="absolute bottom-0 left-0 w-12 h-12 sm:w-16 sm:h-16 bg-white rounded-full transform -translate-x-6 sm:-translate-x-8 translate-y-6 sm:translate-y-8"></div>
+                          </div>
+
+                          <div className="relative z-10">
+                            <h2 className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold mb-2 sm:mb-3 lg:mb-4 text-white leading-tight">
+                              {slide.title}
+                            </h2>
+                            <p className="text-xs sm:text-sm mb-3 sm:mb-4 lg:mb-6 text-white/95 leading-relaxed line-clamp-2 lg:line-clamp-none">
+                              {slide.description}
+                            </p>
+
+                            {slide.date && (
+                              <div className="flex flex-col gap-1 sm:gap-2 mb-3 sm:mb-4 lg:mb-6">
+                                <div className="flex items-center gap-2 text-white/90">
+                                  <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
+                                  <span className="text-xs sm:text-sm font-medium">
+                                    {new Date(slide.date).toLocaleDateString("uz-UZ")}
+                                  </span>
+                                </div>
+                                {slide.location && (
+                                  <div className="flex items-center gap-2 text-white/90">
+                                    <Globe className="w-3 h-3 sm:w-4 sm:h-4" />
+                                    <span className="text-xs sm:text-sm font-medium line-clamp-1">
+                                      {slide.location}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            <div className="space-y-4">
+                              <Button
+                                size="sm"
+                                asChild
+                                className="w-full bg-white hover:bg-gray-100 text-blue-600 hover:text-blue-700 border-0 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold px-4 sm:px-6 py-2 sm:py-3 rounded-full hover:scale-105 transform text-xs sm:text-sm"
+                              >
+                                <Link href={slide.href} className="flex items-center justify-center gap-2">
+                                  {slide.buttonText}
+                                  <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
+                                </Link>
+                              </Button>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  ))}
-                </div>
+                  ))
+                )}
+              </div>
 
-                {/* Navigation */}
-                <button
-                  onClick={prevSlide}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 text-white p-2 rounded-full"
-                >
-                  <ChevronLeft className="w-6 h-6" />
-                </button>
-                <button
-                  onClick={nextSlide}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 text-white p-2 rounded-full"
-                >
-                  <ChevronRight className="w-6 h-6" />
-                </button>
+              {/* Navigation buttons - Responsive positioning */}
+              <button
+                onClick={prevSlide}
+                className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-md text-blue-600 p-2 sm:p-3 rounded-full hover:bg-white hover:scale-110 transition-all duration-300 shadow-lg border border-white/30"
+                disabled={conferencesLoading}
+              >
+                <ChevronLeft className="w-4 h-4 sm:w-6 sm:h-6" />
+              </button>
+              <button
+                onClick={nextSlide}
+                className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-md text-blue-600 p-2 sm:p-3 rounded-full hover:bg-white hover:scale-110 transition-all duration-300 shadow-lg border border-white/30"
+                disabled={conferencesLoading}
+              >
+                <ChevronRight className="w-4 h-4 sm:w-6 sm:h-6" />
+              </button>
 
-                {/* Dots */}
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2">
-                  {slides.map((_, index) => (
+              {/* Dots indicator - Responsive sizing */}
+              <div className="absolute bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2 flex space-x-1 sm:space-x-2">
+                {slides &&
+                  slides.map((_, index) => (
                     <button
                       key={index}
                       onClick={() => setCurrentSlide(index)}
-                      className={`w-3 h-3 rounded-full ${index === currentSlide ? "bg-white" : "bg-white/50"}`}
+                      className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full transition-all duration-300 border border-white/50 ${
+                        index === currentSlide
+                          ? "bg-white scale-125 shadow-md"
+                          : "bg-white/60 hover:bg-white/80 hover:scale-110"
+                      }`}
+                      disabled={conferencesLoading}
                     />
                   ))}
-                </div>
               </div>
             </div>
+          </div>
 
-            {/* O'ng Card - REKLAMA */}
-            <div className="lg:col-span-3">
-              <Card className="h-[600px] bg-white/20 backdrop-blur-md border-white/30 shadow-2xl rounded-r-lg rounded-l-none lg:rounded-l-none overflow-hidden">
-                <CardContent className="p-0 h-full flex flex-col">
-                  <div className="bg-gradient-to-r from-white/30 to-white/20 p-4 flex items-center justify-center border-b">
-                    <Megaphone className="w-5 h-5 mr-2" />
-                    <h3 className="font-bold text-sm">REKLAMA</h3>
+          {/* O'ng Card - REKLAMA - Mobile responsive */}
+          <div className="lg:col-span-3 order-2 lg:order-3">
+            <div className="h-[400px] sm:h-[450px] lg:h-[500px] bg-gradient-to-br from-white via-blue-50/50 to-indigo-100/60 backdrop-blur-xl border border-white/60 shadow-2xl rounded-b-2xl lg:rounded-r-2xl lg:rounded-b-none lg:rounded-l-none overflow-hidden relative group hover:shadow-3xl transition-all duration-500">
+              <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-[#003D7F] via-[#0059B2] to-[#007ACC] backdrop-blur-md p-3 sm:p-4 z-10 shadow-lg">
+                <div className="flex items-center justify-center space-x-2 sm:space-x-3">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                    <Megaphone className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                   </div>
-                  <div className="flex-1 p-4 space-y-3 overflow-y-auto">
-                    {isLoading ? (
-                      <div className="text-sm text-gray-600 text-center">Reklamalar yuklanmoqda...</div>
-                    ) : apiData?.reklama && apiData.reklama.length > 0 ? (
-                      apiData.reklama.slice(0, 2).map((reklama, index) => (
-                        <div
-                          key={reklama.id}
-                          className="bg-gradient-to-br from-[#003D7F]/20 to-[#0059B2]/20 rounded-xl p-4 border shadow-lg hover:shadow-xl transition-all duration-300"
-                        >
-                          {reklama.image && (
-                            <div className="relative mb-3">
-                              <img
-                                src={reklama.image || "/placeholder.svg"}
-                                alt={reklama.title}
-                                className="w-full h-32 object-cover rounded-lg"
-                              />
-                            </div>
-                          )}
-                          <div className="flex items-center mb-2">
-                            <div className="w-6 h-6 bg-gradient-to-r from-[#003D7F] to-[#0059B2] rounded-full flex items-center justify-center mr-2">
-                              <Star className="w-3 h-3 text-white" />
-                            </div>
-                            <span className="text-xs font-bold text-gray-800">{reklama.title}</span>
-                          </div>
-                          <div className="text-xs text-gray-700 mb-3 leading-relaxed">
-                            <div dangerouslySetInnerHTML={{ __html: reklama.description }} />
-                          </div>
-                          {reklama.price && (
-                            <div className="flex items-center gap-2 mb-2">
-                              <span className="text-sm font-bold text-green-600">{reklama.price}</span>
-                              {reklama.originalPrice && (
-                                <span className="text-xs text-gray-400 line-through">{reklama.originalPrice}</span>
-                              )}
-                            </div>
-                          )}
-                          <Button
-                            size="sm"
-                            className="w-full text-xs font-medium border-0"
-                            style={{
-                              backgroundColor: "#003D7F",
-                              color: "#ffffff",
-                            }}
-                          >
-                            Batafsil
-                          </Button>
-                        </div>
-                      ))
-                    ) : (
-                      <>
-                        {/* Static reklama content as fallback */}
-                        <div className="bg-gradient-to-br from-[#003D7F]/20 to-[#0059B2]/20 rounded-xl p-4 border shadow-lg hover:shadow-xl transition-all duration-300">
-                          <div className="relative mb-3">
-                            <div
-                              className="aspect-video bg-black/80 rounded-lg overflow-hidden relative group cursor-pointer"
-                              onClick={() => handleVideoPlay(adSlides[currentVideoSlide].youtubeId)}
-                            >
-                              <img
-                                src={adSlides[currentVideoSlide].thumbnail || "/placeholder.svg"}
-                                alt="Video reklama"
-                                className="w-full h-full object-cover"
-                              />
-                              <div className="absolute inset-0 bg-black/40 flex items-center justify-center group-hover:bg-black/30 transition-all">
-                                <div className="w-14 h-14 bg-white/90 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
-                                  <Play className="w-7 h-7 text-gray-800 ml-1" />
-                                </div>
-                              </div>
-                              <div className="absolute bottom-2 right-2">
-                                <Volume2 className="w-4 h-4 text-white" />
-                              </div>
-                              <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">
-                                LIVE
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center mb-2">
-                            <div className="w-6 h-6 bg-gradient-to-r from-[#003D7F] to-[#0059B2] rounded-full flex items-center justify-center mr-2">
-                              <Star className="w-3 h-3 text-white" />
-                            </div>
-                            <span className="text-xs font-bold text-gray-800">Premium Kurs</span>
-                          </div>
-                          <div className="text-xs text-gray-700 mb-3 leading-relaxed">
-                            Ilmiy tadqiqot metodlari bo'yicha professional treninglar
-                          </div>
-                          <Button
-                            size="sm"
-                            onClick={() => handleVideoPlay(adSlides[currentVideoSlide].youtubeId)}
-                            className="w-full text-xs font-medium border-0"
-                            style={{
-                              backgroundColor: "#003D7F",
-                              color: "#ffffff",
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = "#002B5A"
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = "#003D7F"
-                            }}
-                          >
-                            Videoni ko'rish
-                          </Button>
-                        </div>
-                        {/* Maxsus taklif */}
-                        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-3 mb-3">
-                          <div className="flex items-center mb-2">
-                            <div className="w-6 h-6 bg-gradient-to-r from-[#003D7F] to-[#0059B2] rounded-full flex items-center justify-center mr-2">
-                              <Star className="w-3 h-3 text-white" />
-                            </div>
-                            <span className="text-xs font-bold text-gray-800">MAXSUS TAKLIF</span>
-                          </div>
-                          <p className="text-xs text-green-700 font-medium mb-2">Ilmiy nashrlar uchun 50% chegirma!</p>
-                          <p className="text-xs text-green-600">Birinchi maqolangizni nashr qilish uchun maxsus narx</p>
-                        </div>
-                      </>
+                  <h3 className="font-bold text-xs sm:text-sm text-white tracking-wide">REKLAMA</h3>
+                </div>
+              </div>
+
+              {/* Enhanced content area with responsive padding */}
+              <div className="pt-16 sm:pt-20 p-4 sm:p-6 h-full overflow-y-auto">
+                {isLoading ? (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="text-center">
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-[#003D7F] to-[#0059B2] rounded-3xl flex items-center justify-center mx-auto mb-4 sm:mb-6 animate-pulse shadow-xl">
+                        <Megaphone className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+                      </div>
+                      <p className="text-xs sm:text-sm text-gray-600 font-medium">Reklamalar yuklanmoqda...</p>
+                    </div>
+                  </div>
+                ) : apiData?.reklama && apiData.reklama.length > 0 ? (
+                  <div className="bg-white/90 backdrop-blur-sm rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xl border border-white/70 hover:shadow-2xl transition-all duration-500 hover:bg-white group-inner">
+                    {apiData.reklama[0].media && (
+                      <div className="relative mb-4 sm:mb-6 overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 shadow-inner">
+                        <img
+                          src={`${API_BASE}${apiData.reklama[0].media}`}
+                          alt={apiData.reklama[0].title}
+                          className="w-full h-32 sm:h-40 object-contain p-2 sm:p-3 group-inner-hover:scale-105 transition-transform duration-500"
+                          onError={(e) => {
+                            console.log("[v0] Reklama image failed to load:", apiData.reklama[0].media)
+                            e.currentTarget.style.display = "none"
+                          }}
+                          onLoad={() => {
+                            console.log("[v0] Reklama image loaded successfully:", apiData.reklama[0].media)
+                          }}
+                        />
+                      </div>
                     )}
+
+                    <div className="space-y-4 sm:space-y-5">
+                      <div className="flex items-start space-x-3 sm:space-x-4">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-[#003D7F] to-[#0059B2] rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
+                          <Star className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-bold text-gray-800 text-sm sm:text-base leading-tight mb-2 sm:mb-3 line-clamp-2">
+                            {apiData.reklama[0].title}
+                          </h4>
+                          <div className="text-xs sm:text-sm text-gray-600 leading-relaxed line-clamp-3 sm:line-clamp-4">
+                            <div
+                              dangerouslySetInnerHTML={{
+                                __html: apiData.reklama[0].homepage_content || apiData.reklama[0].description || "",
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <Button
+                        size="sm"
+                        className="w-full bg-gradient-to-r from-[#003D7F] via-[#0059B2] to-[#007ACC] hover:from-[#002B5A] hover:via-[#004494] hover:to-[#005A99] text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold rounded-xl sm:rounded-2xl py-3 sm:py-4 group-button hover:scale-105 transform text-xs sm:text-sm"
+                        onClick={() => handleReklamaDetail(apiData.reklama[0].id, apiData.reklama[0].title)}
+                      >
+                        <span className="flex items-center justify-center space-x-2">
+                          <span>Batafsil ko'rish</span>
+                          <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 group-button-hover:translate-x-1 transition-transform duration-300" />
+                        </span>
+                      </Button>
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="bg-white/90 backdrop-blur-sm rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-xl text-center max-w-sm">
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-gray-200 to-gray-300 rounded-3xl flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                        <Megaphone className="w-8 h-8 sm:w-10 sm:h-10 text-gray-500" />
+                      </div>
+                      <h4 className="font-bold text-gray-800 text-base mb-2 sm:mb-3">Reklamalar</h4>
+                      <p className="text-sm text-gray-600 leading-relaxed mb-4 sm:mb-6">
+                        Hozircha reklamalar mavjud emas. Django serverni ishga tushiring yoki keyinroq qaytib keling.
+                      </p>
+                      <Button
+                        size="sm"
+                        className="w-full bg-gradient-to-r from-gray-400 to-gray-500 text-white border-0 rounded-xl sm:rounded-2xl py-3 sm:py-4 text-xs sm:text-sm"
+                        disabled
+                      >
+                        Batafsil ko'rish
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {showVideoModal && selectedVideoId && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="relative w-full max-w-4xl">
-            <button
-              onClick={() => {
-                setShowVideoModal(false)
-                setSelectedVideoId(null)
-              }}
-              className="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors"
-            >
-              <X className="w-8 h-8" />
-            </button>
-            <div className="aspect-video bg-black rounded-lg overflow-hidden">
-              <iframe
-                src={`https://www.youtube.com/embed/${selectedVideoId}?autoplay=1`}
-                title="YouTube video player"
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                className="w-full h-full"
-              ></iframe>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Main Sections */}
-      <section className="py-12 sm:py-16">
-        <div className="container mx-auto">
-          <div className="text-center mb-8 sm:mb-12">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-4">Asosiy bo'limlar</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
+      {/* Asosiy bo'limlar section - Mobile responsive */}
+      <section className="py-8 sm:py-12 lg:py-16">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-6 sm:mb-8 lg:mb-12">
+            <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-3 sm:mb-4">
+              Asosiy bo'limlar
+            </h2>
+            <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto px-4">
               Ilmiy resurslar va ma'lumotlarga tezkor kirish uchun kerakli bo'limlarni tanlang
             </p>
           </div>
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
             {sections.map((section) => {
               const Icon = section.icon
               return (
@@ -622,15 +698,15 @@ export default function HomePage() {
                   key={section.title}
                   className="group hover:shadow-lg transition-all duration-300 border hover:border-primary/30 hover:scale-105"
                 >
-                  <CardHeader className="text-center pb-4">
-                    <div className="mx-auto mb-4 p-3 rounded-full bg-primary/10">
-                      <Icon className={`h-8 w-8 ${section.color}`} />
+                  <CardHeader className="text-center pb-3 sm:pb-4 p-4 sm:p-6">
+                    <div className="mx-auto mb-3 sm:mb-4 p-2 sm:p-3 rounded-full bg-primary/10">
+                      <Icon className={`h-6 w-6 sm:h-8 sm:w-8 ${section.color}`} />
                     </div>
-                    <CardTitle className="text-xl font-semibold">{section.title}</CardTitle>
-                    <CardDescription>{section.description}</CardDescription>
+                    <CardTitle className="text-lg sm:text-xl font-semibold">{section.title}</CardTitle>
+                    <CardDescription className="text-sm sm:text-base">{section.description}</CardDescription>
                   </CardHeader>
-                  <CardContent className="text-center">
-                    <Button variant="outline" asChild className="w-full bg-transparent">
+                  <CardContent className="text-center p-4 sm:p-6 pt-0">
+                    <Button variant="outline" asChild className="w-full bg-transparent text-sm sm:text-base">
                       <Link href={section.href}>Ko'rish</Link>
                     </Button>
                   </CardContent>
@@ -641,432 +717,369 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Why Choose Us Section */}
-      <section className="py-12 sm:py-16">
-        <div className="container mx-auto">
+      {/* Nima uchun bizni tanlaysiz section - Mobile responsive */}
+      <section className="py-8 sm:py-12 lg:py-16 bg-gradient-to-br from-blue-50 to-indigo-50">
+        <div className="container mx-auto px-4">
           <div className="text-center mb-8 sm:mb-12">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">Nima uchun bizni tanlaysiz?</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-3 sm:mb-4">Nima uchun bizni tanlaysiz?</h2>
+            <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto px-4">
               Ilmiy tadqiqotlar va ta'lim sohasida eng yaxshi xizmatlarni taqdim etamiz
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="text-center space-y-4 p-6 rounded-lg bg-background/50 hover:bg-background">
-              <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-                <Award className="h-8 w-8 text-primary" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <div className="text-center space-y-3 sm:space-y-4 p-4 sm:p-6 rounded-lg bg-white/70 backdrop-blur-sm hover:bg-white/90 transition-all duration-300 shadow-lg hover:shadow-xl">
+              <div className="mx-auto w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-[#003D7F] to-[#0059B2] rounded-full flex items-center justify-center shadow-lg">
+                <Award className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
               </div>
-              <h3 className="text-xl font-semibold">Sifatli kontent</h3>
-              <p className="text-muted-foreground">Ekspert tomonidan tekshirilgan ilmiy materiallar</p>
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-800">Sifatli kontent</h3>
+              <p className="text-sm sm:text-base text-gray-600">Ekspert tomonidan tekshirilgan ilmiy materiallar</p>
             </div>
 
-            <div className="text-center space-y-4 p-6 rounded-lg bg-background/50 hover:bg-background">
-              <div className="mx-auto w-16 h-16 bg-secondary/10 rounded-full flex items-center justify-center">
-                <Globe className="h-8 w-8 text-secondary" />
+            <div className="text-center space-y-3 sm:space-y-4 p-4 sm:p-6 rounded-lg bg-white/70 backdrop-blur-sm hover:bg-white/90 transition-all duration-300 shadow-lg hover:shadow-xl">
+              <div className="mx-auto w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-[#003D7F] to-[#0059B2] rounded-full flex items-center justify-center shadow-lg">
+                <Globe className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
               </div>
-              <h3 className="text-xl font-semibold">Global kirish</h3>
-              <p className="text-muted-foreground">Istalgan joydan 24/7 kirish imkoniyati</p>
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-800">Global kirish</h3>
+              <p className="text-sm sm:text-base text-gray-600">Istalgan joydan 24/7 kirish imkoniyati</p>
             </div>
 
-            <div className="text-center space-y-4 p-6 rounded-lg bg-background/50 hover:bg-background">
-              <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-                <Users className="h-8 w-8 text-primary" />
+            <div className="text-center space-y-3 sm:space-y-4 p-4 sm:p-6 rounded-lg bg-white/70 backdrop-blur-sm hover:bg-white/90 transition-all duration-300 shadow-lg hover:shadow-xl">
+              <div className="mx-auto w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-[#003D7F] to-[#0059B2] rounded-full flex items-center justify-center shadow-lg">
+                <Users className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
               </div>
-              <h3 className="text-xl font-semibold">Hamjamiyat</h3>
-              <p className="text-muted-foreground">Tadqiqotchilar va olimlar jamoasi</p>
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-800">Hamjamiyat</h3>
+              <p className="text-sm sm:text-base text-gray-600">Tadqiqotchilar va olimlar jamoasi</p>
             </div>
 
-            <div className="text-center space-y-4 p-6 rounded-lg bg-background/50 hover:bg-background">
-              <div className="mx-auto w-16 h-16 bg-secondary/10 rounded-full flex items-center justify-center">
-                <Lightbulb className="h-8 w-8 text-secondary" />
+            <div className="text-center space-y-3 sm:space-y-4 p-4 sm:p-6 rounded-lg bg-white/70 backdrop-blur-sm hover:bg-white/90 transition-all duration-300 shadow-lg hover:shadow-xl">
+              <div className="mx-auto w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-[#003D7F] to-[#0059B2] rounded-full flex items-center justify-center shadow-lg">
+                <Lightbulb className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
               </div>
-              <h3 className="text-xl font-semibold">Innovatsiya</h3>
-              <p className="text-muted-foreground">Zamonaviy texnologiyalar va yondashuvlar</p>
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-800">Innovatsiya</h3>
+              <p className="text-sm sm:text-base text-gray-600">Zamonaviy texnologiyalar va yondashuvlar</p>
             </div>
           </div>
         </div>
       </section>
 
-      {apiData?.yangiliklar && apiData.yangiliklar.length > 0 && (
-        <section className="py-16">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4 text-slate-800">So'nggi yangiliklar</h2>
-              <p className="text-slate-600 max-w-2xl mx-auto">
-                Eng muhim yangiliklar va tadbirlar haqida xabardor bo'ling
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-8">
-              {apiData.yangiliklar.slice(0, 3).map((yangilik) => (
-                <Card
-                  key={yangilik.id}
-                  className="group hover:shadow-lg transition-all duration-300 border hover:border-primary/30"
-                >
-                  {yangilik.image && (
-                    <div className="aspect-video overflow-hidden rounded-t-lg">
-                      <img
-                        src={yangilik.image || "/placeholder.svg"}
-                        alt={yangilik.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    </div>
-                  )}
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center text-sm text-muted-foreground mb-2">
-                      <Clock className="w-4 h-4 mr-1" />
-                      {new Date(yangilik.date).toLocaleDateString("uz-UZ")}
-                    </div>
-                    <CardTitle className="text-lg font-semibold line-clamp-2">{yangilik.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-muted-foreground text-sm line-clamp-3 mb-4">
-                      <div dangerouslySetInnerHTML={{ __html: yangilik.description }} />
-                    </div>
-                    <Button variant="outline" size="sm" className="w-full bg-transparent">
-                      Batafsil o'qish
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Advertisement Carousel */}
-      <section className="py-16">
+      {/* Yangiliklar swiper section - Mobile responsive */}
+      <section className="py-8 sm:py-12 lg:py-16 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4 text-slate-800">Reklama</h2>
-            <p className="text-slate-600 max-w-2xl mx-auto">
-              Sizning ehtiyojlaringiz uchun maxsus takliflar va xizmatlar
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-3 sm:mb-4 text-slate-800">
+              So'nggi yangiliklar
+            </h2>
+            <p className="text-sm sm:text-base text-slate-600 max-w-2xl mx-auto px-4">
+              Eng muhim yangiliklar va tadbirlar haqida xabar beramiz
             </p>
           </div>
 
-          <div className="overflow-hidden rounded-2xl mx-0">
-            {(() => {
-              const reklamaData = apiData?.reklama && apiData.reklama.length > 0 ? apiData.reklama : adSlides
-              const currentReklama = reklamaData[currentBookSlide]
-
-              return (
-                <>
-                  {/* Navigation Arrows */}
-                  <button
-                    onClick={prevBookSlide}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white hover:bg-slate-50 border border-slate-200 rounded-full flex items-center justify-center transition-all shadow-md hover:shadow-lg"
-                  >
-                    <ChevronLeft className="w-5 h-5 text-slate-600" />
-                  </button>
-
-                  <button
-                    onClick={nextBookSlide}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white hover:bg-slate-50 border border-slate-200 rounded-full flex items-center justify-center transition-all shadow-md hover:shadow-lg"
-                  >
-                    <ChevronRight className="w-5 h-5 text-slate-600" />
-                  </button>
-
-                  <div className="overflow-hidden rounded-2xl mx-12">
-                    <div className="flex items-center justify-center gap-4">
-                      {/* Previous slide (left) */}
-                      <div className="w-1/4 opacity-50 scale-75 transition-all duration-500">
-                        <div className="bg-white rounded-xl shadow-md overflow-hidden">
-                          <div className="p-4">
-                            <img
-                              src={
-                                reklamaData[(currentBookSlide - 1 + reklamaData.length) % reklamaData.length].image ||
-                                `/placeholder.svg?height=200&width=300&query=${encodeURIComponent(reklamaData[(currentBookSlide - 1 + reklamaData.length) % reklamaData.length].title + " advertisement") || "/placeholder.svg"}`
-                              }
-                              alt={reklamaData[(currentBookSlide - 1 + reklamaData.length) % reklamaData.length].title}
-                              className="w-full h-32 object-cover rounded-lg"
-                            />
-                            <h4 className="text-sm font-semibold mt-2 truncate">
-                              {reklamaData[(currentBookSlide - 1 + reklamaData.length) % reklamaData.length].title}
-                            </h4>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Current slide (center) */}
-                      <div className="w-1/2 scale-100 transition-all duration-500">
-                        <div className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
-                          <div className="grid md:grid-cols-5 gap-0">
-                            {/* Advertisement Image - Left Side */}
-                            <div className="md:col-span-2 bg-gradient-to-br from-blue-100 to-indigo-100 p-8 flex items-center justify-center">
-                              <div className="relative">
-                                <img
-                                  src={
-                                    currentReklama.image ||
-                                    `/placeholder.svg?height=280&width=200&query=${encodeURIComponent(currentReklama.title + " advertisement") || "/placeholder.svg"}`
+          <div className="relative max-w-7xl mx-auto">
+            {isLoading ? (
+              <div className="text-center py-12 sm:py-16">
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 sm:p-12 shadow-xl max-w-md mx-auto">
+                  <Bell className="w-16 h-16 sm:w-20 sm:h-20 text-gray-400 mx-auto mb-4 sm:mb-6" />
+                  <h3 className="text-xl sm:text-2xl font-semibold text-gray-700 mb-3 sm:mb-4">
+                    Yangiliklar yuklanmoqda...
+                  </h3>
+                  <p className="text-sm sm:text-base text-gray-500 leading-relaxed">Iltimos, kuting...</p>
+                </div>
+              </div>
+            ) : apiData?.yangiliklar && apiData.yangiliklar.length > 0 ? (
+              <>
+                <div className="relative overflow-hidden h-[500px] sm:h-[600px] lg:h-[650px]">
+                  <div className="flex items-center justify-center h-full">
+                    {/* Mobile: Single card layout, Desktop: Three card layout */}
+                    <div className="block lg:hidden w-full max-w-sm mx-auto">
+                      <Card className="h-[450px] overflow-hidden shadow-2xl bg-white border-0 rounded-3xl group hover:shadow-3xl transition-all duration-500">
+                        <CardContent className="p-0 h-full flex flex-col">
+                          {apiData.yangiliklar[currentBookSlide]?.media && (
+                            <div className="relative h-1/2 overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+                              <img
+                                src={`${API_BASE}${apiData.yangiliklar[currentBookSlide].media}`}
+                                alt={apiData.yangiliklar[currentBookSlide]?.title || "Yangilik"}
+                                className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700"
+                                onError={(e) => {
+                                  console.log(
+                                    "[v0] Yangilik image failed to load:",
+                                    apiData.yangiliklar[currentBookSlide]?.media,
+                                  )
+                                  const target = e.currentTarget as HTMLImageElement
+                                  target.style.display = "none"
+                                  const parent = target.parentElement
+                                  if (parent) {
+                                    parent.classList.add("bg-gradient-to-br", "from-[#003D7F]", "to-[#0059B2]")
+                                    parent.innerHTML = `
+                                      <div class="flex items-center justify-center h-full">
+                                        <div class="text-center text-white p-6">
+                                          <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                                            <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+                                              <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                                            </svg>
+                                          </div>
+                                          <p class="text-base font-semibold">Yangilik rasmi</p>
+                                        </div>
+                                      </div>
+                                    `
                                   }
-                                  alt={currentReklama.title}
-                                  className="w-40 h-56 object-cover rounded-lg shadow-lg"
+                                }}
+                              />
+                            </div>
+                          )}
+
+                          <div className="h-1/2 p-6 flex flex-col justify-between bg-gradient-to-br from-white via-gray-50/30 to-blue-50/20">
+                            <div className="flex-1">
+                              <h3 className="text-lg font-bold mb-3 text-gray-800 leading-tight line-clamp-2">
+                                {apiData.yangiliklar[currentBookSlide]?.title || "Yangilik"}
+                              </h3>
+                              <div className="text-gray-600 mb-4 leading-relaxed line-clamp-3 text-sm">
+                                <div
+                                  dangerouslySetInnerHTML={{
+                                    __html: apiData.yangiliklar[currentBookSlide]?.description || "",
+                                  }}
                                 />
-                                {currentReklama.discount && (
-                                  <div className="absolute -top-2 -right-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold">
-                                    -{currentReklama.discount}
-                                  </div>
-                                )}
                               </div>
                             </div>
 
-                            {/* Advertisement Details - Right Side */}
-                            <div className="md:col-span-3 p-8 flex flex-col justify-center">
-                              <div className="mb-3">
-                                <span className="inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                                  {currentReklama.category || "Xizmat"}
+                            <div className="flex justify-center pt-2">
+                              <Button
+                                size="sm"
+                                className="bg-gradient-to-r from-[#003D7F] via-[#0059B2] to-[#007ACC] hover:from-[#002B5A] hover:via-[#004494] hover:to-[#005A99] text-white border-0 shadow-lg hover:shadow-2xl transition-all duration-300 font-semibold px-6 py-3 rounded-full hover:scale-105 transform group text-sm"
+                                onClick={() => {
+                                  console.log("[v0] Navigating to yangilik:", {
+                                    slug: apiData.yangiliklar[currentBookSlide]?.slug,
+                                    id: apiData.yangiliklar[currentBookSlide]?.id,
+                                    lang,
+                                  })
+                                  const slugToUse =
+                                    apiData.yangiliklar[currentBookSlide]?.slug ||
+                                    apiData.yangiliklar[currentBookSlide]?.id?.toString() ||
+                                    "1"
+                                  router.push(`/${lang}/yangiliklar/${slugToUse}`)
+                                }}
+                              >
+                                <span className="flex items-center gap-2">
+                                  Batafsil o'qish
+                                  <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
                                 </span>
-                              </div>
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
 
-                              <h3 className="text-2xl font-bold text-slate-800 mb-2 leading-tight">
-                                {currentReklama.title}
-                              </h3>
-
-                              <p className="text-slate-600 mb-2">{currentReklama.company || "Kompaniya"}</p>
-
-                              <p className="text-slate-500 text-sm mb-4">{currentReklama.description}</p>
-
-                              <div className="flex items-center gap-2 mb-4">
-                                <div className="flex items-center">
-                                  {[...Array(5)].map((_, i) => (
-                                    <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                                  ))}
-                                </div>
-                                <span className="text-sm text-slate-500">(4.8)</span>
-                              </div>
-
-                              {currentReklama.price && (
-                                <div className="flex items-baseline gap-3 mb-6">
-                                  <span className="text-2xl font-bold text-green-600">{currentReklama.price}</span>
-                                  {currentReklama.originalPrice && (
-                                    <span className="text-slate-400 line-through">{currentReklama.originalPrice}</span>
-                                  )}
+                    {/* Desktop: Three card layout (existing code) */}
+                    <div className="hidden lg:flex items-center justify-center h-full w-full">
+                      {/* Left slide (previous) */}
+                      <div className="absolute left-0 w-1/4 h-[520px] z-10 opacity-70 transform scale-95 transition-all duration-500">
+                        {apiData.yangiliklar.length > 1 && (
+                          <Card className="h-full overflow-hidden shadow-xl bg-white/95 backdrop-blur-sm border-0 rounded-3xl">
+                            <CardContent className="p-0 h-full flex flex-col">
+                              {apiData.yangiliklar[
+                                (currentBookSlide - 1 + apiData.yangiliklar.length) % apiData.yangiliklar.length
+                              ]?.media && (
+                                <div className="relative h-2/3 overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+                                  <img
+                                    src={`${API_BASE}${apiData.yangiliklar[(currentBookSlide - 1 + apiData.yangiliklar.length) % apiData.yangiliklar.length].media}`}
+                                    alt={
+                                      apiData.yangiliklar[
+                                        (currentBookSlide - 1 + apiData.yangiliklar.length) % apiData.yangiliklar.length
+                                      ]?.title || "Yangilik"
+                                    }
+                                    className="w-full h-full object-contain"
+                                  />
                                 </div>
                               )}
+                              <div className="p-4 flex-1 flex flex-col justify-center">
+                                <h3 className="text-base font-bold text-gray-800 line-clamp-2 text-center leading-tight">
+                                  {apiData.yangiliklar[
+                                    (currentBookSlide - 1 + apiData.yangiliklar.length) % apiData.yangiliklar.length
+                                  ]?.title || "Yangilik"}
+                                </h3>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        )}
+                      </div>
 
-                              <div className="flex gap-3">
-                                <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6">
-                                  Buyurtma berish
-                                </Button>
+                      {/* Main slide (current) */}
+                      <div className="w-1/2 h-[520px] z-20 transform scale-100 transition-all duration-500">
+                        <Card className="h-full overflow-hidden shadow-2xl bg-white border-0 rounded-3xl group hover:shadow-3xl transition-all duration-500">
+                          <CardContent className="p-0 h-full flex flex-col">
+                            {apiData.yangiliklar[currentBookSlide]?.media && (
+                              <div className="relative h-2/3 overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+                                <img
+                                  src={`${API_BASE}${apiData.yangiliklar[currentBookSlide].media}`}
+                                  alt={apiData.yangiliklar[currentBookSlide]?.title || "Yangilik"}
+                                  className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700"
+                                  onError={(e) => {
+                                    console.log(
+                                      "[v0] Yangilik image failed to load:",
+                                      apiData.yangiliklar[currentBookSlide]?.media,
+                                    )
+                                    const target = e.currentTarget as HTMLImageElement
+                                    target.style.display = "none"
+                                    const parent = target.parentElement
+                                    if (parent) {
+                                      parent.classList.add("bg-gradient-to-br", "from-[#003D7F]", "to-[#0059B2]")
+                                      parent.innerHTML = `
+                                        <div class="flex items-center justify-center h-full">
+                                          <div class="text-center text-white p-8">
+                                            <div class="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                                              <svg class="w-10 h-10" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                                              </svg>
+                                            </div>
+                                            <p class="text-lg font-semibold">Yangilik rasmi</p>
+                                          </div>
+                                        </div>
+                                      `
+                                    }
+                                  }}
+                                />
+                              </div>
+                            )}
+
+                            <div className="h-1/3 p-8 flex flex-col justify-between bg-gradient-to-br from-white via-gray-50/30 to-blue-50/20">
+                              <div className="flex-1">
+                                <h3 className="text-2xl font-bold mb-4 text-gray-800 leading-tight line-clamp-2">
+                                  {apiData.yangiliklar[currentBookSlide]?.title || "Yangilik"}
+                                </h3>
+                                <div className="text-gray-600 mb-6 leading-relaxed line-clamp-2 text-base">
+                                  <div
+                                    dangerouslySetInnerHTML={{
+                                      __html: apiData.yangiliklar[currentBookSlide]?.description || "",
+                                    }}
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="flex justify-center pt-2">
                                 <Button
-                                  variant="outline"
-                                  className="border-blue-600 text-blue-600 hover:bg-blue-50 bg-transparent"
+                                  size="lg"
+                                  className="bg-gradient-to-r from-[#003D7F] via-[#0059B2] to-[#007ACC] hover:from-[#002B5A] hover:via-[#004494] hover:to-[#005A99] text-white border-0 shadow-lg hover:shadow-2xl transition-all duration-300 font-semibold px-10 py-4 rounded-full hover:scale-105 transform group"
+                                  onClick={() => {
+                                    console.log("[v0] Navigating to yangilik:", {
+                                      slug: apiData.yangiliklar[currentBookSlide]?.slug,
+                                      id: apiData.yangiliklar[currentBookSlide]?.id,
+                                      lang,
+                                    })
+                                    const slugToUse =
+                                      apiData.yangiliklar[currentBookSlide]?.slug ||
+                                      apiData.yangiliklar[currentBookSlide]?.id?.toString() ||
+                                      "1"
+                                    router.push(`/${lang}/yangiliklar/${slugToUse}`)
+                                  }}
                                 >
-                                  Batafsil
+                                  <span className="flex items-center gap-3 text-lg">
+                                    Batafsil o'qish
+                                    <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
+                                  </span>
                                 </Button>
                               </div>
                             </div>
-                          </div>
-                        </div>
+                          </CardContent>
+                        </Card>
                       </div>
 
-                      {/* Next slide (right) */}
-                      <div className="w-1/4 opacity-50 scale-75 transition-all duration-500">
-                        <div className="bg-white rounded-xl shadow-md overflow-hidden">
-                          <div className="p-4">
-                            <img
-                              src={
-                                reklamaData[(currentBookSlide + 1) % reklamaData.length].image ||
-                                `/placeholder.svg?height=200&width=300&query=${encodeURIComponent(reklamaData[(currentBookSlide + 1) % reklamaData.length].title + " advertisement") || "/placeholder.svg"}`
-                              }
-                              alt={reklamaData[(currentBookSlide + 1) % reklamaData.length].title}
-                              className="w-full h-32 object-cover rounded-lg"
-                            />
-                            <h4 className="text-sm font-semibold mt-2 truncate">
-                              {reklamaData[(currentBookSlide + 1) % reklamaData.length].title}
-                            </h4>
-                          </div>
-                        </div>
+                      {/* Right slide (next) */}
+                      <div className="absolute right-0 w-1/4 h-[520px] z-10 opacity-70 transform scale-95 transition-all duration-500">
+                        {apiData.yangiliklar.length > 1 && (
+                          <Card className="h-full overflow-hidden shadow-xl bg-white/95 backdrop-blur-sm border-0 rounded-3xl">
+                            <CardContent className="p-0 h-full flex flex-col">
+                              {apiData.yangiliklar[(currentBookSlide + 1) % apiData.yangiliklar.length]?.media && (
+                                <div className="relative h-2/3 overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+                                  <img
+                                    src={`${API_BASE}${apiData.yangiliklar[(currentBookSlide + 1) % apiData.yangiliklar.length].media}`}
+                                    alt={
+                                      apiData.yangiliklar[(currentBookSlide + 1) % apiData.yangiliklar.length]?.title ||
+                                      "Yangilik"
+                                    }
+                                    className="w-full h-full object-contain"
+                                  />
+                                </div>
+                              )}
+                              <div className="p-4 flex-1 flex flex-col justify-center">
+                                <h3 className="text-base font-bold text-gray-800 line-clamp-2 text-center leading-tight">
+                                  {apiData.yangiliklar[(currentBookSlide + 1) % apiData.yangiliklar.length]?.title ||
+                                    "Yangilik"}
+                                </h3>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        )}
                       </div>
                     </div>
                   </div>
+                </div>
 
-                  {/* Dots Navigation */}
-                  <div className="flex justify-center mt-8 space-x-2">
-                    {reklamaData.map((_, index) => (
-                      <button
-                        key={index}
-                        onClick={() => setCurrentBookSlide(index)}
-                        className={`w-3 h-3 rounded-full transition-all ${
-                          index === currentBookSlide ? "bg-blue-600 scale-125" : "bg-slate-300 hover:bg-slate-400"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                </>
-              )
-            })()}
+                {apiData.yangiliklar.length > 1 && (
+                  <>
+                    <button
+                      onClick={prevBookSlide}
+                      className="absolute left-2 sm:left-4 lg:left-6 top-1/2 -translate-y-1/2 bg-white/95 backdrop-blur-md text-[#003D7F] p-3 sm:p-4 lg:p-5 rounded-full hover:bg-white hover:scale-110 transition-all duration-300 shadow-2xl z-30 border border-white/50 hover:border-[#003D7F]/20 hover:shadow-3xl"
+                    >
+                      <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7" />
+                    </button>
+                    <button
+                      onClick={nextBookSlide}
+                      className="absolute right-2 sm:right-4 lg:right-6 top-1/2 -translate-y-1/2 bg-white/95 backdrop-blur-md text-[#003D7F] p-3 sm:p-4 lg:p-5 rounded-full hover:bg-white hover:scale-110 transition-all duration-300 shadow-2xl z-30 border border-white/50 hover:border-[#003D7F]/20 hover:shadow-3xl"
+                    >
+                      <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7" />
+                    </button>
+
+                    <div className="absolute -bottom-4 sm:-bottom-6 left-1/2 -translate-x-1/2 flex space-x-2 sm:space-x-3 lg:space-x-4 z-30">
+                      {apiData.yangiliklar.map((_, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setCurrentBookSlide(index)}
+                          className={`w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 rounded-full transition-all duration-300 border-2 ${
+                            index === currentBookSlide
+                              ? "bg-[#003D7F] border-[#003D7F] scale-125 shadow-lg"
+                              : "bg-white border-gray-300 hover:bg-gray-100 hover:border-[#003D7F]/50 hover:scale-110"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
+              </>
+            ) : (
+              <div className="text-center py-16">
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-12 shadow-xl max-w-md mx-auto">
+                  <Bell className="w-20 h-20 text-gray-400 mx-auto mb-6" />
+                  <h3 className="text-2xl font-semibold text-gray-700 mb-4">Yangiliklar mavjud emas</h3>
+                  <p className="text-gray-500 leading-relaxed">
+                    Hozircha yangiliklar mavjud emas. Django serverni ishga tushiring yoki keyinroq qaytib keling.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </section>
 
-      {/* Subscription Section */}
-      <section className="py-16 bg-[#DCE3F8] relative z-10">
+      {/* Subscription section - Mobile responsive */}
+      <section className="py-8 sm:py-12 lg:py-16 bg-gradient-to-br from-[#003D7F] to-[#0059B2]">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4 text-black">Obuna xarid qilish</h2>
-            <p className="text-slate-600 max-w-2xl mx-auto">
-              Sizning ehtiyojlaringizga mos keladigan obuna rejasini tanlang va barcha premium xizmatlardan foydalaning
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-3 sm:mb-4 text-white">Obuna bo'ling</h2>
+            <p className="text-sm sm:text-base text-white/90 max-w-2xl mx-auto px-4">
+              Eng so'nggi yangiliklar va maxsus takliflardan xabardor bo'ling
             </p>
           </div>
-
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {/* Weekly Subscription */}
-            <Card className="relative bg-white hover:shadow-xl transition-all duration-300 border-2 hover:border-green-200">
-              <CardHeader className="text-center pb-4">
-                <div className="mx-auto mb-4 p-3 rounded-full bg-green-100">
-                  <Calendar className="h-8 w-8 text-green-600" />
-                </div>
-                <CardTitle className="text-xl font-semibold text-slate-800">Haftalik obuna</CardTitle>
-                <CardDescription className="text-slate-600">Qisqa muddatli loyihalar uchun ideal</CardDescription>
-              </CardHeader>
-              <CardContent className="text-center space-y-4">
-                <div className="mb-6">
-                  <div className="text-3xl font-bold text-slate-800 mb-1">49,000 so'm</div>
-                  <div className="text-sm text-slate-500">/ hafta</div>
-                </div>
-                <ul className="space-y-3 text-sm text-slate-600 text-left">
-                  <li className="flex items-center">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
-                    Barcha jurnallarga kirish
-                  </li>
-                  <li className="flex items-center">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>5 ta kitob yuklab olish
-                  </li>
-                  <li className="flex items-center">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
-                    Asosiy qo'llab-quvvatlash
-                  </li>
-                  <li className="flex items-center">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
-                    Konferensiya ma'lumotlari
-                  </li>
-                </ul>
-                <Button
-                  className="w-full bg-green-600 hover:bg-green-700 text-white mt-6"
-                  onClick={() => handleSubscriptionClick("weekly")}
-                >
-                  Haftalik obuna
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Monthly Subscription - Popular */}
-            <Card className="relative bg-white hover:shadow-xl transition-all duration-300 border-2 border-blue-500 transform scale-105">
-              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                <span className="bg-blue-500 text-white px-4 py-1 rounded-full text-sm font-medium">Eng mashhur</span>
-              </div>
-              <CardHeader className="text-center pb-4 pt-8">
-                <div className="mx-auto mb-4 p-3 rounded-full bg-blue-100">
-                  <BookOpen className="h-8 w-8 text-blue-600" />
-                </div>
-                <CardTitle className="text-xl font-semibold text-slate-800">Oylik obuna</CardTitle>
-                <CardDescription className="text-slate-600">Ko'pchilik tomonidan tanlanadigan reja</CardDescription>
-              </CardHeader>
-              <CardContent className="text-center space-y-4">
-                <div className="mb-6">
-                  <div className="text-3xl font-bold text-slate-800 mb-1">149,000 so'm</div>
-                  <div className="text-sm text-slate-500">/ oy</div>
-                  <div className="text-xs text-green-600 font-medium">25% tejash</div>
-                </div>
-                <ul className="space-y-3 text-sm text-slate-600 text-left">
-                  <li className="flex items-center">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
-                    Barcha jurnallarga cheksiz kirish
-                  </li>
-                  <li className="flex items-center">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
-                    Cheksiz kitob yuklab olish
-                  </li>
-                  <li className="flex items-center">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
-                    Premium qo'llab-quvvatlash
-                  </li>
-                  <li className="flex items-center">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
-                    Konferensiya chegirmalari
-                  </li>
-                  <li className="flex items-center">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
-                    Ekskluziv kontentlar
-                  </li>
-                </ul>
-                <Button
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white mt-6"
-                  onClick={() => handleSubscriptionClick("monthly")}
-                >
-                  Oylik obuna
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Annual Subscription */}
-            <Card className="relative bg-white hover:shadow-xl transition-all duration-300 border-2 hover:border-purple-200">
-              <CardHeader className="text-center pb-4">
-                <div className="mx-auto mb-4 p-3 rounded-full bg-purple-100">
-                  <Award className="h-8 w-8 text-purple-600" />
-                </div>
-                <CardTitle className="text-xl font-semibold text-slate-800">Yillik obuna</CardTitle>
-                <CardDescription className="text-slate-600">Maksimal tejash va imtiyozlar</CardDescription>
-              </CardHeader>
-              <CardContent className="text-center space-y-4">
-                <div className="mb-6">
-                  <div className="text-3xl font-bold text-slate-800 mb-1">1,299,000 so'm</div>
-                  <div className="text-sm text-slate-500">/ yil</div>
-                  <div className="text-xs text-green-600 font-medium">40% tejash</div>
-                </div>
-                <ul className="space-y-3 text-sm text-slate-600 text-left">
-                  <li className="flex items-center">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full mr-3"></div>
-                    Barcha premium xizmatlar
-                  </li>
-                  <li className="flex items-center">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full mr-3"></div>
-                    Cheksiz yuklab olish
-                  </li>
-                  <li className="flex items-center">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full mr-3"></div>
-                    VIP qo'llab-quvvatlash
-                  </li>
-                  <li className="flex items-center">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full mr-3"></div>
-                    Bepul konferensiya kirish
-                  </li>
-                  <li className="flex items-center">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full mr-3"></div>
-                    Shaxsiy konsultatsiya
-                  </li>
-                  <li className="flex items-center">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full mr-3"></div>
-                    Ilk navbatda yangiliklar
-                  </li>
-                </ul>
-                <Button
-                  className="w-full bg-purple-600 hover:bg-purple-700 text-white mt-6"
-                  onClick={() => handleSubscriptionClick("annual")}
-                >
-                  Yillik obuna
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Additional Info */}
-          <div className="text-center mt-12">
-            <p className="text-sm text-slate-500 mb-4">Barcha obunalar 7 kunlik bepul sinov muddati bilan keladi</p>
-            <div className="flex justify-center items-center space-x-6 text-xs text-slate-400">
-              <span className="flex items-center">
-                <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                Istalgan vaqtda bekor qilish
-              </span>
-              <span className="flex items-center">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
-                Xavfsiz to'lov
-              </span>
-              <span className="flex items-center">
-                <div className="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
-                24/7 qo'llab-quvvatlash
-              </span>
+          <div className="max-w-md mx-auto">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-2">
+              <input
+                type="email"
+                placeholder="Email manzilingizni kiriting"
+                className="flex-1 px-4 py-3 rounded-lg border-0 focus:ring-2 focus:ring-white/50 outline-none text-sm sm:text-base"
+              />
+              <Button className="bg-white text-[#003D7F] hover:bg-gray-100 px-6 py-3 font-semibold text-sm sm:text-base whitespace-nowrap">
+                Obuna bo'lish
+              </Button>
             </div>
           </div>
         </div>

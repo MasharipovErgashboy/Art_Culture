@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Eye, EyeOff, Mail, Lock } from "lucide-react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams, useParams } from "next/navigation"
 
 const AUTH_BASE = "http://127.0.0.1:8000/auth"
 
@@ -24,6 +24,11 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const params = useParams()
+
+  const lang = (params?.lang as string) || "uz"
+  const returnUrl = searchParams?.get("returnUrl")
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -54,7 +59,11 @@ export default function LoginPage() {
           }),
         )
 
-        router.push("/")
+        if (returnUrl) {
+          router.push(returnUrl)
+        } else {
+          router.push(`/${lang}`)
+        }
       } else {
         setError(JSON.stringify(data))
       }
@@ -136,7 +145,7 @@ export default function LoginPage() {
                     <input type="checkbox" className="rounded border-border" />
                     <span className="text-muted-foreground">Meni eslab qol</span>
                   </label>
-                  <Link href="/forgot-password" className="text-primary hover:underline">
+                  <Link href={`/${lang}/forgot-password`} className="text-primary hover:underline">
                     Parolni unutdingizmi?
                   </Link>
                 </div>
@@ -151,7 +160,7 @@ export default function LoginPage() {
               <div className="text-center">
                 <p className="text-muted-foreground">
                   Hisobingiz yo'qmi?{" "}
-                  <Link href="/register" className="text-primary hover:underline font-medium">
+                  <Link href={`/${lang}/register`} className="text-primary hover:underline font-medium">
                     Ro'yxatdan o'ting
                   </Link>
                 </p>
@@ -160,7 +169,7 @@ export default function LoginPage() {
               <div className="text-center">
                 <p className="text-xs text-muted-foreground">
                   Tizimga kirishda muammo bo'lsa,{" "}
-                  <Link href="/contact" className="text-primary hover:underline">
+                  <Link href={`/${lang}/contact`} className="text-primary hover:underline">
                     yordam xizmatiga murojaat qiling
                   </Link>
                 </p>

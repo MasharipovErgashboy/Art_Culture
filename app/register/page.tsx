@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Eye, EyeOff, Mail, Lock, User } from "lucide-react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useParams } from "next/navigation"
 
 const AUTH_BASE = "http://127.0.0.1:8000/auth"
 
@@ -27,6 +27,9 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const router = useRouter()
+  const params = useParams()
+
+  const lang = (params?.lang as string) || "uz"
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
@@ -36,21 +39,20 @@ export default function RegisterPage() {
     } else {
       const usernameRegex = /^[\w.@+-]+$/
       if (!usernameRegex.test(formData.username)) {
-        newErrors.username =
-          "Faqat harflar, raqamlar va @/./+/-/_ belgilariga ruxsat beriladi"
+        newErrors.username = "Faqat harflar, raqamlar va @/./+/-/_ belgilariga ruxsat beriladi"
       }
     }
 
     if (!formData.email.trim()) {
       newErrors.email = "Email majburiy"
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Email noto‘g‘ri formatda"
+      newErrors.email = "Email noto'g'ri formatda"
     }
 
     if (!formData.password) {
       newErrors.password = "Parol majburiy"
     } else if (formData.password.length < 6) {
-      newErrors.password = "Parol kamida 6 ta belgidan iborat bo‘lishi kerak"
+      newErrors.password = "Parol kamida 6 ta belgidan iborat bo'lishi kerak"
     }
 
     if (formData.password !== formData.password2) {
@@ -71,13 +73,13 @@ export default function RegisterPage() {
       const res = await fetch(`${AUTH_BASE}/register/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData), // ✅ endi password2 ham backendga to‘g‘ri yuboriladi
+        body: JSON.stringify(formData), // ✅ endi password2 ham backendga to'g'ri yuboriladi
       })
 
       const data = await res.json()
 
       if (res.ok) {
-        router.push("/login")
+        router.push(`/${lang}/login`)
       } else {
         if (data.email) setErrors({ email: data.email[0] })
         else if (data.username) setErrors({ username: data.username[0] })
@@ -86,7 +88,7 @@ export default function RegisterPage() {
         else setErrors({ general: JSON.stringify(data) })
       }
     } catch (err: any) {
-      setErrors({ general: err.message || "Serverga ulanib bo‘lmadi" })
+      setErrors({ general: err.message || "Serverga ulanib bo'lmadi" })
     } finally {
       setIsLoading(false)
     }
@@ -111,9 +113,9 @@ export default function RegisterPage() {
         <div className="container mx-auto max-w-md">
           <Card className="shadow-lg">
             <CardHeader className="text-center">
-              <CardTitle className="text-2xl font-bold text-foreground">Ro‘yxatdan o‘tish</CardTitle>
+              <CardTitle className="text-2xl font-bold text-foreground">Ro'yxatdan o'tish</CardTitle>
               <CardDescription className="text-muted-foreground">
-                Hisob yaratish uchun quyidagi formani to‘ldiring
+                Hisob yaratish uchun quyidagi formani to'ldiring
               </CardDescription>
             </CardHeader>
 
@@ -214,7 +216,7 @@ export default function RegisterPage() {
                 </div>
 
                 <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
-                  {isLoading ? "Ro‘yxatdan o‘tilmoqda..." : "Ro‘yxatdan o‘tish"}
+                  {isLoading ? "Ro'yxatdan o'tilmoqda..." : "Ro'yxatdan o'tish"}
                 </Button>
               </form>
 
@@ -223,7 +225,7 @@ export default function RegisterPage() {
               <div className="text-center">
                 <p className="text-muted-foreground">
                   Hisobingiz bormi?{" "}
-                  <Link href="/login" className="text-primary hover:underline font-medium">
+                  <Link href={`/${lang}/login`} className="text-primary hover:underline font-medium">
                     Tizimga kiring
                   </Link>
                 </p>

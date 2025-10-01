@@ -10,11 +10,7 @@ export function Footer() {
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
               {/* Logo joylashgan qismi */}
-              <img 
-                src="/logo.jpg" 
-                alt="Art&Culture Logo" 
-                className="h-10 w-10 rounded" 
-              />
+              <img src="/logo.jpg" alt="Art&Culture Logo" className="h-10 w-10 rounded" />
 
               {/* Matn qismi */}
               <div className="flex flex-col items-center font-bold text-primary leading-tight">
@@ -27,11 +23,8 @@ export function Footer() {
               </div>
             </div>
 
-            <p className="text-sm text-muted-foreground">
-              O'zbekiston Madaniyat va San'at Instituti
-            </p>
+            <p className="text-sm text-muted-foreground">O'zbekiston Madaniyat va San'at Instituti</p>
           </div>
-
 
           {/* Quick Links */}
           <div className="space-y-4">
@@ -47,7 +40,7 @@ export function Footer() {
                 Kitoblar
               </Link>
               <Link
-                href="/conference"
+                href="/conferences"
                 className="block text-sm text-muted-foreground hover:text-primary transition-colors"
               >
                 Konferensiya
@@ -71,7 +64,6 @@ export function Footer() {
               >
                 Bog'lanish
               </Link>
-
             </div>
           </div>
 
@@ -97,7 +89,7 @@ export function Footer() {
 
         <div className="border-t mt-8 pt-8 text-center">
           <p className="text-sm text-muted-foreground">
-            © 2024 Art&Culture  University Scientific Portal. Barcha huquqlar himoyalangan.
+            © 2025 Art&Culture University Scientific Portal. Barcha huquqlar himoyalangan.
           </p>
         </div>
       </div>
