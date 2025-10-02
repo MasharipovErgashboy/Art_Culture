@@ -1,6 +1,7 @@
 "use client"
 
 import type React from "react"
+import { useState } from "react"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -20,6 +21,9 @@ export function ConferenceCard({ conference, lang }: ConferenceCardProps) {
   const imageUrl = conference.image ? `http://127.0.0.1:8000${conference.image}` : null
   const conferenceSlug = getSlugForLang(conference, lang)
 
+  const [imageError, setImageError] = useState(false)
+  const [imageLoaded, setImageLoaded] = useState(false)
+
   const handleConferenceAccess = (e: React.MouseEvent) => {
     e.preventDefault()
     router.push(`/${lang}/conferences/${conferenceSlug}`)
@@ -34,22 +38,38 @@ export function ConferenceCard({ conference, lang }: ConferenceCardProps) {
     })
   }
 
+  const handleImageError = () => {
+    console.log(`[v0] Conference image failed to load: ${conference.name}`)
+    setImageError(true)
+  }
+
+  const handleImageLoad = () => {
+    console.log(`[v0] Conference image loaded successfully: ${conference.name}`)
+    setImageLoaded(true)
+  }
+
   return (
     <Card className="group hover:shadow-xl transition-all duration-300 border hover:border-primary/30 hover:scale-[1.02] bg-white/80 backdrop-blur-sm">
-      {imageUrl && (
+      {imageUrl && !imageError ? (
         <div className="relative h-72 w-full overflow-hidden rounded-t-lg bg-gradient-to-br from-slate-100 to-slate-200">
+          {!imageLoaded && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          )}
           <Image
             src={imageUrl || "/placeholder.svg"}
             alt={conference.name}
             fill
-            className="object-contain p-4 group-hover:scale-105 transition-transform duration-500"
+            unoptimized
+            className="object-cover group-hover:scale-105 transition-transform duration-500"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            onError={handleImageError}
+            onLoad={handleImageLoad}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         </div>
-      )}
-
-      {!imageUrl && (
+      ) : (
         <div className="relative h-72 w-full overflow-hidden rounded-t-lg bg-gradient-to-br from-primary/10 to-primary/20 flex items-center justify-center">
           <div className="text-center">
             <Calendar className="h-16 w-16 text-primary/40 mx-auto mb-4" />

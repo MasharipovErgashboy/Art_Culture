@@ -84,4 +84,4 @@ export default function JournalsPage() {
       <Footer />
     </div>
   )
-}
+} 

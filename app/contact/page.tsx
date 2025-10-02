@@ -168,11 +168,9 @@ export default function ContactPage() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-
-
       {/* Main Content */}
-      <section className="py-12 sm:py-16 responsive-padding">
-        <div className="container mx-auto">
+      <section className="py-12 sm:py-16 px-6 md:px-8 lg:px-12">
+        <div className="container mx-auto max-w-7xl">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 mb-12 sm:mb-16">
             {/* Contact Form */}
             <div>

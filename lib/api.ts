@@ -31,6 +31,10 @@ export interface Journal {
   issues_count: number
   latest_issues?: JournalIssue[] // API includes this field
   image?: string // Added image field for journal images
+  issn?: string // International Standard Serial Number
+  about?: string // About the journal (HTML content)
+  editorial_team?: string // Editorial team information (HTML content)
+  article_submission?: string // Article submission guidelines (HTML content)
 }
 
 export interface JournalIssue {
@@ -239,7 +243,10 @@ export async function fetchConferences(
   results: Conference[]
 }> {
   try {
-    const response = await fetchWithTimeout(`${API_BASE}/${lang}/conferences/?page=${page}`, {
+    const url = `${API_BASE}/${lang}/conferences/?page=${page}`
+    console.log("[v0] Fetching conferences from URL:", url)
+
+    const response = await fetchWithTimeout(url, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -247,15 +254,34 @@ export async function fetchConferences(
         "Accept-Language": lang,
       },
       mode: "cors",
+      cache: "no-store", // Added to prevent caching issues
     })
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)
     }
 
-    return await response.json()
+    const data = await response.json()
+    console.log("[v0] Conferences API response:", data)
+    console.log("[v0] Number of conferences:", data.results?.length || 0)
+
+    if (data.results) {
+      data.results.forEach((conf: Conference) => {
+        console.log(`[v0] Conference: ${conf.name}`)
+        console.log(`[v0] Image path: ${conf.image}`)
+        console.log(`[v0] Full image URL: ${API_BASE}${conf.image}`)
+      })
+    }
+
+    return data
   } catch (error) {
-    console.error("Error fetching conferences:", error)
+    console.error("[v0] Error fetching conferences:", error)
+    if (error instanceof TypeError && error.message.includes("fetch")) {
+      console.error("[v0] Network error - possible causes:")
+      console.error("  1. Django server is not running on http://127.0.0.1:8000")
+      console.error("  2. CORS is not configured properly on Django backend")
+      console.error("  3. Check Django CORS settings: CORS_ALLOWED_ORIGINS should include http://localhost:3000")
+    }
     throw error
   }
 }

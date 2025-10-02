@@ -67,20 +67,19 @@ export default function AboutPage() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-
       {/* Main Content */}
-      <section className="py-12 sm:py-16 responsive-padding">
-        <div className="container mx-auto">
+      <section className="py-12 sm:py-16 px-6 md:px-8 lg:px-12">
+        <div className="container mx-auto max-w-7xl">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 mb-12 sm:mb-16">
             {/* About Text */}
             <div className="space-y-6">
               <div>
                 <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-4 text-balance">Loyihaning maqsadi</h2>
                 <p className="text-muted-foreground leading-relaxed responsive-text">
-                  Art&Culture portali O'zbekiston Madaniyat va San'at Instituti tomonidan 2020-yilda boshlangan va madaniyat,
-                  san'at sohasidagi ilmiy tadqiqotlarni rivojlantirish, saqlash va tarqatishga qaratilgan. Portal
-                  talabalar, tadqiqotchilar, olimlar va madaniyat sohasida faoliyat yurituvchi barcha mutaxassislar
-                  uchun mo'ljallangan.
+                  Art&Culture portali O'zbekiston Madaniyat va San'at Instituti tomonidan 2020-yilda boshlangan va
+                  madaniyat, san'at sohasidagi ilmiy tadqiqotlarni rivojlantirish, saqlash va tarqatishga qaratilgan.
+                  Portal talabalar, tadqiqotchilar, olimlar va madaniyat sohasida faoliyat yurituvchi barcha
+                  mutaxassislar uchun mo'ljallangan.
                 </p>
               </div>
 

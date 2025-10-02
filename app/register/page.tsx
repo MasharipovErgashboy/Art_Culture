@@ -109,25 +109,27 @@ export default function RegisterPage() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <section className="py-12 px-4">
+      <section className="py-8 sm:py-12 px-4">
         <div className="container mx-auto max-w-md">
           <Card className="shadow-lg">
-            <CardHeader className="text-center">
-              <CardTitle className="text-2xl font-bold text-foreground">Ro'yxatdan o'tish</CardTitle>
-              <CardDescription className="text-muted-foreground">
+            <CardHeader className="text-center space-y-2">
+              <CardTitle className="text-xl sm:text-2xl font-bold text-foreground">Ro'yxatdan o'tish</CardTitle>
+              <CardDescription className="text-sm sm:text-base text-muted-foreground">
                 Hisob yaratish uchun quyidagi formani to'ldiring
               </CardDescription>
             </CardHeader>
 
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-4 sm:space-y-6">
               <form onSubmit={handleSubmit} className="space-y-4">
                 {errors.general && (
-                  <p className="text-sm text-destructive bg-destructive/10 p-2 rounded">{errors.general}</p>
+                  <p className="text-xs sm:text-sm text-destructive bg-destructive/10 p-2 rounded">{errors.general}</p>
                 )}
 
                 {/* Username */}
                 <div className="space-y-2">
-                  <Label htmlFor="username">Foydalanuvchi nomi</Label>
+                  <Label htmlFor="username" className="text-sm sm:text-base">
+                    Foydalanuvchi nomi
+                  </Label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
                     <Input
@@ -137,16 +139,18 @@ export default function RegisterPage() {
                       placeholder="Foydalanuvchi nomingiz"
                       value={formData.username}
                       onChange={handleChange}
-                      className="pl-10"
+                      className="pl-10 text-sm sm:text-base"
                       required
                     />
                   </div>
-                  {errors.username && <p className="text-sm text-destructive">{errors.username}</p>}
+                  {errors.username && <p className="text-xs sm:text-sm text-destructive">{errors.username}</p>}
                 </div>
 
                 {/* Email */}
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email" className="text-sm sm:text-base">
+                    Email
+                  </Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
                     <Input
@@ -156,16 +160,18 @@ export default function RegisterPage() {
                       placeholder="example@email.com"
                       value={formData.email}
                       onChange={handleChange}
-                      className="pl-10"
+                      className="pl-10 text-sm sm:text-base"
                       required
                     />
                   </div>
-                  {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+                  {errors.email && <p className="text-xs sm:text-sm text-destructive">{errors.email}</p>}
                 </div>
 
                 {/* Password */}
                 <div className="space-y-2">
-                  <Label htmlFor="password">Parol</Label>
+                  <Label htmlFor="password" className="text-sm sm:text-base">
+                    Parol
+                  </Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
                     <Input
@@ -175,7 +181,7 @@ export default function RegisterPage() {
                       placeholder="Parol kiriting"
                       value={formData.password}
                       onChange={handleChange}
-                      className="pl-10 pr-10"
+                      className="pl-10 pr-10 text-sm sm:text-base"
                       required
                     />
                     <button
@@ -186,12 +192,14 @@ export default function RegisterPage() {
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
-                  {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
+                  {errors.password && <p className="text-xs sm:text-sm text-destructive">{errors.password}</p>}
                 </div>
 
                 {/* Confirm Password */}
                 <div className="space-y-2">
-                  <Label htmlFor="password2">Parolni tasdiqlang</Label>
+                  <Label htmlFor="password2" className="text-sm sm:text-base">
+                    Parolni tasdiqlang
+                  </Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
                     <Input
@@ -201,7 +209,7 @@ export default function RegisterPage() {
                       placeholder="Parolni qayta kiriting"
                       value={formData.password2}
                       onChange={handleChange}
-                      className="pl-10 pr-10"
+                      className="pl-10 pr-10 text-sm sm:text-base"
                       required
                     />
                     <button
@@ -212,10 +220,10 @@ export default function RegisterPage() {
                       {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
-                  {errors.password2 && <p className="text-sm text-destructive">{errors.password2}</p>}
+                  {errors.password2 && <p className="text-xs sm:text-sm text-destructive">{errors.password2}</p>}
                 </div>
 
-                <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+                <Button type="submit" className="w-full text-sm sm:text-base" size="lg" disabled={isLoading}>
                   {isLoading ? "Ro'yxatdan o'tilmoqda..." : "Ro'yxatdan o'tish"}
                 </Button>
               </form>
@@ -223,7 +231,7 @@ export default function RegisterPage() {
               <Separator />
 
               <div className="text-center">
-                <p className="text-muted-foreground">
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   Hisobingiz bormi?{" "}
                   <Link href={`/${lang}/login`} className="text-primary hover:underline font-medium">
                     Tizimga kiring

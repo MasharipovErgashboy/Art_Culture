@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import Image from "next/image"
 
+const API_BASE = "http://127.0.0.1:8000"
+
 export default function ConferenceDetailPage() {
   const params = useParams()
   const lang = (params.lang as string) || "en"
@@ -20,16 +22,28 @@ export default function ConferenceDetailPage() {
   const [conference, setConference] = useState<Conference | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [imageError, setImageError] = useState(false)
+  const [imageLoaded, setImageLoaded] = useState(false)
 
   useEffect(() => {
     const loadConference = async () => {
       try {
         setIsLoading(true)
         setError(null)
+        console.log("[v0] Loading conference detail...")
+        console.log("[v0] Slug:", slug)
+        console.log("[v0] Language:", lang)
+        console.log("[v0] API URL:", `${API_BASE}/${lang}/conferences/${slug}/`)
+
         const data = await fetchConference(slug, lang)
+        console.log("[v0] Conference data received:", data)
+        console.log("[v0] Conference name:", data.name)
+        console.log("[v0] Conference image:", data.image)
+        console.log("[v0] Full image URL:", data.image ? `${API_BASE}${data.image}` : "No image")
+
         setConference(data)
       } catch (err) {
-        console.error("Error loading conference:", err)
+        console.error("[v0] Error loading conference:", err)
         if (err instanceof TypeError && err.message.includes("fetch")) {
           setError("Django server bilan bog'lanish xatoligi. Server ishlamayapti yoki CORS sozlamalari noto'g'ri.")
         } else {
@@ -56,9 +70,22 @@ export default function ConferenceDetailPage() {
 
   const handlePdfDownload = () => {
     if (conference?.pdf) {
-      const pdfUrl = `http://127.0.0.1:8000${conference.pdf}`
+      const pdfUrl = `${API_BASE}${conference.pdf}`
+      console.log("[v0] Opening PDF:", pdfUrl)
       window.open(pdfUrl, "_blank")
     }
+  }
+
+  const handleImageError = () => {
+    console.error(`[v0] Conference detail image failed to load: ${conference?.name}`)
+    console.error(`[v0] Image URL:`, conference?.image ? `${API_BASE}${conference.image}` : "No image")
+    setImageError(true)
+  }
+
+  const handleImageLoad = () => {
+    console.log(`[v0] Conference detail image loaded successfully: ${conference?.name}`)
+    console.log(`[v0] Image URL:`, conference?.image ? `${API_BASE}${conference.image}` : "No image")
+    setImageLoaded(true)
   }
 
   if (isLoading) {
@@ -104,7 +131,7 @@ export default function ConferenceDetailPage() {
     )
   }
 
-  const imageUrl = conference.image ? `http://127.0.0.1:8000${conference.image}` : null
+  const imageUrl = conference.image ? `${API_BASE}${conference.image}` : null
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -123,21 +150,41 @@ export default function ConferenceDetailPage() {
           </div>
 
           {/* Image */}
-          {imageUrl && (
+          {imageUrl && !imageError ? (
             <Card className="mb-8">
               <CardContent className="p-0">
                 <div className="relative w-full aspect-video overflow-hidden rounded-lg bg-gradient-to-br from-slate-100 to-slate-200">
+                  {!imageLoaded && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                    </div>
+                  )}
                   <Image
                     src={imageUrl || "/placeholder.svg"}
                     alt={conference.name}
                     fill
-                    className="object-contain p-4"
+                    unoptimized
+                    className="object-cover"
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 60vw"
+                    onError={handleImageError}
+                    onLoad={handleImageLoad}
+                    priority
                   />
                 </div>
               </CardContent>
             </Card>
-          )}
+          ) : imageUrl && imageError ? (
+            <Card className="mb-8">
+              <CardContent className="p-0">
+                <div className="relative w-full aspect-video overflow-hidden rounded-lg bg-gradient-to-br from-primary/10 to-primary/20 flex items-center justify-center">
+                  <div className="text-center">
+                    <Calendar className="h-16 w-16 text-primary/40 mx-auto mb-4" />
+                    <p className="text-primary/60 font-medium">Rasm yuklanmadi</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ) : null}
 
           {/* Conference Details */}
           <Card className="mb-8">

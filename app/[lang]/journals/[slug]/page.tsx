@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { fetchJournalDetail, fetchJournalIssues, type Journal, type JournalIssue } from "@/lib/api"
-import { Calendar, User, BookOpen, ArrowLeft, AlertCircle } from "lucide-react"
+import { Calendar, User, BookOpen, ArrowLeft, AlertCircle, Users, FileText } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import Link from "next/link"
 import Image from "next/image"
@@ -26,6 +26,8 @@ export default function JournalDetailPage() {
   const [issues, setIssues] = useState<JournalIssue[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [imageError, setImageError] = useState(false)
+  const [imageLoaded, setImageLoaded] = useState(false)
 
   useEffect(() => {
     const loadJournalData = async () => {
@@ -34,6 +36,14 @@ export default function JournalDetailPage() {
         setError(null)
 
         const journalData = await fetchJournalDetail(slug, lang)
+        console.log("[v0] Journal data loaded:", journalData)
+        console.log("[v0] Journal image:", journalData.image)
+        console.log("[v0] Journal about field:", journalData.about)
+        console.log("[v0] Journal editorial_team field:", journalData.editorial_team)
+        console.log("[v0] Journal article_submission field:", journalData.article_submission)
+        console.log("[v0] About exists?", !!journalData.about)
+        console.log("[v0] Editorial team exists?", !!journalData.editorial_team)
+        console.log("[v0] Article submission exists?", !!journalData.article_submission)
         setJournal(journalData)
 
         const issuesData = await fetchJournalIssues(journalData.name, lang)
@@ -98,6 +108,8 @@ export default function JournalDetailPage() {
     )
   }
 
+  const imageUrl = journal.image ? `http://127.0.0.1:8000${journal.image}` : null
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -124,20 +136,43 @@ export default function JournalDetailPage() {
             <div className="lg:col-span-1">
               <Card className="sticky top-8">
                 <CardContent className="p-6">
-                  <div className="aspect-[3/4] relative mb-6 overflow-hidden rounded-lg bg-gradient-to-br from-blue-50 to-purple-50">
-                    {journal.image ? (
+                  {imageUrl && !imageError ? (
+                    <div className="relative aspect-[3/4] w-full overflow-hidden rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 mb-6">
+                      {!imageLoaded && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="animate-pulse">
+                            <BookOpen className="h-12 w-12 text-primary/30" />
+                          </div>
+                        </div>
+                      )}
                       <Image
-                        src={`http://127.0.0.1:8000${journal.image}`}
+                        src={imageUrl || "/placeholder.svg"}
                         alt={journal.name}
                         fill
-                        className="object-contain p-2"
+                        className={`object-cover transition-opacity duration-300 ${
+                          imageLoaded ? "opacity-100" : "opacity-0"
+                        }`}
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        unoptimized
+                        priority={false}
+                        onError={() => {
+                          console.log("[v0] Image failed to load:", imageUrl)
+                          setImageError(true)
+                        }}
+                        onLoad={() => {
+                          console.log("[v0] Image loaded successfully:", imageUrl)
+                          setImageLoaded(true)
+                        }}
                       />
-                    ) : (
-                      <div className="flex items-center justify-center h-full">
-                        <BookOpen className="h-16 w-16 text-muted-foreground" />
+                    </div>
+                  ) : (
+                    <div className="aspect-[3/4] relative mb-6 overflow-hidden rounded-lg bg-gradient-to-br from-primary/10 via-primary/5 to-primary/20 flex items-center justify-center">
+                      <div className="text-center">
+                        <BookOpen className="h-16 w-16 text-primary/40 mx-auto mb-2" />
+                        <p className="text-sm text-primary/60 font-medium">Rasm mavjud emas</p>
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
 
                   <div className="space-y-4">
                     <div>
@@ -195,23 +230,70 @@ export default function JournalDetailPage() {
                 </div>
               </div>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Jurnal haqida</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {journal.description ? (
+              {journal.about && journal.about.trim().length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <BookOpen className="h-5 w-5" />
+                      Jurnal haqida
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div
+                      className="text-muted-foreground leading-relaxed prose prose-lg max-w-none"
+                      dangerouslySetInnerHTML={{ __html: journal.about }}
+                    />
+                  </CardContent>
+                </Card>
+              )}
+
+              {journal.editorial_team && journal.editorial_team.trim().length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Users className="h-5 w-5" />
+                      Tahririyat jamoasi
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div
+                      className="text-muted-foreground leading-relaxed prose prose-lg max-w-none"
+                      dangerouslySetInnerHTML={{ __html: journal.editorial_team }}
+                    />
+                  </CardContent>
+                </Card>
+              )}
+
+              {journal.article_submission && journal.article_submission.trim().length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="h-5 w-5" />
+                      Maqola yuborish
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div
+                      className="text-muted-foreground leading-relaxed prose prose-lg max-w-none"
+                      dangerouslySetInnerHTML={{ __html: journal.article_submission }}
+                    />
+                  </CardContent>
+                </Card>
+              )}
+
+              {!journal.about && journal.description && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Jurnal haqida</CardTitle>
+                  </CardHeader>
+                  <CardContent>
                     <div
                       className="text-muted-foreground leading-relaxed prose prose-lg max-w-none"
                       dangerouslySetInnerHTML={{ __html: journal.description }}
                     />
-                  ) : (
-                    <p className="text-muted-foreground leading-relaxed">
-                      Bu jurnal haqida batafsil ma'lumot mavjud emas.
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              )}
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
