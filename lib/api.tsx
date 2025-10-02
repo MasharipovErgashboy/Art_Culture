@@ -22,19 +22,98 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout 
   }
 }
 
+export interface Reklama {
+  id?: number
+  title: string
+  slug_uz: string
+  slug_en: string
+  slug_ru: string
+  media: string | null
+  homepage_content: string | null
+  description: string | null
+  author?: string
+}
+
+export async function fetchReklama(slug: string, lang = "en"): Promise<Reklama> {
+  try {
+    const url = `${API_BASE}/${lang}/reklama/${slug}/`
+    console.log("[v0] Fetching reklama from URL:", url)
+    console.log("[v0] Slug:", slug)
+    console.log("[v0] Language:", lang)
+
+    const response = await fetchWithTimeout(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "Accept-Language": lang,
+      },
+      mode: "cors",
+    })
+
+    if (!response.ok) {
+      console.error("[v0] API response not OK:", response.status, response.statusText)
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
+    console.log("[v0] Reklama API response:", data)
+
+    // API returns {detail: {...}} or just the object
+    return data.detail || data
+  } catch (error) {
+    console.error("[v0] Error fetching reklama:", error)
+    throw error
+  }
+}
+
+export function getSlugForLang(item: { slug_uz?: string; slug_en?: string; slug_ru?: string }, lang: string): string {
+  console.log("[v0] getSlugForLang called with:", { item, lang })
+
+  let slug: string | undefined
+
+  switch (lang) {
+    case "uz":
+      slug = item.slug_uz
+      break
+    case "en":
+      slug = item.slug_en
+      break
+    case "ru":
+      slug = item.slug_ru
+      break
+    default:
+      slug = item.slug_uz
+  }
+
+  // If the requested language slug is missing, try fallbacks
+  if (!slug) {
+    console.warn(`[v0] Slug for language '${lang}' is missing, trying fallbacks...`)
+    slug = item.slug_uz || item.slug_en || item.slug_ru
+  }
+
+  if (!slug) {
+    console.error("[v0] No valid slug found in item:", item)
+    throw new Error(`No valid slug found for language: ${lang}`)
+  }
+
+  console.log(`[v0] Returning slug for ${lang}:`, slug)
+  return slug
+}
+
 export interface Journal {
   slug_uz: string
   slug_en: string
   slug_ru: string
-  name: string // API returns 'name', not 'title'
+  name: string
   description: string
   issues_count: number
-  latest_issues?: JournalIssue[] // API includes this field
-  image?: string // Added image field for journal images
-  issn?: string // International Standard Serial Number
-  about?: string // About the journal (HTML content)
-  editorial_team?: string // Editorial team information (HTML content)
-  article_submission?: string // Article submission guidelines (HTML content)
+  latest_issues?: JournalIssue[]
+  image?: string
+  issn?: string
+  about?: string
+  editorial_team?: string
+  article_submission?: string
 }
 
 export interface JournalIssue {
@@ -114,9 +193,6 @@ export async function fetchJournalIssues(journalName: string, lang = "en"): Prom
   try {
     const encodedJournalName = encodeURIComponent(journalName)
     const url = `${API_BASE}/${lang}/journal-soni/?journal_name=${encodedJournalName}`
-    console.log("[v0] Fetching issues from URL:", url)
-    console.log("[v0] Original journal name:", journalName)
-    console.log("[v0] Encoded journal name:", encodedJournalName)
 
     const response = await fetchWithTimeout(url, {
       method: "GET",
@@ -133,19 +209,7 @@ export async function fetchJournalIssues(journalName: string, lang = "en"): Prom
     }
 
     const data = await response.json()
-    console.log("[v0] Raw issues response:", data)
-    console.log("[v0] Number of issues returned:", data.length)
-
-    const filteredIssues = data.filter((issue: JournalIssue) => {
-      const matches = issue.journal_name === journalName
-      console.log(
-        `[v0] Issue "${issue.name}" - journal_name: "${issue.journal_name}" - matches "${journalName}": ${matches}`,
-      )
-      return matches
-    })
-
-    console.log("[v0] Filtered issues count:", filteredIssues.length)
-    return filteredIssues
+    return data.filter((issue: JournalIssue) => issue.journal_name === journalName)
   } catch (error) {
     console.error("Error fetching journal issues:", error)
     throw error
@@ -181,9 +245,6 @@ export async function fetchJournalSections(journalIssueName: string, lang = "en"
   try {
     const encodedIssueName = encodeURIComponent(journalIssueName)
     const url = `${API_BASE}/${lang}/journal-sections/?journal_issue_name=${encodedIssueName}`
-    console.log("[v0] Fetching sections from URL:", url)
-    console.log("[v0] Original issue name:", journalIssueName)
-    console.log("[v0] Encoded issue name:", encodedIssueName)
 
     const response = await fetchWithTimeout(url, {
       method: "GET",
@@ -200,19 +261,7 @@ export async function fetchJournalSections(journalIssueName: string, lang = "en"
     }
 
     const data = await response.json()
-    console.log("[v0] Raw sections response:", data)
-    console.log("[v0] Number of sections returned:", data.length)
-
-    const filteredSections = data.filter((section: JournalSection) => {
-      const matches = section.journal_issue_name === journalIssueName
-      console.log(
-        `[v0] Section by "${section.author_name}" - journal_issue_name: "${section.journal_issue_name}" - matches "${journalIssueName}": ${matches}`,
-      )
-      return matches
-    })
-
-    console.log("[v0] Filtered sections count:", filteredSections.length)
-    return filteredSections
+    return data.filter((section: JournalSection) => section.journal_issue_name === journalIssueName)
   } catch (error) {
     console.error("Error fetching journal sections:", error)
     throw error
@@ -244,7 +293,6 @@ export async function fetchConferences(
 }> {
   try {
     const url = `${API_BASE}/${lang}/conferences/?page=${page}`
-    console.log("[v0] Fetching conferences from URL:", url)
 
     const response = await fetchWithTimeout(url, {
       method: "GET",
@@ -254,34 +302,16 @@ export async function fetchConferences(
         "Accept-Language": lang,
       },
       mode: "cors",
-      cache: "no-store", // Added to prevent caching issues
+      cache: "no-store",
     })
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)
     }
 
-    const data = await response.json()
-    console.log("[v0] Conferences API response:", data)
-    console.log("[v0] Number of conferences:", data.results?.length || 0)
-
-    if (data.results) {
-      data.results.forEach((conf: Conference) => {
-        console.log(`[v0] Conference: ${conf.name}`)
-        console.log(`[v0] Image path: ${conf.image}`)
-        console.log(`[v0] Full image URL: ${API_BASE}${conf.image}`)
-      })
-    }
-
-    return data
+    return await response.json()
   } catch (error) {
     console.error("[v0] Error fetching conferences:", error)
-    if (error instanceof TypeError && error.message.includes("fetch")) {
-      console.error("[v0] Network error - possible causes:")
-      console.error("  1. Django server is not running on http://127.0.0.1:8000")
-      console.error("  2. CORS is not configured properly on Django backend")
-      console.error("  3. Check Django CORS settings: CORS_ALLOWED_ORIGINS should include http://localhost:3000")
-    }
     throw error
   }
 }
@@ -324,9 +354,6 @@ export interface Yangilik {
 export async function fetchYangilik(slug: string, lang = "en"): Promise<Yangilik> {
   try {
     const url = `${API_BASE}/${lang}/yangiliklar/${slug}/`
-    console.log("[v0] Fetching yangilik from URL:", url)
-    console.log("[v0] Slug:", slug)
-    console.log("[v0] Language:", lang)
 
     const response = await fetchWithTimeout(url, {
       method: "GET",
@@ -339,101 +366,13 @@ export async function fetchYangilik(slug: string, lang = "en"): Promise<Yangilik
     })
 
     if (!response.ok) {
-      console.error("[v0] API response not OK:", response.status, response.statusText)
       throw new Error(`HTTP error! status: ${response.status}`)
     }
 
     const data = await response.json()
-    console.log("[v0] Yangilik API response:", data)
-
-    if (!data.detail) {
-      console.error("[v0] API response missing detail field:", data)
-      throw new Error("Invalid API response: missing detail field")
-    }
-
-    // API returns {detail: {...}, 10_data: [...]}
     return data.detail
   } catch (error) {
     console.error("[v0] Error fetching yangilik:", error)
     throw error
   }
-}
-
-export interface Reklama {
-  id?: number
-  title: string
-  slug_uz: string
-  slug_en: string
-  slug_ru: string
-  media: string | null
-  homepage_content: string | null
-  description: string | null
-  author?: string
-}
-
-export async function fetchReklama(slug: string, lang = "en"): Promise<Reklama> {
-  try {
-    const url = `${API_BASE}/${lang}/reklama/${slug}/`
-    console.log("[v0] Fetching reklama from URL:", url)
-    console.log("[v0] Slug:", slug)
-    console.log("[v0] Language:", lang)
-
-    const response = await fetchWithTimeout(url, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        "Accept-Language": lang,
-      },
-      mode: "cors",
-    })
-
-    if (!response.ok) {
-      console.error("[v0] API response not OK:", response.status, response.statusText)
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
-
-    const data = await response.json()
-    console.log("[v0] Reklama API response:", data)
-
-    // API returns {detail: {...}} or just the object
-    return data.detail || data
-  } catch (error) {
-    console.error("[v0] Error fetching reklama:", error)
-    throw error
-  }
-}
-
-export function getSlugForLang(item: { slug_uz?: string; slug_en?: string; slug_ru?: string }, lang: string): string {
-  console.log("[v0] getSlugForLang called with:", { item, lang })
-
-  let slug: string | undefined
-
-  switch (lang) {
-    case "uz":
-      slug = item.slug_uz
-      break
-    case "en":
-      slug = item.slug_en
-      break
-    case "ru":
-      slug = item.slug_ru
-      break
-    default:
-      slug = item.slug_uz
-  }
-
-  // If the requested language slug is missing, try fallbacks
-  if (!slug) {
-    console.warn(`[v0] Slug for language '${lang}' is missing, trying fallbacks...`)
-    slug = item.slug_uz || item.slug_en || item.slug_ru
-  }
-
-  if (!slug) {
-    console.error("[v0] No valid slug found in item:", item)
-    throw new Error(`No valid slug found for language: ${lang}`)
-  }
-
-  console.log(`[v0] Returning slug for ${lang}:`, slug)
-  return slug
 }

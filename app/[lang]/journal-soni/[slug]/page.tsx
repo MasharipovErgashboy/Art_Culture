@@ -14,11 +14,51 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import Link from "next/link"
 import { decodeHtmlEntities } from "@/lib/utils"
 
+const translations = {
+  uz: {
+    loading: "Jurnal soni ma'lumotlari yuklanmoqda...",
+    goBack: "Orqaga qaytish",
+    sections: "bo'lim",
+    authors: "muallif",
+    downloadPdf: "To'liq PDF ni yuklab olish",
+    sectionsAndAuthors: "Bo'limlar va mualliflar",
+    noDescription: "Tavsif mavjud emas",
+    notFound: "Jurnal soni topilmadi",
+    notFoundDesc: "So'ralgan jurnal soni mavjud emas yoki o'chirilgan.",
+    returnToJournals: "Jurnallar ro'yxatiga qaytish",
+  },
+  ru: {
+    loading: "Загрузка информации о выпуске журнала...",
+    goBack: "Назад",
+    sections: "разделов",
+    authors: "авторов",
+    downloadPdf: "Скачать полный PDF",
+    sectionsAndAuthors: "Разделы и авторы",
+    noDescription: "Описание недоступно",
+    notFound: "Выпуск журнала не найден",
+    notFoundDesc: "Запрашиваемый выпуск не существует или был удален.",
+    returnToJournals: "Вернуться к списку журналов",
+  },
+  en: {
+    loading: "Loading journal issue information...",
+    goBack: "Go Back",
+    sections: "sections",
+    authors: "authors",
+    downloadPdf: "Download Full PDF",
+    sectionsAndAuthors: "Sections and Authors",
+    noDescription: "No description available",
+    notFound: "Journal issue not found",
+    notFoundDesc: "The requested journal issue does not exist or has been deleted.",
+    returnToJournals: "Return to Journals List",
+  },
+}
+
 export default function JournalIssueDetailPage() {
   const params = useParams()
   const router = useRouter()
   const lang = (params.lang as string) || "en"
   const slug = params.slug as string
+  const t = translations[lang as keyof typeof translations] || translations.uz
 
   const [issue, setIssue] = useState<JournalIssue | null>(null)
   const [sections, setSections] = useState<JournalSection[]>([])
@@ -61,7 +101,7 @@ export default function JournalIssueDetailPage() {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
         <Navbar />
         <main className="container mx-auto px-4 py-8">
-          <Loader message="Jurnal soni ma'lumotlari yuklanmoqda..." />
+          <Loader message={t.loading} />
         </main>
         <Footer />
       </div>
@@ -90,12 +130,12 @@ export default function JournalIssueDetailPage() {
         <main className="container mx-auto px-4 py-8">
           <div className="text-center py-12">
             <Calendar className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-muted-foreground mb-2">Jurnal soni topilmadi</h3>
-            <p className="text-muted-foreground mb-4">So'ralgan jurnal soni mavjud emas yoki o'chirilgan.</p>
+            <h3 className="text-xl font-semibold text-muted-foreground mb-2">{t.notFound}</h3>
+            <p className="text-muted-foreground mb-4">{t.notFoundDesc}</p>
             <Button asChild>
               <Link href={`/${lang}/journals`}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Jurnallar ro'yxatiga qaytish
+                {t.returnToJournals}
               </Link>
             </Button>
           </div>
@@ -117,7 +157,7 @@ export default function JournalIssueDetailPage() {
             className="group hover:bg-primary hover:text-primary-foreground transition-all duration-200 hover:shadow-md"
           >
             <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform duration-200" />
-            Orqaga qaytish
+            {t.goBack}
           </Button>
         </div>
 
@@ -131,11 +171,15 @@ export default function JournalIssueDetailPage() {
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <FileText className="h-4 w-4" />
-                  <span>{issue.sections_count} bo'lim</span>
+                  <span>
+                    {issue.sections_count} {t.sections}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4" />
-                  <span>{sections.length} muallif</span>
+                  <span>
+                    {sections.length} {t.authors}
+                  </span>
                 </div>
               </div>
             </div>
@@ -144,11 +188,11 @@ export default function JournalIssueDetailPage() {
               {issue.description
                 ? decodeHtmlEntities(
                     issue.description
-                      .replace(/<[^>]*>/g, "") // Remove HTML tags
-                      .replace(/\s+/g, " ") // Replace multiple spaces with single space
+                      .replace(/<[^>]*>/g, "")
+                      .replace(/\s+/g, " ")
                       .trim(),
                   )
-                : "Tavsif mavjud emas"}
+                : t.noDescription}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -156,7 +200,7 @@ export default function JournalIssueDetailPage() {
               <Button asChild className="w-full sm:w-auto">
                 <a href={`${API_BASE}${issue.pdf_file}`} target="_blank" rel="noopener noreferrer">
                   <Download className="h-4 w-4 mr-2" />
-                  To'liq PDF ni yuklab olish
+                  {t.downloadPdf}
                 </a>
               </Button>
             )}
@@ -165,7 +209,7 @@ export default function JournalIssueDetailPage() {
 
         {/* Sections */}
         <div className="mb-8">
-          <h2 className="text-2xl font-bold mb-6">Bo'limlar va mualliflar</h2>
+          <h2 className="text-2xl font-bold mb-6">{t.sectionsAndAuthors}</h2>
           <SectionList sections={sections} />
         </div>
       </main>

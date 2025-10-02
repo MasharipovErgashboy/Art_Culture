@@ -14,10 +14,53 @@ import Image from "next/image"
 
 const API_BASE = "http://127.0.0.1:8000"
 
+const translations = {
+  uz: {
+    loading: "Konferensiya ma'lumotlari yuklanmoqda...",
+    notFound: "Konferensiya topilmadi",
+    notFoundDesc: "Ushbu konferensiya mavjud emas yoki o'chirilgan.",
+    date: "Sana",
+    address: "Manzil",
+    organizer: "Tashkilotchi va hamkorlar",
+    description: "Tavsif",
+    materials: "Konferensiya materiallari",
+    pdfDownload: "PDF formatida yuklab olish",
+    download: "Yuklab olish",
+    imageNotLoaded: "Rasm yuklanmadi",
+  },
+  ru: {
+    loading: "Загрузка информации о конференции...",
+    notFound: "Конференция не найдена",
+    notFoundDesc: "Эта конференция не существует или была удалена.",
+    date: "Дата",
+    address: "Адрес",
+    organizer: "Организатор и партнеры",
+    description: "Описание",
+    materials: "Материалы конференции",
+    pdfDownload: "Скачать в формате PDF",
+    download: "Скачать",
+    imageNotLoaded: "Изображение не загружено",
+  },
+  en: {
+    loading: "Loading conference information...",
+    notFound: "Conference not found",
+    notFoundDesc: "This conference does not exist or has been deleted.",
+    date: "Date",
+    address: "Address",
+    organizer: "Organizer and Partners",
+    description: "Description",
+    materials: "Conference Materials",
+    pdfDownload: "Download in PDF format",
+    download: "Download",
+    imageNotLoaded: "Image not loaded",
+  },
+}
+
 export default function ConferenceDetailPage() {
   const params = useParams()
   const lang = (params.lang as string) || "en"
   const slug = params.slug as string
+  const t = translations[lang as keyof typeof translations] || translations.en
 
   const [conference, setConference] = useState<Conference | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -30,17 +73,8 @@ export default function ConferenceDetailPage() {
       try {
         setIsLoading(true)
         setError(null)
-        console.log("[v0] Loading conference detail...")
-        console.log("[v0] Slug:", slug)
-        console.log("[v0] Language:", lang)
-        console.log("[v0] API URL:", `${API_BASE}/${lang}/conferences/${slug}/`)
 
         const data = await fetchConference(slug, lang)
-        console.log("[v0] Conference data received:", data)
-        console.log("[v0] Conference name:", data.name)
-        console.log("[v0] Conference image:", data.image)
-        console.log("[v0] Full image URL:", data.image ? `${API_BASE}${data.image}` : "No image")
-
         setConference(data)
       } catch (err) {
         console.error("[v0] Error loading conference:", err)
@@ -71,20 +105,15 @@ export default function ConferenceDetailPage() {
   const handlePdfDownload = () => {
     if (conference?.pdf) {
       const pdfUrl = `${API_BASE}${conference.pdf}`
-      console.log("[v0] Opening PDF:", pdfUrl)
       window.open(pdfUrl, "_blank")
     }
   }
 
   const handleImageError = () => {
-    console.error(`[v0] Conference detail image failed to load: ${conference?.name}`)
-    console.error(`[v0] Image URL:`, conference?.image ? `${API_BASE}${conference.image}` : "No image")
     setImageError(true)
   }
 
   const handleImageLoad = () => {
-    console.log(`[v0] Conference detail image loaded successfully: ${conference?.name}`)
-    console.log(`[v0] Image URL:`, conference?.image ? `${API_BASE}${conference.image}` : "No image")
     setImageLoaded(true)
   }
 
@@ -93,7 +122,7 @@ export default function ConferenceDetailPage() {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
         <Navbar />
         <main className="container mx-auto px-4 py-8">
-          <Loader message="Konferensiya ma'lumotlari yuklanmoqda..." />
+          <Loader message={t.loading} />
         </main>
         <Footer />
       </div>
@@ -122,8 +151,8 @@ export default function ConferenceDetailPage() {
         <main className="container mx-auto px-4 py-8">
           <div className="text-center py-12">
             <Calendar className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-muted-foreground mb-2">Konferensiya topilmadi</h3>
-            <p className="text-muted-foreground">Ushbu konferensiya mavjud emas yoki o'chirilgan.</p>
+            <h3 className="text-xl font-semibold text-muted-foreground mb-2">{t.notFound}</h3>
+            <p className="text-muted-foreground">{t.notFoundDesc}</p>
           </div>
         </main>
         <Footer />
@@ -179,7 +208,7 @@ export default function ConferenceDetailPage() {
                 <div className="relative w-full aspect-video overflow-hidden rounded-lg bg-gradient-to-br from-primary/10 to-primary/20 flex items-center justify-center">
                   <div className="text-center">
                     <Calendar className="h-16 w-16 text-primary/40 mx-auto mb-4" />
-                    <p className="text-primary/60 font-medium">Rasm yuklanmadi</p>
+                    <p className="text-primary/60 font-medium">{t.imageNotLoaded}</p>
                   </div>
                 </div>
               </CardContent>
@@ -195,7 +224,7 @@ export default function ConferenceDetailPage() {
                     <Calendar className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Sana</p>
+                    <p className="text-sm text-muted-foreground">{t.date}</p>
                     <p className="font-semibold">{formatDate(conference.date)}</p>
                   </div>
                 </div>
@@ -205,7 +234,7 @@ export default function ConferenceDetailPage() {
                     <MapPin className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Manzil</p>
+                    <p className="text-sm text-muted-foreground">{t.address}</p>
                     <p className="font-semibold">{conference.manzil}</p>
                   </div>
                 </div>
@@ -216,7 +245,7 @@ export default function ConferenceDetailPage() {
                       <Users className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Tashkilotchi va hamkorlar</p>
+                      <p className="text-sm text-muted-foreground">{t.organizer}</p>
                       <p className="font-semibold">{conference.tashkilotchi_hamkorlar}</p>
                     </div>
                   </div>
@@ -228,7 +257,7 @@ export default function ConferenceDetailPage() {
           {/* Description */}
           <Card className="mb-8">
             <CardContent className="p-6">
-              <h2 className="text-2xl font-bold mb-4">Tavsif</h2>
+              <h2 className="text-2xl font-bold mb-4">{t.description}</h2>
               <div
                 className="prose prose-slate max-w-none"
                 dangerouslySetInnerHTML={{ __html: conference.description }}
@@ -246,13 +275,13 @@ export default function ConferenceDetailPage() {
                       <FileText className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                      <p className="font-semibold">Konferensiya materiallari</p>
-                      <p className="text-sm text-muted-foreground">PDF formatida yuklab olish</p>
+                      <p className="font-semibold">{t.materials}</p>
+                      <p className="text-sm text-muted-foreground">{t.pdfDownload}</p>
                     </div>
                   </div>
                   <Button onClick={handlePdfDownload} className="flex items-center gap-2">
                     <Download className="h-4 w-4" />
-                    Yuklab olish
+                    {t.download}
                   </Button>
                 </div>
               </CardContent>

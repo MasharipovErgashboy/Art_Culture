@@ -6,7 +6,14 @@ import { usePathname, useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Globe, Menu, BookOpen, Calendar, FileText, User, LogOut } from "lucide-react"
-import { fetchJournal, fetchConference, fetchJournalIssue, getSlugForLang } from "@/lib/api"
+import {
+  fetchJournal,
+  fetchConference,
+  fetchJournalIssue,
+  fetchYangilik,
+  fetchReklama,
+  getSlugForLang,
+} from "@/lib/api"
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { languages } from "@/lib/languages"
 import { logout } from "@/lib/auth"
@@ -171,6 +178,13 @@ export function Navbar() {
       const resourceType = pathParts[1]
       const currentSlug = pathParts[2]
 
+      console.log("[v0] Language change detected:", {
+        resourceType,
+        currentSlug,
+        currentLang,
+        newLang,
+      })
+
       try {
         let newSlug = currentSlug
 
@@ -183,9 +197,52 @@ export function Navbar() {
         } else if (resourceType === "journal-soni") {
           const issue = await fetchJournalIssue(currentSlug, currentLang)
           newSlug = getSlugForLang(issue, newLang)
+        } else if (resourceType === "yangiliklar") {
+          console.log("[v0] Fetching yangilik for language change...")
+          console.log("[v0] Current slug:", currentSlug)
+          console.log("[v0] Current lang:", currentLang)
+          console.log("[v0] Target lang:", newLang)
+
+          try {
+            const yangilik = await fetchYangilik(currentSlug, currentLang)
+            console.log("[v0] Yangilik data received:", yangilik)
+            console.log("[v0] Available slugs:", {
+              slug_uz: yangilik.slug_uz,
+              slug_en: yangilik.slug_en,
+              slug_ru: yangilik.slug_ru,
+            })
+            newSlug = getSlugForLang(yangilik, newLang)
+            console.log("[v0] New slug for", newLang, ":", newSlug)
+          } catch (error) {
+            console.error("[v0] Failed to fetch yangilik:", error)
+            console.log("[v0] Falling back to current slug")
+            newSlug = currentSlug
+          }
+        } else if (resourceType === "reklama") {
+          console.log("[v0] Fetching reklama for language change...")
+          console.log("[v0] Current slug:", currentSlug)
+          console.log("[v0] Current lang:", currentLang)
+          console.log("[v0] Target lang:", newLang)
+
+          try {
+            const reklama = await fetchReklama(currentSlug, currentLang)
+            console.log("[v0] Reklama data received:", reklama)
+            console.log("[v0] Available slugs:", {
+              slug_uz: reklama.slug_uz,
+              slug_en: reklama.slug_en,
+              slug_ru: reklama.slug_ru,
+            })
+            newSlug = getSlugForLang(reklama, newLang)
+            console.log("[v0] New slug for", newLang, ":", newSlug)
+          } catch (error) {
+            console.error("[v0] Failed to fetch reklama:", error)
+            console.log("[v0] Falling back to current slug")
+            newSlug = currentSlug
+          }
         }
 
         const newPath = `/${newLang}/${resourceType}/${newSlug}`
+        console.log("[v0] Redirecting to:", newPath)
         router.push(newPath)
 
         window.dispatchEvent(
@@ -195,7 +252,7 @@ export function Navbar() {
         )
         return
       } catch (error) {
-        console.error("Error fetching resource for language change:", error)
+        console.error("[v0] Error fetching resource for language change:", error)
       }
     }
 
@@ -224,14 +281,16 @@ export function Navbar() {
   }
 
   const leftNavItems = [
-    { href: `/about`, label: t.about },
-    { href: `/contact`, label: t.contact },
+    { href: `/${lang}/about`, label: t.about },
+    { href: `/${lang}/contact`, label: t.contact },
   ]
 
   const centerNavItems = [
     { href: `/${lang}/journals`, label: t.journals, icon: FileText },
     { href: `/${lang}/books`, label: t.books, icon: BookOpen },
     { href: `/${lang}/conferences`, label: t.conferences, icon: Calendar },
+    { href: `/${lang}/yangiliklar`, label: "Yangiliklar", icon: Globe }, // Added yangiliklar resource type
+    { href: `/${lang}/reklama`, label: "Reklama", icon: Globe }, // Added reklama resource type
   ]
 
   const getUserInitial = () => {

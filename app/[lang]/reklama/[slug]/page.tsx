@@ -8,11 +8,15 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { ArrowLeft, User } from "lucide-react"
 import Image from "next/image"
+import { getSlugForLang } from "@/lib/api"
 
 interface Reklama {
   id?: number
   title: string
   slug: string
+  slug_uz: string
+  slug_en: string
+  slug_ru: string
   media: string | null
   homepage_content: string | null
   description: string | null
@@ -71,6 +75,11 @@ export default function ReklamaDetailPage() {
 
   const lang = (params.lang as "uz" | "ru" | "en") || "en"
   const ITEMS_PER_PAGE = 9
+
+  const isVideo = (mediaUrl: string) => {
+    const videoExtensions = [".mp4", ".webm", ".ogg", ".mov", ".avi"]
+    return videoExtensions.some((ext) => mediaUrl.toLowerCase().endsWith(ext))
+  }
 
   useEffect(() => {
     const fetchReklamaDetail = async () => {
@@ -142,9 +151,9 @@ export default function ReklamaDetailPage() {
   }, [params.slug, lang, page])
 
   const handleSelectReklama = (reklama: Reklama) => {
-    if (reklama.slug) {
-      router.push(`/${lang}/reklama/${reklama.slug}`)
-    }
+    const targetSlug = getSlugForLang(reklama, lang)
+    console.log("[v0] Navigating to reklama with slug:", targetSlug, "for lang:", lang)
+    router.push(`/${lang}/reklama/${targetSlug}`)
   }
 
   if (isLoading) {
@@ -181,35 +190,57 @@ export default function ReklamaDetailPage() {
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
 
-      <main className="flex-1 container mx-auto px-4 py-12 sm:py-16">
-        {/* Orqaga qaytish */}
-        <Button onClick={() => router.back()} variant="outline" className="mb-8 hover-primary bg-transparent">
-          <ArrowLeft className="w-4 h-4 mr-2" />
+      <main className="flex-1 container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12 xl:py-16">
+        {/* Orqaga qaytish - Responsive button */}
+        <Button
+          onClick={() => router.back()}
+          variant="outline"
+          className="mb-6 sm:mb-8 hover-primary bg-transparent text-sm sm:text-base"
+        >
+          <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
           Orqaga qaytish
         </Button>
 
-        <Card className="overflow-hidden border-0 shadow-lg mb-12">
+        <Card className="overflow-hidden border-0 shadow-lg mb-8 sm:mb-12">
           {reklama.media && (
-            <div className="relative w-full h-[400px] sm:h-[500px]">
-              <Image
-                src={reklama.media.startsWith("http") ? reklama.media : `${API_BASE}${reklama.media}`}
-                alt={reklama.title}
-                fill
-                className="object-cover"
-                priority
-              />
+            <div className="relative w-full h-[250px] sm:h-[350px] lg:h-[400px] xl:h-[500px] bg-muted">
+              {isVideo(reklama.media) ? (
+                <video
+                  src={reklama.media.startsWith("http") ? reklama.media : `${API_BASE}${reklama.media}`}
+                  controls
+                  className="w-full h-full object-contain"
+                  preload="metadata"
+                >
+                  Brauzeringiz video formatini qo'llab-quvvatlamaydi.
+                </video>
+              ) : (
+                <Image
+                  src={reklama.media.startsWith("http") ? reklama.media : `${API_BASE}${reklama.media}`}
+                  alt={reklama.title}
+                  fill
+                  className="object-cover"
+                  priority
+                  unoptimized
+                  onError={(e) => {
+                    console.error("[v0] Image load error:", reklama.media)
+                    e.currentTarget.style.display = "none"
+                  }}
+                />
+              )}
             </div>
           )}
 
-          <CardContent className="p-6 sm:p-8 space-y-6">
-            {/* Title */}
-            <h1 className="text-3xl sm:text-4xl font-bold leading-tight text-balance">{reklama.title}</h1>
+          <CardContent className="p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
+            {/* Title - Responsive typography */}
+            <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold leading-tight text-balance">
+              {reklama.title}
+            </h1>
 
             {reklama.description && (
-              <div className="space-y-3">
-                <h2 className="text-xl font-semibold text-primary">Tavsif</h2>
+              <div className="space-y-2 sm:space-y-3">
+                <h2 className="text-lg sm:text-xl font-semibold text-primary">Tavsif</h2>
                 <div
-                  className="prose max-w-none text-muted-foreground leading-relaxed"
+                  className="prose prose-sm sm:prose-base max-w-none text-muted-foreground leading-relaxed"
                   dangerouslySetInnerHTML={{
                     __html: cleanHtmlContent(reklama.description),
                   }}
@@ -217,12 +248,12 @@ export default function ReklamaDetailPage() {
               </div>
             )}
 
-            {/* Homepage content section */}
+            {/* Homepage content section - Responsive typography */}
             {reklama.homepage_content && (
-              <div className="space-y-3">
-                <h2 className="text-xl font-semibold text-primary">Batafsil ma'lumot</h2>
+              <div className="space-y-2 sm:space-y-3">
+                <h2 className="text-lg sm:text-xl font-semibold text-primary">Batafsil ma'lumot</h2>
                 <div
-                  className="prose max-w-none text-foreground leading-relaxed"
+                  className="prose prose-sm sm:prose-base max-w-none text-foreground leading-relaxed"
                   dangerouslySetInnerHTML={{
                     __html: cleanHtmlContent(reklama.homepage_content),
                   }}
@@ -230,59 +261,71 @@ export default function ReklamaDetailPage() {
               </div>
             )}
 
-            {/* Author info */}
-            <div className="flex items-center gap-2 pt-4 border-t">
-              <User className="h-5 w-5 text-primary" />
-              <span className="text-sm text-muted-foreground">Muallif: {reklama.author || "Admin"}</span>
+            {/* Author info - Responsive sizing */}
+            <div className="flex items-center gap-2 pt-3 sm:pt-4 border-t">
+              <User className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+              <span className="text-xs sm:text-sm text-muted-foreground">Muallif: {reklama.author || "Admin"}</span>
             </div>
           </CardContent>
         </Card>
 
         {otherReklamalar.length > 0 && (
-          <section className="space-y-8">
+          <section className="space-y-6 sm:space-y-8">
             <div className="text-center space-y-2">
-              <h2 className="text-3xl sm:text-4xl font-bold text-balance">So'nggi reklamalar</h2>
-              <p className="text-muted-foreground">Boshqa muhim reklamalar bilan tanishing</p>
+              <h2 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold text-balance">So'nggi reklamalar</h2>
+              <p className="text-sm sm:text-base text-muted-foreground">Boshqa muhim reklamalar bilan tanishing</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {otherReklamalar.slice(0, ITEMS_PER_PAGE).map((item, idx) => (
                 <Card
                   key={idx}
                   className="group overflow-hidden border-0 shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer"
                   onClick={() => handleSelectReklama(item)}
                 >
-                  <div className="relative w-full h-[220px]">
+                  <div className="relative w-full h-[180px] sm:h-[200px] lg:h-[220px] bg-muted overflow-hidden">
                     {item.media ? (
-                      <Image
-                        src={item.media.startsWith("http") ? item.media : `${API_BASE}${item.media}`}
-                        alt={item.title}
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-700"
-                      />
+                      isVideo(item.media) ? (
+                        <video
+                          src={item.media.startsWith("http") ? item.media : `${API_BASE}${item.media}`}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                          preload="metadata"
+                          muted
+                        />
+                      ) : (
+                        <img
+                          src={item.media.startsWith("http") ? item.media : `${API_BASE}${item.media}`}
+                          alt={item.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                          onError={(e) => {
+                            console.error("[v0] Card image load error:", item.media)
+                            e.currentTarget.style.display = "none"
+                          }}
+                        />
+                      )
                     ) : (
                       <div className="w-full h-full bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
-                        <User className="h-12 w-12 text-primary/30" />
+                        <User className="h-10 w-10 sm:h-12 sm:w-12 text-primary/30" />
                       </div>
                     )}
                   </div>
-                  <CardHeader className="space-y-3">
-                    <CardTitle className="text-lg font-semibold group-hover:text-primary transition-colors line-clamp-2 text-balance">
+                  <CardHeader className="space-y-2 sm:space-y-3 p-4 sm:p-6">
+                    <CardTitle className="text-base sm:text-lg font-semibold group-hover:text-primary transition-colors line-clamp-2 text-balance">
                       {item.title}
                     </CardTitle>
-                    <CardDescription className="line-clamp-3 text-sm leading-relaxed">
+                    <CardDescription className="line-clamp-3 text-xs sm:text-sm leading-relaxed">
                       {stripHtmlTags(item.description || item.homepage_content || "")}
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="flex items-center justify-between pt-0">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <User className="h-4 w-4 text-primary" />
+                  <CardContent className="flex items-center justify-between pt-0 p-4 sm:p-6">
+                    <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                      <User className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
                       <span className="line-clamp-1">{item.author || "Admin"}</span>
                     </div>
                     <Button
                       variant="outline"
                       size="sm"
-                      className="bg-transparent hover-primary"
+                      className="bg-transparent hover-primary text-xs sm:text-sm"
                       onClick={(e) => {
                         e.stopPropagation()
                         handleSelectReklama(item)
@@ -295,23 +338,23 @@ export default function ReklamaDetailPage() {
               ))}
             </div>
 
-            <div className="flex justify-center items-center gap-4 pt-8">
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-4 pt-6 sm:pt-8">
               <Button
                 variant="outline"
                 disabled={page === 1}
                 onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-                className="hover-primary"
+                className="hover-primary w-full sm:w-auto text-sm sm:text-base"
               >
                 Oldingi
               </Button>
-              <div className="flex items-center gap-2 px-4 py-2 bg-muted rounded-lg">
-                <span className="text-sm font-medium">Sahifa {page}</span>
+              <div className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-muted rounded-lg">
+                <span className="text-xs sm:text-sm font-medium">Sahifa {page}</span>
               </div>
               <Button
                 variant="outline"
                 disabled={otherReklamalar.length < ITEMS_PER_PAGE}
                 onClick={() => setPage((prev) => prev + 1)}
-                className="hover-primary"
+                className="hover-primary w-full sm:w-auto text-sm sm:text-base"
               >
                 Keyingi
               </Button>

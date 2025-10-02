@@ -46,7 +46,7 @@ export default function JournalsPage() {
 
       <main className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="text-center mb-12">
+        {/* <div className="text-center mb-12">
           <div className="flex items-center justify-center gap-3 mb-4">
             <div className="p-3 rounded-full bg-primary/10">
               <BookOpen className="h-8 w-8 text-primary" />
@@ -56,7 +56,7 @@ export default function JournalsPage() {
           <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
             Eng so'nggi ilmiy tadqiqotlar va maqolalar to'plami. Turli sohalardagi ekspert fikrlari va yangiliklar.
           </p>
-        </div>
+        </div> */}
 
         {/* Content */}
         {isLoading ? (

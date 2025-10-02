@@ -34,6 +34,7 @@ interface RasmiyElon {
   description_ru: string | null
   title?: string
   slug?: string
+  name?: string
 }
 
 interface Reklama {
@@ -48,6 +49,9 @@ interface Reklama {
   discount?: string
   media?: string
   homepage_content?: string
+  slug_uz?: string
+  slug_en?: string
+  slug_ru?: string
 }
 
 interface Yangilik {
@@ -56,7 +60,9 @@ interface Yangilik {
   description: string
   media?: string
   date: string
-  slug?: string
+  slug_uz?: string
+  slug_en?: string
+  slug_ru?: string
 }
 
 interface ApiData {
@@ -66,6 +72,15 @@ interface ApiData {
 }
 
 const API_BASE = "http://127.0.0.1:8000"
+
+const createSlug = (text: string): string => {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, "") // Remove special characters
+    .replace(/\s+/g, "-") // Replace spaces with hyphens
+    .replace(/-+/g, "-") // Replace multiple hyphens with single hyphen
+}
 
 const isVideoFile = (url: string): boolean => {
   if (!url) return false
@@ -145,7 +160,7 @@ const translations = {
     konferensiyaDesc: "Научные конференции и мероприятия",
     korish: "Посмотреть",
     nimaUchunBiz: "Почему выбирают нас?",
-    nimaUchunBizDesc: "Мы предоставляем лучшие услуги в области научных исследований и образования",
+    nimaUchunBizDesc: "Мы предоставляем лучшие услуги в области научных и��следований и образования",
     sifatliKontent: "Качественный контент",
     sifatliKontentDesc: "Научные материалы, проверенные экспертами",
     globalKirish: "Глобальный доступ",
@@ -232,20 +247,25 @@ export function HomeContent({ lang }: HomeContentProps) {
   const [conferences, setConferences] = useState<Conference[]>([])
   const [conferencesLoading, setConferencesLoading] = useState(true)
 
-  const handleReklamaDetail = (reklamaId: number, slug?: string) => {
-    const properSlug = slug
-      ? slug
+  const handleReklamaDetail = (reklama: Reklama) => {
+    const slugToUse = getSlugForLang(reklama, lang) || reklama.id.toString()
+    router.push(`/${lang}/reklama/${slugToUse}`)
+  }
+
+  const handleRasmiyElonDetail = (id?: number, slug?: string, name?: string) => {
+    // Try slug first, then name, then ID, then fallback to "rasmiy-elon"
+    const slugToUse = slug || name
+
+    const properSlug = slugToUse
+      ? slugToUse
           .toLowerCase()
           .replace(/[^\w\s-]/g, "")
           .replace(/\s+/g, "-")
           .trim()
-      : reklamaId.toString()
+      : id
+        ? id.toString()
+        : "rasmiy-elon" // Fallback if everything is undefined
 
-    router.push(`/${lang}/reklama/${properSlug}`)
-  }
-
-  const handleRasmiyElonDetail = (slug?: string) => {
-    const properSlug = slug || "rasmiy"
     router.push(`/${lang}/rasmiy-elon/${properSlug}`)
   }
 
@@ -308,6 +328,11 @@ export function HomeContent({ lang }: HomeContentProps) {
         }
 
         const data = await response.json()
+        console.log("[v0] Full API response:", data)
+        console.log("[v0] Rasmiy elon object:", data.rasmiy_elon)
+        console.log("[v0] All rasmiy_elon fields:", Object.keys(data.rasmiy_elon || {}))
+        console.log("[v0] Rasmiy elon slug:", data.rasmiy_elon?.slug)
+        console.log("[v0] Rasmiy elon name:", data.rasmiy_elon?.name)
         setApiData(data)
         setApiError(null)
       } catch (error) {
@@ -461,6 +486,20 @@ export function HomeContent({ lang }: HomeContentProps) {
     router.push("/login")
   }
 
+  // Helper function to get language-specific slug
+  const getLangSpecificSlug = (yangilik: Yangilik, lang: "uz" | "ru" | "en"): string => {
+    switch (lang) {
+      case "uz":
+        return yangilik.slug_uz || (yangilik.title ? createSlug(yangilik.title) : yangilik.id.toString())
+      case "ru":
+        return yangilik.slug_ru || (yangilik.title ? createSlug(yangilik.title) : yangilik.id.toString())
+      case "en":
+        return yangilik.slug_en || (yangilik.title ? createSlug(yangilik.title) : yangilik.id.toString())
+      default:
+        return yangilik.id.toString() // Fallback
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <section className="relative bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 py-4 sm:py-6 lg:py-8 px-0">
@@ -539,7 +578,12 @@ export function HomeContent({ lang }: HomeContentProps) {
                       <Button
                         size="sm"
                         className="w-full bg-gradient-to-r from-[#003D7F] via-[#0059B2] to-[#007ACC] hover:from-[#002B5A] hover:via-[#004494] hover:to-[#005A99] text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold rounded-xl sm:rounded-2xl py-3 sm:py-4 group-button hover:scale-105 transform text-xs sm:text-sm"
-                        onClick={() => handleRasmiyElonDetail(apiData.rasmiy_elon.slug)}
+                        onClick={() =>
+                          handleRasmiyElonDetail(
+                            apiData.rasmiy_elon.id,
+                            apiData.rasmiy_elon.title, // Changed to use title as slug
+                          )
+                        }
                       >
                         <span className="flex items-center justify-center space-x-2">
                           <span>{t.batafsil}</span>
@@ -772,7 +816,7 @@ export function HomeContent({ lang }: HomeContentProps) {
                       <Button
                         size="sm"
                         className="w-full bg-gradient-to-r from-[#003D7F] via-[#0059B2] to-[#007ACC] hover:from-[#002B5A] hover:via-[#004494] hover:to-[#005A99] text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold rounded-xl sm:rounded-2xl py-3 sm:py-4 group-button hover:scale-105 transform text-xs sm:text-sm"
-                        onClick={() => handleReklamaDetail(apiData.reklama[0].id, apiData.reklama[0].title)}
+                        onClick={() => handleReklamaDetail(apiData.reklama[0])}
                       >
                         <span className="flex items-center justify-center space-x-2">
                           <span>{t.batafsilKorish}</span>
@@ -960,7 +1004,7 @@ export function HomeContent({ lang }: HomeContentProps) {
                           )}
 
                           <div className="h-1/2 p-6 flex flex-col justify-between bg-gradient-to-br from-white via-gray-50/30 to-blue-50/20">
-                            <div className="flex-1">
+                            <div>
                               <h3 className="text-lg font-bold mb-3 text-gray-800 leading-tight line-clamp-2">
                                 {apiData.yangiliklar[currentBookSlide]?.title || "Yangilik"}
                               </h3>
@@ -973,15 +1017,14 @@ export function HomeContent({ lang }: HomeContentProps) {
                               </div>
                             </div>
 
-                            <div className="flex justify-center pt-2">
+                            <div className="flex justify-center">
                               <Button
                                 size="sm"
                                 className="bg-gradient-to-r from-[#003D7F] via-[#0059B2] to-[#007ACC] hover:from-[#002B5A] hover:via-[#004494] hover:to-[#005A99] text-white border-0 shadow-lg hover:shadow-2xl transition-all duration-300 font-semibold px-6 py-3 rounded-full hover:scale-105 transform group text-sm"
                                 onClick={() => {
+                                  const yangilik = apiData.yangiliklar[currentBookSlide]
                                   const slugToUse =
-                                    apiData.yangiliklar[currentBookSlide]?.slug ||
-                                    apiData.yangiliklar[currentBookSlide]?.id?.toString() ||
-                                    "1"
+                                    getLangSpecificSlug(yangilik, lang) || yangilik?.id?.toString() || "1"
                                   router.push(`/${lang}/yangiliklar/${slugToUse}`)
                                 }}
                               >
@@ -1031,7 +1074,7 @@ export function HomeContent({ lang }: HomeContentProps) {
                       </div>
 
                       {/* Main slide (current) */}
-                      <div className="w-1/2 h-[520px] z-20 transform scale-100 transition-all duration-500">
+                      <div className="w-1/2 h-[600px] z-20 transform scale-100 transition-all duration-500">
                         <Card className="h-full overflow-hidden shadow-2xl bg-white border-0 rounded-3xl group hover:shadow-3xl transition-all duration-500">
                           <CardContent className="p-0 h-full flex flex-col">
                             {apiData.yangiliklar[currentBookSlide]?.media && (
@@ -1065,11 +1108,11 @@ export function HomeContent({ lang }: HomeContentProps) {
                             )}
 
                             <div className="h-1/3 p-8 flex flex-col justify-between bg-gradient-to-br from-white via-gray-50/30 to-blue-50/20">
-                              <div className="flex-1">
+                              <div>
                                 <h3 className="text-2xl font-bold mb-4 text-gray-800 leading-tight line-clamp-2">
                                   {apiData.yangiliklar[currentBookSlide]?.title || "Yangilik"}
                                 </h3>
-                                <div className="text-gray-600 mb-6 leading-relaxed line-clamp-2 text-base">
+                                <div className="text-gray-600 leading-relaxed line-clamp-2 text-base">
                                   <div
                                     dangerouslySetInnerHTML={{
                                       __html: apiData.yangiliklar[currentBookSlide]?.description || "",
@@ -1078,20 +1121,19 @@ export function HomeContent({ lang }: HomeContentProps) {
                                 </div>
                               </div>
 
-                              <div className="flex justify-center pt-2">
+                              <div className="flex justify-center mt-4">
                                 <Button
                                   size="lg"
                                   className="bg-gradient-to-r from-[#003D7F] via-[#0059B2] to-[#007ACC] hover:from-[#002B5A] hover:via-[#004494] hover:to-[#005A99] text-white border-0 shadow-lg hover:shadow-2xl transition-all duration-300 font-semibold px-10 py-4 rounded-full hover:scale-105 transform group"
                                   onClick={() => {
+                                    const yangilik = apiData.yangiliklar[currentBookSlide]
                                     const slugToUse =
-                                      apiData.yangiliklar[currentBookSlide]?.slug ||
-                                      apiData.yangiliklar[currentBookSlide]?.id?.toString() ||
-                                      "1"
+                                      getLangSpecificSlug(yangilik, lang) || yangilik?.id?.toString() || "1"
                                     router.push(`/${lang}/yangiliklar/${slugToUse}`)
                                   }}
                                 >
                                   <span className="flex items-center gap-3 text-lg">
-                                    Batafsil o'qish
+                                    {t.batafsilOqish}
                                     <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
                                   </span>
                                 </Button>
