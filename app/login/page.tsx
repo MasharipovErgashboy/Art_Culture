@@ -15,6 +15,57 @@ import { useRouter, useSearchParams, useParams } from "next/navigation"
 
 const AUTH_BASE = "https://artculture.pythonanywhere.com/auth"
 
+const translations = {
+  uz: {
+    title: "Tizimga kirish",
+    description: "Art&Culture portaliga kirish uchun ma'lumotlaringizni kiriting",
+    email: "Email manzil",
+    emailPlaceholder: "example@email.com",
+    password: "Parol",
+    passwordPlaceholder: "Parolingizni kiriting",
+    rememberMe: "Meni eslab qol",
+    forgotPassword: "Parolni unutdingizmi?",
+    loginButton: "Kirish",
+    loggingIn: "Kirilmoqda...",
+    noAccount: "Hisobingiz yo'qmi?",
+    register: "Ro'yxatdan o'ting",
+    needHelp: "Tizimga kirishda muammo bo'lsa,",
+    contactSupport: "yordam xizmatiga murojaat qiling",
+  },
+  ru: {
+    title: "Вход в систему",
+    description: "Введите свои данные для входа на портал Art&Culture",
+    email: "Email адрес",
+    emailPlaceholder: "example@email.com",
+    password: "Пароль",
+    passwordPlaceholder: "Введите пароль",
+    rememberMe: "Запомнить меня",
+    forgotPassword: "Забыли пароль?",
+    loginButton: "Войти",
+    loggingIn: "Вход...",
+    noAccount: "Нет аккаунта?",
+    register: "Зарегистрироваться",
+    needHelp: "Если у вас проблемы со входом,",
+    contactSupport: "обратитесь в службу поддержки",
+  },
+  en: {
+    title: "Login",
+    description: "Enter your credentials to access the Art&Culture portal",
+    email: "Email address",
+    emailPlaceholder: "example@email.com",
+    password: "Password",
+    passwordPlaceholder: "Enter your password",
+    rememberMe: "Remember me",
+    forgotPassword: "Forgot password?",
+    loginButton: "Login",
+    loggingIn: "Logging in...",
+    noAccount: "Don't have an account?",
+    register: "Register",
+    needHelp: "If you have trouble logging in,",
+    contactSupport: "contact support",
+  },
+}
+
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({
@@ -28,6 +79,7 @@ export default function LoginPage() {
   const params = useParams()
 
   const lang = (params?.lang as string) || "uz"
+  const t = translations[lang as keyof typeof translations] || translations.uz
   const returnUrl = searchParams?.get("returnUrl")
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -50,14 +102,7 @@ export default function LoginPage() {
       if (res.ok) {
         localStorage.setItem("access_token", data.access)
         localStorage.setItem("refresh_token", data.refresh)
-
-        // User info (mock yoki keyinchalik API dan olish mumkin)
-        localStorage.setItem(
-          "user",
-          JSON.stringify({
-            email: formData.email,
-          }),
-        )
+        localStorage.setItem("user_email", formData.email)
 
         if (returnUrl) {
           router.push(returnUrl)
@@ -85,47 +130,49 @@ export default function LoginPage() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <section className="py-12 px-4">
+      <section className="py-8 sm:py-12 px-4">
         <div className="container mx-auto max-w-md">
           <Card className="shadow-lg">
-            <CardHeader className="text-center">
-              <CardTitle className="text-2xl font-bold text-foreground">Tizimga kirish</CardTitle>
-              <CardDescription className="text-muted-foreground">
-                Art&Culture portaliga kirish uchun ma'lumotlaringizni kiriting
-              </CardDescription>
+            <CardHeader className="text-center space-y-2">
+              <CardTitle className="text-xl sm:text-2xl font-bold text-foreground">{t.title}</CardTitle>
+              <CardDescription className="text-sm sm:text-base text-muted-foreground">{t.description}</CardDescription>
             </CardHeader>
 
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-4 sm:space-y-6">
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email manzil</Label>
+                  <Label htmlFor="email" className="text-sm sm:text-base">
+                    {t.email}
+                  </Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                     <Input
                       id="email"
                       name="email"
                       type="email"
-                      placeholder="example@email.com"
+                      placeholder={t.emailPlaceholder}
                       value={formData.email}
                       onChange={handleChange}
-                      className="pl-10"
+                      className="pl-10 text-sm sm:text-base"
                       required
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="password">Parol</Label>
+                  <Label htmlFor="password" className="text-sm sm:text-base">
+                    {t.password}
+                  </Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                     <Input
                       id="password"
                       name="password"
                       type={showPassword ? "text" : "password"}
-                      placeholder="Parolingizni kiriting"
+                      placeholder={t.passwordPlaceholder}
                       value={formData.password}
                       onChange={handleChange}
-                      className="pl-10 pr-10"
+                      className="pl-10 pr-10 text-sm sm:text-base"
                       required
                     />
                     <button
@@ -138,39 +185,39 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                {error && <p className="text-red-500 text-sm">{error}</p>}
+                {error && <p className="text-red-500 text-xs sm:text-sm">{error}</p>}
 
-                <div className="flex items-center justify-between text-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 text-xs sm:text-sm">
                   <label className="flex items-center space-x-2">
                     <input type="checkbox" className="rounded border-border" />
-                    <span className="text-muted-foreground">Meni eslab qol</span>
+                    <span className="text-muted-foreground">{t.rememberMe}</span>
                   </label>
                   <Link href={`/${lang}/forgot-password`} className="text-primary hover:underline">
-                    Parolni unutdingizmi?
+                    {t.forgotPassword}
                   </Link>
                 </div>
 
-                <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
-                  {isLoading ? "Kirilmoqda..." : "Kirish"}
+                <Button type="submit" className="w-full text-sm sm:text-base" size="lg" disabled={isLoading}>
+                  {isLoading ? t.loggingIn : t.loginButton}
                 </Button>
               </form>
 
               <Separator />
 
               <div className="text-center">
-                <p className="text-muted-foreground">
-                  Hisobingiz yo'qmi?{" "}
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  {t.noAccount}{" "}
                   <Link href={`/${lang}/register`} className="text-primary hover:underline font-medium">
-                    Ro'yxatdan o'ting
+                    {t.register}
                   </Link>
                 </p>
               </div>
 
               <div className="text-center">
                 <p className="text-xs text-muted-foreground">
-                  Tizimga kirishda muammo bo'lsa,{" "}
+                  {t.needHelp}{" "}
                   <Link href={`/${lang}/contact`} className="text-primary hover:underline">
-                    yordam xizmatiga murojaat qiling
+                    {t.contactSupport}
                   </Link>
                 </p>
               </div>

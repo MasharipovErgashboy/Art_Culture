@@ -362,7 +362,7 @@ export function HomeContent({ lang }: HomeContentProps) {
             description: "2024-yilning eng so'nggi tadqiqot natijalari va ilmiy maqolalar",
             image: "/scientific-research-books-and-journals.jpg",
             buttonText: t.batafsil,
-            href: `/${lang}/jurnals`,
+            href: `/${lang}/journals`,
           },
           {
             title: "Xalqaro konferensiya",
@@ -443,7 +443,7 @@ export function HomeContent({ lang }: HomeContentProps) {
       title: t.jurnallar,
       description: t.jurnallarDesc,
       icon: FileText,
-      href: `/${lang}/jurnals`,
+      href: `/${lang}/journals`,
       gradient: "from-[#003D7F] to-[#0059B2]",
       iconBg: "bg-blue-100",
       iconColor: "text-[#003D7F]",
@@ -906,7 +906,7 @@ export function HomeContent({ lang }: HomeContentProps) {
 
             <div className="text-center space-y-3 sm:space-y-4 p-4 sm:p-6 rounded-lg bg-white/70 backdrop-blur-sm hover:bg-white/90 transition-all duration-300 shadow-lg hover:shadow-xl order-5 sm:order-none">
               <div className="mx-auto w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-[#003D7F] to-[#0059B2] rounded-full flex items-center justify-center shadow-lg">
-                <Globe className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
+                <Globe className="h-6 w-6 sm:h-8 sm:h-8 text-white" />
               </div>
               <h3 className="text-lg sm:text-xl font-semibold text-gray-800">{t.globalKirish}</h3>
               <p className="text-sm sm:text-base text-gray-600">{t.globalKirishDesc}</p>

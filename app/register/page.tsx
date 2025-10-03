@@ -15,6 +15,84 @@ import { useRouter, useParams } from "next/navigation"
 
 const AUTH_BASE = "https://artculture.pythonanywhere.com/auth"
 
+const translations = {
+  uz: {
+    title: "Ro'yxatdan o'tish",
+    description: "Hisob yaratish uchun quyidagi formani to'ldiring",
+    username: "Foydalanuvchi nomi",
+    usernamePlaceholder: "Foydalanuvchi nomingiz",
+    email: "Email",
+    emailPlaceholder: "example@email.com",
+    password: "Parol",
+    passwordPlaceholder: "Parol kiriting",
+    confirmPassword: "Parolni tasdiqlang",
+    confirmPasswordPlaceholder: "Parolni qayta kiriting",
+    registerButton: "Ro'yxatdan o'tish",
+    registering: "Ro'yxatdan o'tilmoqda...",
+    haveAccount: "Hisobingiz bormi?",
+    login: "Tizimga kiring",
+    errors: {
+      usernameRequired: "Foydalanuvchi nomi majburiy",
+      usernameInvalid: "Faqat harflar, raqamlar va @/./+/-/_ belgilariga ruxsat beriladi",
+      emailRequired: "Email majburiy",
+      emailInvalid: "Email noto'g'ri formatda",
+      passwordRequired: "Parol majburiy",
+      passwordTooShort: "Parol kamida 6 ta belgidan iborat bo'lishi kerak",
+      passwordMismatch: "Parollar mos emas",
+    },
+  },
+  ru: {
+    title: "Регистрация",
+    description: "Заполните форму для создания аккаунта",
+    username: "Имя пользователя",
+    usernamePlaceholder: "Ваше имя пользователя",
+    email: "Email",
+    emailPlaceholder: "example@email.com",
+    password: "Пароль",
+    passwordPlaceholder: "Введите пароль",
+    confirmPassword: "Подтвердите пароль",
+    confirmPasswordPlaceholder: "Введите пароль повторно",
+    registerButton: "Зарегистрироваться",
+    registering: "Регистрация...",
+    haveAccount: "Уже есть аккаунт?",
+    login: "Войти",
+    errors: {
+      usernameRequired: "Имя пользователя обязательно",
+      usernameInvalid: "Разрешены только буквы, цифры и символы @/./+/-/_",
+      emailRequired: "Email обязателен",
+      emailInvalid: "Неверный формат email",
+      passwordRequired: "Пароль обязателен",
+      passwordTooShort: "Пароль должен содержать минимум 6 символов",
+      passwordMismatch: "Пароли не совпадают",
+    },
+  },
+  en: {
+    title: "Register",
+    description: "Fill out the form to create an account",
+    username: "Username",
+    usernamePlaceholder: "Your username",
+    email: "Email",
+    emailPlaceholder: "example@email.com",
+    password: "Password",
+    passwordPlaceholder: "Enter password",
+    confirmPassword: "Confirm password",
+    confirmPasswordPlaceholder: "Re-enter password",
+    registerButton: "Register",
+    registering: "Registering...",
+    haveAccount: "Already have an account?",
+    login: "Login",
+    errors: {
+      usernameRequired: "Username is required",
+      usernameInvalid: "Only letters, numbers and @/./+/-/_ are allowed",
+      emailRequired: "Email is required",
+      emailInvalid: "Invalid email format",
+      passwordRequired: "Password is required",
+      passwordTooShort: "Password must be at least 6 characters",
+      passwordMismatch: "Passwords do not match",
+    },
+  },
+}
+
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -30,33 +108,34 @@ export default function RegisterPage() {
   const params = useParams()
 
   const lang = (params?.lang as string) || "uz"
+  const t = translations[lang as keyof typeof translations] || translations.uz
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
 
     if (!formData.username.trim()) {
-      newErrors.username = "Foydalanuvchi nomi majburiy"
+      newErrors.username = t.errors.usernameRequired
     } else {
       const usernameRegex = /^[\w.@+-]+$/
       if (!usernameRegex.test(formData.username)) {
-        newErrors.username = "Faqat harflar, raqamlar va @/./+/-/_ belgilariga ruxsat beriladi"
+        newErrors.username = t.errors.usernameInvalid
       }
     }
 
     if (!formData.email.trim()) {
-      newErrors.email = "Email majburiy"
+      newErrors.email = t.errors.emailRequired
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Email noto'g'ri formatda"
+      newErrors.email = t.errors.emailInvalid
     }
 
     if (!formData.password) {
-      newErrors.password = "Parol majburiy"
+      newErrors.password = t.errors.passwordRequired
     } else if (formData.password.length < 6) {
-      newErrors.password = "Parol kamida 6 ta belgidan iborat bo'lishi kerak"
+      newErrors.password = t.errors.passwordTooShort
     }
 
     if (formData.password !== formData.password2) {
-      newErrors.password2 = "Parollar mos emas"
+      newErrors.password2 = t.errors.passwordMismatch
     }
 
     setErrors(newErrors)
@@ -73,7 +152,7 @@ export default function RegisterPage() {
       const res = await fetch(`${AUTH_BASE}/register/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData), // ✅ endi password2 ham backendga to'g'ri yuboriladi
+        body: JSON.stringify(formData),
       })
 
       const data = await res.json()
@@ -109,73 +188,74 @@ export default function RegisterPage() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <section className="py-12 px-4">
+      <section className="py-8 sm:py-12 px-4">
         <div className="container mx-auto max-w-md">
           <Card className="shadow-lg">
-            <CardHeader className="text-center">
-              <CardTitle className="text-2xl font-bold text-foreground">Ro'yxatdan o'tish</CardTitle>
-              <CardDescription className="text-muted-foreground">
-                Hisob yaratish uchun quyidagi formani to'ldiring
-              </CardDescription>
+            <CardHeader className="text-center space-y-2">
+              <CardTitle className="text-xl sm:text-2xl font-bold text-foreground">{t.title}</CardTitle>
+              <CardDescription className="text-sm sm:text-base text-muted-foreground">{t.description}</CardDescription>
             </CardHeader>
 
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-4 sm:space-y-6">
               <form onSubmit={handleSubmit} className="space-y-4">
                 {errors.general && (
-                  <p className="text-sm text-destructive bg-destructive/10 p-2 rounded">{errors.general}</p>
+                  <p className="text-xs sm:text-sm text-destructive bg-destructive/10 p-2 rounded">{errors.general}</p>
                 )}
 
-                {/* Username */}
                 <div className="space-y-2">
-                  <Label htmlFor="username">Foydalanuvchi nomi</Label>
+                  <Label htmlFor="username" className="text-sm sm:text-base">
+                    {t.username}
+                  </Label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
                     <Input
                       id="username"
                       name="username"
                       type="text"
-                      placeholder="Foydalanuvchi nomingiz"
+                      placeholder={t.usernamePlaceholder}
                       value={formData.username}
                       onChange={handleChange}
-                      className="pl-10"
+                      className="pl-10 text-sm sm:text-base"
                       required
                     />
                   </div>
-                  {errors.username && <p className="text-sm text-destructive">{errors.username}</p>}
+                  {errors.username && <p className="text-xs sm:text-sm text-destructive">{errors.username}</p>}
                 </div>
 
-                {/* Email */}
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email" className="text-sm sm:text-base">
+                    {t.email}
+                  </Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
                     <Input
                       id="email"
                       name="email"
                       type="email"
-                      placeholder="example@email.com"
+                      placeholder={t.emailPlaceholder}
                       value={formData.email}
                       onChange={handleChange}
-                      className="pl-10"
+                      className="pl-10 text-sm sm:text-base"
                       required
                     />
                   </div>
-                  {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+                  {errors.email && <p className="text-xs sm:text-sm text-destructive">{errors.email}</p>}
                 </div>
 
-                {/* Password */}
                 <div className="space-y-2">
-                  <Label htmlFor="password">Parol</Label>
+                  <Label htmlFor="password" className="text-sm sm:text-base">
+                    {t.password}
+                  </Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
                     <Input
                       id="password"
                       name="password"
                       type={showPassword ? "text" : "password"}
-                      placeholder="Parol kiriting"
+                      placeholder={t.passwordPlaceholder}
                       value={formData.password}
                       onChange={handleChange}
-                      className="pl-10 pr-10"
+                      className="pl-10 pr-10 text-sm sm:text-base"
                       required
                     />
                     <button
@@ -186,22 +266,23 @@ export default function RegisterPage() {
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
-                  {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
+                  {errors.password && <p className="text-xs sm:text-sm text-destructive">{errors.password}</p>}
                 </div>
 
-                {/* Confirm Password */}
                 <div className="space-y-2">
-                  <Label htmlFor="password2">Parolni tasdiqlang</Label>
+                  <Label htmlFor="password2" className="text-sm sm:text-base">
+                    {t.confirmPassword}
+                  </Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
                     <Input
                       id="password2"
                       name="password2"
                       type={showConfirmPassword ? "text" : "password"}
-                      placeholder="Parolni qayta kiriting"
+                      placeholder={t.confirmPasswordPlaceholder}
                       value={formData.password2}
                       onChange={handleChange}
-                      className="pl-10 pr-10"
+                      className="pl-10 pr-10 text-sm sm:text-base"
                       required
                     />
                     <button
@@ -212,21 +293,21 @@ export default function RegisterPage() {
                       {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
-                  {errors.password2 && <p className="text-sm text-destructive">{errors.password2}</p>}
+                  {errors.password2 && <p className="text-xs sm:text-sm text-destructive">{errors.password2}</p>}
                 </div>
 
-                <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
-                  {isLoading ? "Ro'yxatdan o'tilmoqda..." : "Ro'yxatdan o'tish"}
+                <Button type="submit" className="w-full text-sm sm:text-base" size="lg" disabled={isLoading}>
+                  {isLoading ? t.registering : t.registerButton}
                 </Button>
               </form>
 
               <Separator />
 
               <div className="text-center">
-                <p className="text-muted-foreground">
-                  Hisobingiz bormi?{" "}
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  {t.haveAccount}{" "}
                   <Link href={`/${lang}/login`} className="text-primary hover:underline font-medium">
-                    Tizimga kiring
+                    {t.login}
                   </Link>
                 </p>
               </div>
