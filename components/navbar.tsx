@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname, useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Menu, BookOpen, Calendar, FileText, User, LogOut } from "lucide-react"
 import {
   fetchJournal,
@@ -68,6 +67,7 @@ export function Navbar() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [user, setUser] = useState<UserProfile | null>(null)
   const [isLoadingUser, setIsLoadingUser] = useState(true)
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false)
   const pathname = usePathname()
   const params = useParams()
   const router = useRouter()
@@ -341,52 +341,55 @@ export function Navbar() {
 
             {!isLoadingUser && isLoggedIn && user ? (
               <div className="hidden sm:block">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-10 w-10 rounded-full p-0 hover:ring-2 hover:ring-white/50 hover:ring-offset-2 hover:ring-offset-[#003D7F] transition-all duration-200"
-                    >
-                      <div className="h-full w-full rounded-full bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-base shadow-lg hover:shadow-xl transition-shadow">
-                        {getUserInitial()}
-                      </div>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="end"
-                    className="w-56 z-[9999] pointer-events-auto bg-white shadow-xl border border-gray-200 rounded-lg p-2"
+                <div
+                  className="relative"
+                  onMouseEnter={() => setIsProfileDropdownOpen(true)}
+                  onMouseLeave={() => setIsProfileDropdownOpen(false)}
+                >
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-10 w-10 rounded-full p-0 hover:ring-2 hover:ring-white/50 hover:ring-offset-2 hover:ring-offset-[#003D7F] transition-all duration-200"
                   >
-                    <div className="px-3 py-2 mb-2 bg-gradient-to-br from-blue-50 to-blue-100 rounded-md">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-sm shadow-md">
-                          {getUserInitial()}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-semibold text-sm text-gray-900 truncate">{user.username}</div>
-                          <div className="text-xs text-gray-600 truncate">{user.email}</div>
+                    <div className="h-full w-full rounded-full bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-base shadow-lg hover:shadow-xl transition-shadow">
+                      {getUserInitial()}
+                    </div>
+                  </Button>
+
+                  {isProfileDropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-56 bg-white shadow-xl border border-gray-200 rounded-lg p-2 z-[9999] animate-in fade-in slide-in-from-top-2 duration-200">
+                      <div className="px-3 py-2 mb-2 bg-gradient-to-br from-blue-50 to-blue-100 rounded-md">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-sm shadow-md">
+                            {getUserInitial()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-semibold text-sm text-gray-900 truncate">{user.username}</div>
+                            <div className="text-xs text-gray-600 truncate">{user.email}</div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <DropdownMenuItem asChild className="cursor-pointer rounded-md hover:bg-blue-50 transition-colors">
-                      <Link href={`/${lang}/profile`} className="flex items-center gap-3 px-3 py-2">
+                      <Link
+                        href={`/${lang}/profile`}
+                        className="flex items-center gap-3 px-3 py-2 cursor-pointer rounded-md hover:bg-blue-50 transition-colors"
+                      >
                         <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
                           <User className="h-4 w-4 text-blue-600" />
                         </div>
                         <span className="font-medium text-gray-700">{t.profile}</span>
                       </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={handleLogout}
-                      className="flex items-center gap-3 px-3 py-2 cursor-pointer rounded-md hover:bg-red-50 transition-colors text-red-600 hover:text-red-700"
-                    >
-                      <div className="h-8 w-8 rounded-full bg-red-100 flex items-center justify-center">
-                        <LogOut className="h-4 w-4" />
-                      </div>
-                      <span className="font-medium">{t.logout}</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                      <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-3 px-3 py-2 cursor-pointer rounded-md hover:bg-red-50 transition-colors text-red-600 hover:text-red-700"
+                      >
+                        <div className="h-8 w-8 rounded-full bg-red-100 flex items-center justify-center">
+                          <LogOut className="h-4 w-4" />
+                        </div>
+                        <span className="font-medium">{t.logout}</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             ) : !isLoadingUser ? (
               <div className="hidden sm:flex items-center space-x-2">
