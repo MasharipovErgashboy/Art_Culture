@@ -66,6 +66,7 @@ const navTranslations = {
 
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false)
   const [currentLang, setCurrentLang] = useState("UZB")
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [user, setUser] = useState<UserProfile | null>(null)
@@ -157,7 +158,9 @@ export function Navbar() {
   }, [lang])
 
   const handleLanguageChange = async (langCode: string) => {
+    console.log("[v0] Language change clicked:", langCode)
     setCurrentLang(langCode)
+    setIsLangDropdownOpen(false)
 
     const langMap: { [key: string]: string } = {
       UZB: "uz",
@@ -372,23 +375,30 @@ export function Navbar() {
           </div>
 
           <div className="flex items-center space-x-2 sm:space-x-4">
-            <DropdownMenu modal={false}>
+            <DropdownMenu open={isLangDropdownOpen} onOpenChange={setIsLangDropdownOpen}>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
                   size="sm"
                   className="gap-1 sm:gap-2 bg-transparent border-blue-300 text-blue-100 hover:bg-blue-800 hover:text-white px-2 sm:px-3"
+                  onClick={() => {
+                    console.log("[v0] Language button clicked, current state:", isLangDropdownOpen)
+                    setIsLangDropdownOpen(!isLangDropdownOpen)
+                  }}
                 >
                   <Globe className="h-3 w-3 sm:h-4 sm:w-4" />
                   <span className="text-xs sm:text-sm">{currentLang}</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="z-[100]">
+              <DropdownMenuContent align="end" className="z-[9999] pointer-events-auto bg-white">
                 {languages.map((language) => (
                   <DropdownMenuItem
                     key={language.code}
-                    onClick={() => handleLanguageChange(language.code)}
-                    className="gap-2 cursor-pointer"
+                    onClick={() => {
+                      console.log("[v0] Language item clicked:", language.code)
+                      handleLanguageChange(language.code)
+                    }}
+                    className="gap-2 cursor-pointer hover:bg-gray-100"
                   >
                     <span>{language.flag}</span>
                     <span>{language.name}</span>
@@ -399,7 +409,7 @@ export function Navbar() {
 
             {!isLoadingUser && isLoggedIn && user ? (
               <div className="hidden sm:block">
-                <DropdownMenu modal={false}>
+                <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm" className="h-10 w-10 rounded-full bg-white hover:bg-blue-50 p-0">
                       <div className="h-full w-full rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-semibold text-base">
@@ -407,7 +417,7 @@ export function Navbar() {
                       </div>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48 z-[100]">
+                  <DropdownMenuContent align="end" className="w-48 z-[9999] pointer-events-auto bg-white">
                     <div className="px-2 py-1.5 text-sm font-medium text-gray-700">{user.username}</div>
                     <div className="px-2 py-1 text-xs text-gray-500 border-b mb-1">{user.email}</div>
                     <DropdownMenuItem asChild>
