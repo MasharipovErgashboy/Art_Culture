@@ -444,14 +444,14 @@ export function Navbar() {
                   asChild
                   className="text-blue-100 hover:text-white hover:bg-blue-800 text-xs sm:text-sm px-2 sm:px-3"
                 >
-                  <Link href={`/${lang}/login`}>{t.login}</Link>
+                  <Link href="/login">{t.login}</Link>
                 </Button>
                 <Button
                   size="sm"
                   asChild
                   className="bg-white text-blue-900 hover:bg-blue-50 text-xs sm:text-sm px-2 sm:px-3"
                 >
-                  <Link href={`/${lang}/register`}>{t.register}</Link>
+                  <Link href="/register">{t.register}</Link>
                 </Button>
               </div>
             ) : null}
@@ -550,10 +550,10 @@ export function Navbar() {
                           asChild
                           onClick={() => setIsMenuOpen(false)}
                         >
-                          <Link href={`/${lang}/login`}>{t.login}</Link>
+                          <Link href="/login">{t.login}</Link>
                         </Button>
                         <Button className="w-full" asChild onClick={() => setIsMenuOpen(false)}>
-                          <Link href={`/${lang}/register`}>{t.register}</Link>
+                          <Link href="/register">{t.register}</Link>
                         </Button>
                       </>
                     ) : null}
