@@ -29,7 +29,7 @@ interface JournalIssueCardProps {
 }
 
 export function JournalIssueCard({ issue, lang }: JournalIssueCardProps) {
-  const API_BASE = "http://127.0.0.1:8000"
+  const API_BASE = "https://artculture.pythonanywhere.com"
   const issueSlug = getSlugForLang(issue, lang)
   const t = translations[lang as keyof typeof translations] || translations.uz
 

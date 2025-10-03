@@ -41,7 +41,7 @@ export function JournalCard({ journal, lang }: JournalCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false)
   const t = translations[lang as keyof typeof translations] || translations.uz
 
-  const imageUrl = journal.image ? `http://127.0.0.1:8000${journal.image}` : null
+  const imageUrl = journal.image ? `https://artculture.pythonanywhere.com${journal.image}` : null
   const journalSlug = getSlugForLang(journal, lang)
 
   useEffect(() => {

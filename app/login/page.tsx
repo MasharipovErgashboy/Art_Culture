@@ -50,7 +50,14 @@ export default function LoginPage() {
       if (res.ok) {
         localStorage.setItem("access_token", data.access)
         localStorage.setItem("refresh_token", data.refresh)
-        localStorage.setItem("user_email", formData.email)
+
+        // User info (mock yoki keyinchalik API dan olish mumkin)
+        localStorage.setItem(
+          "user",
+          JSON.stringify({
+            email: formData.email,
+          }),
+        )
 
         if (returnUrl) {
           router.push(returnUrl)
@@ -78,22 +85,20 @@ export default function LoginPage() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <section className="py-8 sm:py-12 px-4">
+      <section className="py-12 px-4">
         <div className="container mx-auto max-w-md">
           <Card className="shadow-lg">
-            <CardHeader className="text-center space-y-2">
-              <CardTitle className="text-xl sm:text-2xl font-bold text-foreground">Tizimga kirish</CardTitle>
-              <CardDescription className="text-sm sm:text-base text-muted-foreground">
+            <CardHeader className="text-center">
+              <CardTitle className="text-2xl font-bold text-foreground">Tizimga kirish</CardTitle>
+              <CardDescription className="text-muted-foreground">
                 Art&Culture portaliga kirish uchun ma'lumotlaringizni kiriting
               </CardDescription>
             </CardHeader>
 
-            <CardContent className="space-y-4 sm:space-y-6">
+            <CardContent className="space-y-6">
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-sm sm:text-base">
-                    Email manzil
-                  </Label>
+                  <Label htmlFor="email">Email manzil</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                     <Input
@@ -103,16 +108,14 @@ export default function LoginPage() {
                       placeholder="example@email.com"
                       value={formData.email}
                       onChange={handleChange}
-                      className="pl-10 text-sm sm:text-base"
+                      className="pl-10"
                       required
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="password" className="text-sm sm:text-base">
-                    Parol
-                  </Label>
+                  <Label htmlFor="password">Parol</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                     <Input
@@ -122,7 +125,7 @@ export default function LoginPage() {
                       placeholder="Parolingizni kiriting"
                       value={formData.password}
                       onChange={handleChange}
-                      className="pl-10 pr-10 text-sm sm:text-base"
+                      className="pl-10 pr-10"
                       required
                     />
                     <button
@@ -135,9 +138,9 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                {error && <p className="text-red-500 text-xs sm:text-sm">{error}</p>}
+                {error && <p className="text-red-500 text-sm">{error}</p>}
 
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 text-xs sm:text-sm">
+                <div className="flex items-center justify-between text-sm">
                   <label className="flex items-center space-x-2">
                     <input type="checkbox" className="rounded border-border" />
                     <span className="text-muted-foreground">Meni eslab qol</span>
@@ -147,7 +150,7 @@ export default function LoginPage() {
                   </Link>
                 </div>
 
-                <Button type="submit" className="w-full text-sm sm:text-base" size="lg" disabled={isLoading}>
+                <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
                   {isLoading ? "Kirilmoqda..." : "Kirish"}
                 </Button>
               </form>
@@ -155,7 +158,7 @@ export default function LoginPage() {
               <Separator />
 
               <div className="text-center">
-                <p className="text-xs sm:text-sm text-muted-foreground">
+                <p className="text-muted-foreground">
                   Hisobingiz yo'qmi?{" "}
                   <Link href={`/${lang}/register`} className="text-primary hover:underline font-medium">
                     Ro'yxatdan o'ting

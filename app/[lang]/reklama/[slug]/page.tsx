@@ -5,89 +5,47 @@ import { useParams, useRouter } from "next/navigation"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { ArrowLeft, User } from "lucide-react"
-import Image from "next/image"
-import { getSlugForLang } from "@/lib/api"
+import { Card, CardContent } from "@/components/ui/card"
+import { ArrowLeft, MapPin, Calendar, Phone, Mail, User } from "lucide-react"
 
-interface Reklama {
-  id?: number
+interface ReklamaDetail {
   title: string
   slug: string
-  slug_uz: string
-  slug_en: string
-  slug_ru: string
   media: string | null
   homepage_content: string | null
   description: string | null
-  author?: string
+  price?: string
+  location?: string
+  date?: string
+  contact_name?: string
+  contact_phone?: string
+  contact_email?: string
 }
 
 const API_BASE = "https://artculture.pythonanywhere.com"
 
-const decodeHtmlEntities = (text: string) => {
-  const textarea = document.createElement("textarea")
-  textarea.innerHTML = text
-  return textarea.value
-}
-
-const cleanHtmlContent = (content: string) => {
-  if (!content) return ""
-
-  // Decode HTML entities
-  const decoded = decodeHtmlEntities(content)
-
-  // Remove unwanted text patterns
-  const cleaned = decoded
-    .replace(/Admin\s*O'qish\s*/gi, "") // Remove "AdminO'qish" text
-    .replace(/\.{6,}/g, "") // Remove multiple dots
-    .trim()
-
-  return cleaned
-}
-
-const stripHtmlTags = (content: string) => {
-  if (!content) return ""
-
-  // First clean the content
-  const cleaned = cleanHtmlContent(content)
-
-  // Create a temporary div to strip HTML tags
-  const tempDiv = document.createElement("div")
-  tempDiv.innerHTML = cleaned
-
-  // Get plain text and clean up extra whitespace
-  const plainText = tempDiv.textContent || tempDiv.innerText || ""
-
-  return plainText
-    .replace(/\s+/g, " ") // Replace multiple whitespace with single space
-    .trim()
-}
-
 export default function ReklamaDetailPage() {
   const params = useParams()
   const router = useRouter()
-  const [reklama, setReklama] = useState<Reklama | null>(null)
-  const [otherReklamalar, setOtherReklamalar] = useState<Reklama[]>([])
-  const [page, setPage] = useState(1)
+  const [reklama, setReklama] = useState<ReklamaDetail | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [lang, setLang] = useState<"uz" | "ru" | "en">("uz")
 
-  const lang = (params.lang as "uz" | "ru" | "en") || "en"
-  const ITEMS_PER_PAGE = 9
-
-  const isVideo = (mediaUrl: string) => {
-    const videoExtensions = [".mp4", ".webm", ".ogg", ".mov", ".avi"]
-    return videoExtensions.some((ext) => mediaUrl.toLowerCase().endsWith(ext))
-  }
+  useEffect(() => {
+    const storedLang = (localStorage.getItem("language") as "uz" | "ru" | "en") || "uz"
+    setLang(storedLang)
+  }, [])
 
   useEffect(() => {
     const fetchReklamaDetail = async () => {
       try {
         setIsLoading(true)
         const slug = params.slug as string
+        console.log("[v0] Fetching reklama detail with params:", { slug, lang })
 
         let apiUrl = `${API_BASE}/${lang}/reklama/${slug}/`
+        console.log("[v0] API URL:", apiUrl)
 
         let response = await fetch(apiUrl, {
           method: "GET",
@@ -100,6 +58,7 @@ export default function ReklamaDetailPage() {
         })
 
         if (!response.ok && /^\d+$/.test(slug)) {
+          console.log("[v0] Slug failed, trying ID-based endpoint")
           apiUrl = `${API_BASE}/${lang}/reklama/id/${slug}/`
           response = await fetch(apiUrl, {
             method: "GET",
@@ -112,256 +71,183 @@ export default function ReklamaDetailPage() {
           })
         }
 
+        console.log("[v0] Response status:", response.status)
         if (!response.ok) {
           const errorText = await response.text()
           throw new Error(`HTTP error! status: ${response.status} - ${errorText}`)
         }
 
         const data = await response.json()
-        setReklama(data.detail || data)
+        setReklama(data)
       } catch (err) {
+        console.error("[v0] Reklama detail fetch error:", err)
         setError(err instanceof Error ? err.message : "Ma'lumot yuklanmadi")
       } finally {
         setIsLoading(false)
       }
     }
 
-    const fetchOtherReklamalar = async () => {
-      try {
-        const response = await fetch(`${API_BASE}/${lang}/reklama/?page=${page}`, {
-          headers: { "Accept-Language": lang },
-        })
-
-        if (!response.ok) throw new Error("Ma'lumot yuklab bo'lmadi")
-
-        const data: Reklama[] = await response.json()
-        // Filter out the current reklama from the list
-        const currentSlug = params.slug as string
-        const filtered = data.filter((item) => item.slug !== currentSlug)
-        setOtherReklamalar(filtered)
-      } catch (err) {
-        console.error("Other reklamalar fetch error:", err)
-      }
-    }
-
     if (params.slug) {
       fetchReklamaDetail()
-      fetchOtherReklamalar()
     }
-  }, [params.slug, lang, page])
-
-  const handleSelectReklama = (reklama: Reklama) => {
-    const targetSlug = getSlugForLang(reklama, lang)
-    console.log("[v0] Navigating to reklama with slug:", targetSlug, "for lang:", lang)
-    router.push(`/${lang}/reklama/${targetSlug}`)
-  }
+  }, [params.slug, lang])
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen bg-background">
         <Navbar />
-        <div className="flex-1 flex items-center justify-center">Yuklanmoqda...</div>
+        <div className="container mx-auto px-4 py-8 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Ma'lumot yuklanmoqda...</p>
+        </div>
         <Footer />
       </div>
     )
   }
 
-  if (error) {
+  if (error || !reklama) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen bg-background">
         <Navbar />
-        <div className="flex-1 flex items-center justify-center text-red-500">{error}</div>
-        <Footer />
-      </div>
-    )
-  }
-
-  if (!reklama) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <div className="flex-1 flex items-center justify-center">Reklama topilmadi</div>
+        <div className="container mx-auto px-4 py-8">
+          <Card className="max-w-2xl mx-auto">
+            <CardContent className="p-8 text-center">
+              <h1 className="text-2xl font-bold mb-4">Xatolik yuz berdi</h1>
+              <p className="text-muted-foreground mb-6">{error || "Reklama topilmadi"}</p>
+              <Button onClick={() => router.back()}>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Orqaga qaytish
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
         <Footer />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen bg-background">
       <Navbar />
 
-      <main className="flex-1 container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12 xl:py-16">
-        {/* Orqaga qaytish - Responsive button */}
-        <Button
-          onClick={() => router.back()}
-          variant="outline"
-          className="mb-6 sm:mb-8 hover-primary bg-transparent text-sm sm:text-base"
-        >
-          <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
-          Orqaga qaytish
-        </Button>
+      <div className="container mx-auto px-4 py-6 max-w-4xl">
+        {/* Header with back button */}
+        <div className="flex items-center gap-3 mb-6">
+          <Button onClick={() => router.back()} variant="ghost" size="icon" className="rounded-full">
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <h1 className="text-2xl font-bold">Reklama</h1>
+        </div>
 
-        <Card className="overflow-hidden border-0 shadow-lg mb-8 sm:mb-12">
+        {/* Main content card */}
+        <Card className="overflow-hidden mb-6">
+          {/* Product image */}
           {reklama.media && (
-            <div className="relative w-full h-[250px] sm:h-[350px] lg:h-[400px] xl:h-[500px] bg-muted">
-              {isVideo(reklama.media) ? (
-                <video
-                  src={reklama.media.startsWith("http") ? reklama.media : `${API_BASE}${reklama.media}`}
-                  controls
-                  className="w-full h-full object-contain"
-                  preload="metadata"
-                >
-                  Brauzeringiz video formatini qo'llab-quvvatlamaydi.
-                </video>
-              ) : (
-                <Image
-                  src={reklama.media.startsWith("http") ? reklama.media : `${API_BASE}${reklama.media}`}
-                  alt={reklama.title}
-                  fill
-                  className="object-cover"
-                  priority
-                  unoptimized
-                  onError={(e) => {
-                    console.error("[v0] Image load error:", reklama.media)
-                    e.currentTarget.style.display = "none"
-                  }}
-                />
-              )}
+            <div className="relative aspect-video bg-muted">
+              <img src={`${API_BASE}${reklama.media}`} alt={reklama.title} className="w-full h-full object-contain" />
             </div>
           )}
 
-          <CardContent className="p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
-            {/* Title - Responsive typography */}
-            <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold leading-tight text-balance">
-              {reklama.title}
-            </h1>
+          <CardContent className="p-6 space-y-6">
+            {/* Title and basic info */}
+            <div className="space-y-3">
+              <h2 className="text-2xl font-bold text-balance">{reklama.title}</h2>
 
-            {reklama.description && (
-              <div className="space-y-2 sm:space-y-3">
-                <h2 className="text-lg sm:text-xl font-semibold text-primary">Tavsif</h2>
-                <div
-                  className="prose prose-sm sm:prose-base max-w-none text-muted-foreground leading-relaxed"
-                  dangerouslySetInnerHTML={{
-                    __html: cleanHtmlContent(reklama.description),
-                  }}
-                />
+              <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                {reklama.price && <div className="text-2xl font-bold text-primary">{reklama.price}</div>}
               </div>
-            )}
 
-            {/* Homepage content section - Responsive typography */}
-            {reklama.homepage_content && (
-              <div className="space-y-2 sm:space-y-3">
-                <h2 className="text-lg sm:text-xl font-semibold text-primary">Batafsil ma'lumot</h2>
-                <div
-                  className="prose prose-sm sm:prose-base max-w-none text-foreground leading-relaxed"
-                  dangerouslySetInnerHTML={{
-                    __html: cleanHtmlContent(reklama.homepage_content),
-                  }}
-                />
+              <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                {reklama.location && (
+                  <div className="flex items-center gap-1">
+                    <MapPin className="w-4 h-4" />
+                    <span>{reklama.location}</span>
+                  </div>
+                )}
+                {reklama.date && (
+                  <div className="flex items-center gap-1">
+                    <Calendar className="w-4 h-4" />
+                    <span>{reklama.date}</span>
+                  </div>
+                )}
               </div>
-            )}
-
-            {/* Author info - Responsive sizing */}
-            <div className="flex items-center gap-2 pt-3 sm:pt-4 border-t">
-              <User className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-              <span className="text-xs sm:text-sm text-muted-foreground">Muallif: {reklama.author || "Admin"}</span>
             </div>
+
+            {/* Description section */}
+            {(reklama.description || reklama.homepage_content) && (
+              <div className="space-y-2 pt-4 border-t">
+                <h3 className="font-semibold text-lg">Tavsif</h3>
+                <div className="text-muted-foreground leading-relaxed">
+                  {reklama.description ? (
+                    <div dangerouslySetInnerHTML={{ __html: reklama.description }} />
+                  ) : (
+                    <div dangerouslySetInnerHTML={{ __html: reklama.homepage_content || "" }} />
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Contact information */}
+            {(reklama.contact_name || reklama.contact_phone || reklama.contact_email) && (
+              <div className="space-y-3 pt-4 border-t">
+                <h3 className="font-semibold text-lg">Aloqa ma'lumotlari</h3>
+                <div className="space-y-2">
+                  {reklama.contact_name && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <User className="w-4 h-4 text-muted-foreground" />
+                      <span>{reklama.contact_name}</span>
+                    </div>
+                  )}
+                  {reklama.contact_phone && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Phone className="w-4 h-4 text-muted-foreground" />
+                      <span>{reklama.contact_phone}</span>
+                    </div>
+                  )}
+                  {reklama.contact_email && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Mail className="w-4 h-4 text-muted-foreground" />
+                      <span>{reklama.contact_email}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {otherReklamalar.length > 0 && (
-          <section className="space-y-6 sm:space-y-8">
-            <div className="text-center space-y-2">
-              <h2 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold text-balance">So'nggi reklamalar</h2>
-              <p className="text-sm sm:text-base text-muted-foreground">Boshqa muhim reklamalar bilan tanishing</p>
-            </div>
+        {/* Action buttons - fixed at bottom on mobile */}
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t md:relative md:border-0 md:p-0">
+          <div className="flex gap-3 max-w-4xl mx-auto">
+            <Button
+              variant="outline"
+              className="flex-1 bg-transparent"
+              onClick={() => {
+                if (reklama.contact_phone) {
+                  window.location.href = `tel:${reklama.contact_phone}`
+                }
+              }}
+            >
+              <Phone className="w-4 h-4 mr-2" />
+              Zavolať
+            </Button>
+            <Button
+              className="flex-1"
+              onClick={() => {
+                if (reklama.contact_email) {
+                  window.location.href = `mailto:${reklama.contact_email}`
+                }
+              }}
+            >
+              <Mail className="w-4 h-4 mr-2" />
+              Napísať správu
+            </Button>
+          </div>
+        </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {otherReklamalar.slice(0, ITEMS_PER_PAGE).map((item, idx) => (
-                <Card
-                  key={idx}
-                  className="group overflow-hidden border-0 shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer"
-                  onClick={() => handleSelectReklama(item)}
-                >
-                  <div className="relative w-full h-[180px] sm:h-[200px] lg:h-[220px] bg-muted overflow-hidden">
-                    {item.media ? (
-                      isVideo(item.media) ? (
-                        <video
-                          src={item.media.startsWith("http") ? item.media : `${API_BASE}${item.media}`}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                          preload="metadata"
-                          muted
-                        />
-                      ) : (
-                        <img
-                          src={item.media.startsWith("http") ? item.media : `${API_BASE}${item.media}`}
-                          alt={item.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                          onError={(e) => {
-                            console.error("[v0] Card image load error:", item.media)
-                            e.currentTarget.style.display = "none"
-                          }}
-                        />
-                      )
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
-                        <User className="h-10 w-10 sm:h-12 sm:w-12 text-primary/30" />
-                      </div>
-                    )}
-                  </div>
-                  <CardHeader className="space-y-2 sm:space-y-3 p-4 sm:p-6">
-                    <CardTitle className="text-base sm:text-lg font-semibold group-hover:text-primary transition-colors line-clamp-2 text-balance">
-                      {item.title}
-                    </CardTitle>
-                    <CardDescription className="line-clamp-3 text-xs sm:text-sm leading-relaxed">
-                      {stripHtmlTags(item.description || item.homepage_content || "")}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="flex items-center justify-between pt-0 p-4 sm:p-6">
-                    <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-                      <User className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
-                      <span className="line-clamp-1">{item.author || "Admin"}</span>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="bg-transparent hover-primary text-xs sm:text-sm"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleSelectReklama(item)
-                      }}
-                    >
-                      O'qish
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            <div className="flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-4 pt-6 sm:pt-8">
-              <Button
-                variant="outline"
-                disabled={page === 1}
-                onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-                className="hover-primary w-full sm:w-auto text-sm sm:text-base"
-              >
-                Oldingi
-              </Button>
-              <div className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-muted rounded-lg">
-                <span className="text-xs sm:text-sm font-medium">Sahifa {page}</span>
-              </div>
-              <Button
-                variant="outline"
-                disabled={otherReklamalar.length < ITEMS_PER_PAGE}
-                onClick={() => setPage((prev) => prev + 1)}
-                className="hover-primary w-full sm:w-auto text-sm sm:text-base"
-              >
-                Keyingi
-              </Button>
-            </div>
-          </section>
-        )}
-      </main>
+        {/* Spacer for fixed buttons on mobile */}
+        <div className="h-20 md:hidden" />
+      </div>
 
       <Footer />
     </div>

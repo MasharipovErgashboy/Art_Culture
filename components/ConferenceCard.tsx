@@ -11,6 +11,24 @@ import type { Conference } from "@/lib/api"
 import { getSlugForLang } from "@/lib/api"
 import { useRouter } from "next/navigation"
 
+const translations = {
+  uz: {
+    noImage: "Rasm mavjud emas",
+    pdfAvailable: "PDF mavjud",
+    viewConference: "Konferensiyani ko'rish",
+  },
+  ru: {
+    noImage: "Изображение недоступно",
+    pdfAvailable: "PDF доступен",
+    viewConference: "Просмотреть конференцию",
+  },
+  en: {
+    noImage: "No image available",
+    pdfAvailable: "PDF available",
+    viewConference: "View Conference",
+  },
+}
+
 interface ConferenceCardProps {
   conference: Conference
   lang: string
@@ -20,6 +38,7 @@ export function ConferenceCard({ conference, lang }: ConferenceCardProps) {
   const router = useRouter()
   const imageUrl = conference.image ? `https://artculture.pythonanywhere.com${conference.image}` : null
   const conferenceSlug = getSlugForLang(conference, lang)
+  const t = translations[lang as keyof typeof translations] || translations.uz
 
   const [imageError, setImageError] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
@@ -73,7 +92,7 @@ export function ConferenceCard({ conference, lang }: ConferenceCardProps) {
         <div className="relative h-72 w-full overflow-hidden rounded-t-lg bg-gradient-to-br from-primary/10 to-primary/20 flex items-center justify-center">
           <div className="text-center">
             <Calendar className="h-16 w-16 text-primary/40 mx-auto mb-4" />
-            <p className="text-primary/60 font-medium">Rasm mavjud emas</p>
+            <p className="text-primary/60 font-medium">{t.noImage}</p>
           </div>
         </div>
       )}
@@ -107,7 +126,7 @@ export function ConferenceCard({ conference, lang }: ConferenceCardProps) {
           {conference.pdf && (
             <div className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
-              <span>PDF mavjud</span>
+              <span>{t.pdfAvailable}</span>
             </div>
           )}
         </div>
@@ -117,7 +136,7 @@ export function ConferenceCard({ conference, lang }: ConferenceCardProps) {
           onClick={handleConferenceAccess}
           className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-md hover:shadow-lg transition-all duration-300 group"
         >
-          <span className="flex items-center gap-2">Konferensiyani ko'rish</span>
+          <span className="flex items-center gap-2">{t.viewConference}</span>
         </Button>
       </CardContent>
     </Card>
