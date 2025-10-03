@@ -12,6 +12,7 @@ import {
   fetchJournalIssue,
   fetchYangilik,
   fetchReklama,
+  fetchRasmiyElon,
   getSlugForLang,
 } from "@/lib/api"
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet"
@@ -239,6 +240,16 @@ export function Navbar() {
             console.log("[v0] Falling back to current slug")
             newSlug = currentSlug
           }
+        } else if (resourceType === "rasmiy-elon") {
+          console.log("[v0] Fetching rasmiy-elon for language change...")
+
+          try {
+            const rasmiyElon = await fetchRasmiyElon(currentSlug, currentLang)
+            newSlug = getSlugForLang(rasmiyElon, newLang)
+          } catch (error) {
+            console.error("[v0] Failed to fetch rasmiy-elon:", error)
+            newSlug = currentSlug
+          }
         }
 
         const newPath = `/${newLang}/${resourceType}/${newSlug}`
@@ -289,8 +300,6 @@ export function Navbar() {
     { href: `/${lang}/journals`, label: t.journals, icon: FileText },
     { href: `/${lang}/books`, label: t.books, icon: BookOpen },
     { href: `/${lang}/conferences`, label: t.conferences, icon: Calendar },
-    { href: `/${lang}/yangiliklar`, label: "Yangiliklar", icon: Globe }, // Added yangiliklar resource type
-    { href: `/${lang}/reklama`, label: "Reklama", icon: Globe }, // Added reklama resource type
   ]
 
   const getUserInitial = () => {

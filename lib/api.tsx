@@ -376,3 +376,49 @@ export async function fetchYangilik(slug: string, lang = "en"): Promise<Yangilik
     throw error
   }
 }
+
+export interface RasmiyElon {
+  id?: number
+  title: string
+  slug_uz: string
+  slug_en: string
+  slug_ru: string
+  media: string | null
+  homepage_content: string | null
+  description: string | null
+  author?: string
+}
+
+// Fetch single rasmiy elon by slug
+export async function fetchRasmiyElon(slug: string, lang = "en"): Promise<RasmiyElon> {
+  try {
+    const url = `${API_BASE}/${lang}/rasmiy-elonlar/${slug}/`
+    console.log("[v0] Fetching rasmiy elon from URL:", url)
+    console.log("[v0] Slug:", slug)
+    console.log("[v0] Language:", lang)
+
+    const response = await fetchWithTimeout(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "Accept-Language": lang,
+      },
+      mode: "cors",
+    })
+
+    if (!response.ok) {
+      console.error("[v0] API response not OK:", response.status, response.statusText)
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
+    console.log("[v0] Rasmiy elon API response:", data)
+
+    // API returns {detail: {...}} or just the object
+    return data.detail || data
+  } catch (error) {
+    console.error("[v0] Error fetching rasmiy elon:", error)
+    throw error
+  }
+}

@@ -76,7 +76,7 @@ export default function RasmiyElonDetailPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [currentElonId, setCurrentElonId] = useState<number | null>(null)
-
+  const [failedImages, setFailedImages] = useState<Set<number>>(new Set())
   const prevLang = useRef<string>("en")
 
   const lang = (params.lang as "uz" | "ru" | "en") || "en"
@@ -186,6 +186,8 @@ export default function RasmiyElonDetailPage() {
 
     const fetchOtherElonlar = async () => {
       try {
+        console.log("[v0] Fetching other elonlar from:", `${API_BASE}/${lang}/rasmiy-elonlar/?page=${page}`)
+
         const response = await fetch(`${API_BASE}/${lang}/rasmiy-elonlar/?page=${page}`, {
           headers: { "Accept-Language": lang },
         })
@@ -193,12 +195,20 @@ export default function RasmiyElonDetailPage() {
         if (!response.ok) throw new Error("Ma'lumot yuklab bo'lmadi")
 
         const data: RasmiyElon[] = await response.json()
+
+        console.log("[v0] Other elonlar data:", data)
+        console.log("[v0] First item media:", data[0]?.media)
+
         // Filter out the current rasmiy-elon from the list
         const currentSlug = params.slug as string
         const filtered = data.filter((item) => item.slug !== currentSlug)
+
+        console.log("[v0] Filtered elonlar count:", filtered.length)
+        console.log("[v0] Filtered elonlar:", filtered)
+
         setOtherElonlar(filtered)
       } catch (err) {
-        console.error("Other elonlar fetch error:", err)
+        console.error("[v0] Other elonlar fetch error:", err)
       }
     }
 
@@ -348,8 +358,8 @@ export default function RasmiyElonDetailPage() {
                   className="group overflow-hidden border-0 shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer"
                   onClick={() => handleSelectElon(item)}
                 >
-                  <div className="relative w-full h-[180px] sm:h-[200px] lg:h-[220px]">
-                    {item.media ? (
+                  <div className="relative w-full h-[180px] sm:h-[200px] lg:h-[220px] overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
+                    {item.media && !failedImages.has(idx) ? (
                       isVideoFile(item.media) ? (
                         <video
                           src={item.media.startsWith("http") ? item.media : `${API_BASE}${item.media}`}
@@ -363,12 +373,15 @@ export default function RasmiyElonDetailPage() {
                           Brauzeringiz video formatini qo'llab-quvvatlamaydi.
                         </video>
                       ) : (
-                        <Image
+                        <img
                           src={item.media.startsWith("http") ? item.media : `${API_BASE}${item.media}`}
                           alt={item.title}
-                          fill
-                          className="object-cover group-hover:scale-105 transition-transform duration-700"
-                          unoptimized
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                          onError={(e) => {
+                            console.log("[v0] Image failed to load:", item.media)
+                            e.currentTarget.style.display = "none"
+                            setFailedImages((prev) => new Set(prev).add(idx))
+                          }}
                         />
                       )
                     ) : (

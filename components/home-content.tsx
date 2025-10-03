@@ -35,6 +35,9 @@ interface RasmiyElon {
   title?: string
   slug?: string
   name?: string
+  slug_uz?: string
+  slug_ru?: string
+  slug_en?: string
 }
 
 interface Reklama {
@@ -160,7 +163,7 @@ const translations = {
     konferensiyaDesc: "Научные конференции и мероприятия",
     korish: "Посмотреть",
     nimaUchunBiz: "Почему выбирают нас?",
-    nimaUchunBizDesc: "Мы предоставляем лучшие услуги в области научных и��следований и образования",
+    nimaUchunBizDesc: "Мы предоставляем лучшие услуги в области научных исследований и образования",
     sifatliKontent: "Качественный контент",
     sifatliKontentDesc: "Научные материалы, проверенные экспертами",
     globalKirish: "Глобальный доступ",
@@ -252,21 +255,9 @@ export function HomeContent({ lang }: HomeContentProps) {
     router.push(`/${lang}/reklama/${slugToUse}`)
   }
 
-  const handleRasmiyElonDetail = (id?: number, slug?: string, name?: string) => {
-    // Try slug first, then name, then ID, then fallback to "rasmiy-elon"
-    const slugToUse = slug || name
-
-    const properSlug = slugToUse
-      ? slugToUse
-          .toLowerCase()
-          .replace(/[^\w\s-]/g, "")
-          .replace(/\s+/g, "-")
-          .trim()
-      : id
-        ? id.toString()
-        : "rasmiy-elon" // Fallback if everything is undefined
-
-    router.push(`/${lang}/rasmiy-elon/${properSlug}`)
+  const handleRasmiyElonDetail = (rasmiyElon: RasmiyElon) => {
+    const slugToUse = getSlugForLang(rasmiyElon, lang) || rasmiyElon.id.toString()
+    router.push(`/${lang}/rasmiy-elon/${slugToUse}`)
   }
 
   useEffect(() => {
@@ -404,7 +395,7 @@ export function HomeContent({ lang }: HomeContentProps) {
     if (slides && slides.length > 0) {
       const timer = setInterval(() => {
         setCurrentSlide((prev) => (prev + 1) % slides.length)
-      }, 5000)
+      }, 4000) // Changed from 5000ms to 4000ms (4 seconds)
       return () => clearInterval(timer)
     }
   }, [slides])
@@ -412,7 +403,7 @@ export function HomeContent({ lang }: HomeContentProps) {
   useEffect(() => {
     const videoTimer = setInterval(() => {
       setCurrentVideoSlide((prev) => (prev + 1) % adSlides.length)
-    }, 5000)
+    }, 4000) // Changed from 5000ms to 4000ms (4 seconds)
     return () => clearInterval(videoTimer)
   }, [adSlides])
 
@@ -578,12 +569,7 @@ export function HomeContent({ lang }: HomeContentProps) {
                       <Button
                         size="sm"
                         className="w-full bg-gradient-to-r from-[#003D7F] via-[#0059B2] to-[#007ACC] hover:from-[#002B5A] hover:via-[#004494] hover:to-[#005A99] text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold rounded-xl sm:rounded-2xl py-3 sm:py-4 group-button hover:scale-105 transform text-xs sm:text-sm"
-                        onClick={() =>
-                          handleRasmiyElonDetail(
-                            apiData.rasmiy_elon.id,
-                            apiData.rasmiy_elon.title, // Changed to use title as slug
-                          )
-                        }
+                        onClick={() => handleRasmiyElonDetail(apiData.rasmiy_elon)}
                       >
                         <span className="flex items-center justify-center space-x-2">
                           <span>{t.batafsil}</span>
