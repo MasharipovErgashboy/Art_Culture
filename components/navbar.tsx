@@ -343,27 +343,47 @@ export function Navbar() {
               <div className="hidden sm:block">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-10 w-10 rounded-full bg-white hover:bg-blue-50 p-0">
-                      <div className="h-full w-full rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-semibold text-base">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-10 w-10 rounded-full p-0 hover:ring-2 hover:ring-white/50 hover:ring-offset-2 hover:ring-offset-[#003D7F] transition-all duration-200"
+                    >
+                      <div className="h-full w-full rounded-full bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-base shadow-lg hover:shadow-xl transition-shadow">
                         {getUserInitial()}
                       </div>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48 z-[9999] pointer-events-auto bg-white">
-                    <div className="px-2 py-1.5 text-sm font-medium text-gray-700">{user.username}</div>
-                    <div className="px-2 py-1 text-xs text-gray-500 border-b mb-1">{user.email}</div>
-                    <DropdownMenuItem asChild>
-                      <Link href={`/${lang}/profile`} className="flex items-center gap-2 cursor-pointer">
-                        <User className="h-4 w-4" />
-                        <span>{t.profile}</span>
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-56 z-[9999] pointer-events-auto bg-white shadow-xl border border-gray-200 rounded-lg p-2"
+                  >
+                    <div className="px-3 py-2 mb-2 bg-gradient-to-br from-blue-50 to-blue-100 rounded-md">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-sm shadow-md">
+                          {getUserInitial()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-sm text-gray-900 truncate">{user.username}</div>
+                          <div className="text-xs text-gray-600 truncate">{user.email}</div>
+                        </div>
+                      </div>
+                    </div>
+                    <DropdownMenuItem asChild className="cursor-pointer rounded-md hover:bg-blue-50 transition-colors">
+                      <Link href={`/${lang}/profile`} className="flex items-center gap-3 px-3 py-2">
+                        <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                          <User className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <span className="font-medium text-gray-700">{t.profile}</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={handleLogout}
-                      className="flex items-center gap-2 cursor-pointer text-red-600"
+                      className="flex items-center gap-3 px-3 py-2 cursor-pointer rounded-md hover:bg-red-50 transition-colors text-red-600 hover:text-red-700"
                     >
-                      <LogOut className="h-4 w-4" />
-                      <span>{t.logout}</span>
+                      <div className="h-8 w-8 rounded-full bg-red-100 flex items-center justify-center">
+                        <LogOut className="h-4 w-4" />
+                      </div>
+                      <span className="font-medium">{t.logout}</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>

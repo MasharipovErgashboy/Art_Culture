@@ -18,8 +18,10 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   useEffect(() => {
     if (!isAuth) {
-      const returnUrl = encodeURIComponent(pathname || "/")
-      router.push(`/login?returnUrl=${returnUrl}`)
+      const pathParts = pathname?.split("/").filter(Boolean) || []
+      const lang = pathParts[0] && ["uz", "ru", "en"].includes(pathParts[0]) ? pathParts[0] : "uz"
+      const returnUrl = encodeURIComponent(pathname || `/${lang}`)
+      router.push(`/${lang}/login?returnUrl=${returnUrl}`)
     }
   }, [isAuth, router, pathname])
 

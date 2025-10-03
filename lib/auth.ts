@@ -1,24 +1,45 @@
 export function isAuthenticated(): boolean {
   if (typeof window === "undefined") return false
 
-  const user = localStorage.getItem("user")
   const accessToken = localStorage.getItem("access_token")
-
-  return !!(user && accessToken)
+  return !!accessToken
 }
 
-export function getUser() {
+export async function getUser() {
   if (typeof window === "undefined") return null
 
+  // First check localStorage
   const userData = localStorage.getItem("user")
-  if (!userData) return null
+  if (userData) {
+    try {
+      return JSON.parse(userData)
+    } catch (e) {
+      console.error("Error parsing user data:", e)
+    }
+  }
+
+  // If not in localStorage, fetch from API
+  const accessToken = localStorage.getItem("access_token")
+  if (!accessToken) return null
 
   try {
-    return JSON.parse(userData)
+    const response = await fetch("https://artculture.pythonanywhere.com/auth/me/", {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    })
+
+    if (response.ok) {
+      const user = await response.json()
+      // Cache in localStorage
+      localStorage.setItem("user", JSON.stringify(user))
+      return user
+    }
   } catch (e) {
-    console.error("Error parsing user data:", e)
-    return null
+    console.error("Error fetching user data:", e)
   }
+
+  return null
 }
 
 export function logout() {
@@ -27,6 +48,7 @@ export function logout() {
   localStorage.removeItem("user")
   localStorage.removeItem("access_token")
   localStorage.removeItem("refresh_token")
+  localStorage.removeItem("user_email")
 
   window.location.href = "/"
 }
