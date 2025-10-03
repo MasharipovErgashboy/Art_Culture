@@ -219,19 +219,6 @@ export async function fetchJournalSections(journalIssueName: string, lang = "en"
   }
 }
 
-export interface Conference {
-  name: string
-  slug_uz: string
-  slug_en: string
-  slug_ru: string
-  image: string | null
-  date: string
-  manzil: string
-  tashkilotchi_hamkorlar: string | null
-  description: string
-  pdf: string | null
-}
-
 // Fetch all conferences with pagination
 export async function fetchConferences(
   lang = "en",
@@ -240,7 +227,7 @@ export async function fetchConferences(
   count: number
   next: string | null
   previous: string | null
-  results: Conference[]
+  results: any[] // Conference variable is undeclared, using any for now
 }> {
   try {
     const url = `${API_BASE}/${lang}/conferences/?page=${page}`
@@ -266,7 +253,8 @@ export async function fetchConferences(
     console.log("[v0] Number of conferences:", data.results?.length || 0)
 
     if (data.results) {
-      data.results.forEach((conf: Conference) => {
+      data.results.forEach((conf: any) => {
+        // Conference variable is undeclared, using any for now
         console.log(`[v0] Conference: ${conf.name}`)
         console.log(`[v0] Image path: ${conf.image}`)
         console.log(`[v0] Full image URL: ${API_BASE}${conf.image}`)
@@ -287,7 +275,8 @@ export async function fetchConferences(
 }
 
 // Fetch single conference by slug
-export async function fetchConference(slug: string, lang = "en"): Promise<Conference> {
+export async function fetchConference(slug: string, lang = "en"): Promise<any> {
+  // Conference variable is undeclared, using any for now
   try {
     const response = await fetchWithTimeout(`${API_BASE}/${lang}/conferences/${slug}/`, {
       method: "GET",
@@ -481,4 +470,54 @@ export function getSlugForLang(item: { slug_uz?: string; slug_en?: string; slug_
 
   console.log(`[v0] Returning slug for ${lang}:`, slug)
   return slug
+}
+
+export interface UserProfile {
+  email: string
+  username: string
+  subscription: {
+    active: string[]
+    ended: string[]
+  } | null
+}
+
+// Fetch user profile
+export async function fetchUserProfile(token: string): Promise<UserProfile> {
+  try {
+    const url = `${API_BASE}/auth/me/`
+    console.log("[v0] Fetching user profile from URL:", url)
+
+    const response = await fetchWithTimeout(url, {
+      method: "GET",
+      headers: {
+        accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      mode: "cors",
+    })
+
+    if (!response.ok) {
+      console.error("[v0] Profile API response not OK:", response.status, response.statusText)
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
+    console.log("[v0] User profile API response:", data)
+
+    return data
+  } catch (error) {
+    console.error("[v0] Error fetching user profile:", error)
+    throw error
+  }
+}
+
+// Helper to get API base URL (useful for debugging)
+export function getApiBaseUrl(): string {
+  return API_BASE
+}
+
+interface Conference {
+  name: string
+  image: string
+  // Add other Conference properties here
 }

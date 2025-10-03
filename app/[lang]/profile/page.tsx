@@ -12,17 +12,38 @@ import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { User, Edit3, Save, X, AlertCircle, CheckCircle, Shield, Crown, Star } from "lucide-react"
 import { ProtectedRoute } from "@/components/protected-route"
+import { fetchUserProfile, type UserProfile } from "@/lib/api"
 
-interface UserProfile {
-  email: string
+interface Translations {
+  myProfile: string
+  manageAccount: string
+  editProfile: string
+  profileUpdated: string
+  authTokenNotFound: string
+  sessionExpired: string
+  failedToFetch: string
+  networkError: string
+  noProfileData: string
+  personalInfo: string
   username: string
-  subscription: {
-    active: string[]
-    ended: string[]
-  } | null
+  emailAddress: string
+  subscriptionStatus: string
+  currentPlan: string
+  activePremium: string
+  fullAccess: string
+  pendingActivation: string
+  activationInProgress: string
+  expired: string
+  limitedAccess: string
+  freePlan: string
+  renewSubscription: string
+  saveChanges: string
+  savingChanges: string
+  cancel: string
+  failedToSave: string
 }
 
-const translations = {
+const translations: { [key: string]: Translations } = {
   uz: {
     myProfile: "Mening profilim",
     manageAccount: "Hisob sozlamalarini boshqarish",
@@ -134,32 +155,18 @@ export default function ProfilePage({ params }: { params: Promise<{ lang: string
           return
         }
 
-        const response = await fetch("https://artculture.pythonanywhere.com/auth/me/", {
-          method: "GET",
-          headers: {
-            accept: "application/json",
-            Authorization: `Bearer ${token}`,
-            "X-CSRFTOKEN": localStorage.getItem("csrf_token") || "",
-          },
-        })
-
-        if (!response.ok) {
-          if (response.status === 401) {
-            setError(t.sessionExpired)
-            localStorage.removeItem("access_token")
-            localStorage.removeItem("refresh_token")
-          } else {
-            setError(`${t.failedToFetch}: ${response.status}`)
-          }
-          return
-        }
-
-        const data = await response.json()
+        const data = await fetchUserProfile(token)
         setProfile(data)
         setEditedProfile(data)
       } catch (err) {
         console.error("Profile fetch error:", err)
-        setError(t.networkError)
+        if (err instanceof Error && err.message.includes("401")) {
+          setError(t.sessionExpired)
+          localStorage.removeItem("access_token")
+          localStorage.removeItem("refresh_token")
+        } else {
+          setError(t.networkError)
+        }
       } finally {
         setLoading(false)
       }
