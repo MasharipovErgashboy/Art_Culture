@@ -372,7 +372,7 @@ export function Navbar() {
           </div>
 
           <div className="flex items-center space-x-2 sm:space-x-4">
-            <DropdownMenu>
+            <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
@@ -383,12 +383,12 @@ export function Navbar() {
                   <span className="text-xs sm:text-sm">{currentLang}</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="z-[100]">
                 {languages.map((language) => (
                   <DropdownMenuItem
                     key={language.code}
                     onClick={() => handleLanguageChange(language.code)}
-                    className="gap-2"
+                    className="gap-2 cursor-pointer"
                   >
                     <span>{language.flag}</span>
                     <span>{language.name}</span>
@@ -399,7 +399,7 @@ export function Navbar() {
 
             {!isLoadingUser && isLoggedIn && user ? (
               <div className="hidden sm:block">
-                <DropdownMenu>
+                <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm" className="h-10 w-10 rounded-full bg-white hover:bg-blue-50 p-0">
                       <div className="h-full w-full rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-semibold text-base">
@@ -407,7 +407,7 @@ export function Navbar() {
                       </div>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuContent align="end" className="w-48 z-[100]">
                     <div className="px-2 py-1.5 text-sm font-medium text-gray-700">{user.username}</div>
                     <div className="px-2 py-1 text-xs text-gray-500 border-b mb-1">{user.email}</div>
                     <DropdownMenuItem asChild>
