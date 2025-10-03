@@ -5,7 +5,7 @@ import Link from "next/link"
 import { usePathname, useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Globe, Menu, BookOpen, Calendar, FileText, User, LogOut } from "lucide-react"
+import { Menu, BookOpen, Calendar, FileText, User, LogOut } from "lucide-react"
 import {
   fetchJournal,
   fetchConference,
@@ -16,7 +16,6 @@ import {
   getSlugForLang,
 } from "@/lib/api"
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet"
-import { languages } from "@/lib/languages"
 import { logout } from "@/lib/auth"
 
 interface UserProfile {
@@ -66,8 +65,6 @@ const navTranslations = {
 
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false)
-  const [currentLang, setCurrentLang] = useState("UZB")
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [user, setUser] = useState<UserProfile | null>(null)
   const [isLoadingUser, setIsLoadingUser] = useState(true)
@@ -148,24 +145,11 @@ export function Navbar() {
     }
   }, [pathname])
 
-  useEffect(() => {
-    const urlLangMap: { [key: string]: string } = {
-      uz: "UZB",
-      ru: "RUS",
-      en: "ENG",
-    }
-    setCurrentLang(urlLangMap[lang] || "UZB")
-  }, [lang])
-
   const handleLanguageChange = async (langCode: string) => {
-    console.log("[v0] Language change clicked:", langCode)
-    setCurrentLang(langCode)
-    setIsLangDropdownOpen(false)
-
     const langMap: { [key: string]: string } = {
-      UZB: "uz",
-      RUS: "ru",
-      ENG: "en",
+      uz: "uz",
+      ru: "ru",
+      en: "en",
     }
 
     const newLang = langMap[langCode] || "uz"
@@ -182,13 +166,6 @@ export function Navbar() {
       const resourceType = pathParts[1]
       const currentSlug = pathParts[2]
 
-      console.log("[v0] Language change detected:", {
-        resourceType,
-        currentSlug,
-        currentLang,
-        newLang,
-      })
-
       try {
         let newSlug = currentSlug
 
@@ -202,50 +179,22 @@ export function Navbar() {
           const issue = await fetchJournalIssue(currentSlug, currentLang)
           newSlug = getSlugForLang(issue, newLang)
         } else if (resourceType === "yangiliklar") {
-          console.log("[v0] Fetching yangilik for language change...")
-          console.log("[v0] Current slug:", currentSlug)
-          console.log("[v0] Current lang:", currentLang)
-          console.log("[v0] Target lang:", newLang)
-
           try {
             const yangilik = await fetchYangilik(currentSlug, currentLang)
-            console.log("[v0] Yangilik data received:", yangilik)
-            console.log("[v0] Available slugs:", {
-              slug_uz: yangilik.slug_uz,
-              slug_en: yangilik.slug_en,
-              slug_ru: yangilik.slug_ru,
-            })
             newSlug = getSlugForLang(yangilik, newLang)
-            console.log("[v0] New slug for", newLang, ":", newSlug)
           } catch (error) {
             console.error("[v0] Failed to fetch yangilik:", error)
-            console.log("[v0] Falling back to current slug")
             newSlug = currentSlug
           }
         } else if (resourceType === "reklama") {
-          console.log("[v0] Fetching reklama for language change...")
-          console.log("[v0] Current slug:", currentSlug)
-          console.log("[v0] Current lang:", currentLang)
-          console.log("[v0] Target lang:", newLang)
-
           try {
             const reklama = await fetchReklama(currentSlug, currentLang)
-            console.log("[v0] Reklama data received:", reklama)
-            console.log("[v0] Available slugs:", {
-              slug_uz: reklama.slug_uz,
-              slug_en: reklama.slug_en,
-              slug_ru: reklama.slug_ru,
-            })
             newSlug = getSlugForLang(reklama, newLang)
-            console.log("[v0] New slug for", newLang, ":", newSlug)
           } catch (error) {
             console.error("[v0] Failed to fetch reklama:", error)
-            console.log("[v0] Falling back to current slug")
             newSlug = currentSlug
           }
         } else if (resourceType === "rasmiy-elon") {
-          console.log("[v0] Fetching rasmiy-elon for language change...")
-
           try {
             const rasmiyElon = await fetchRasmiyElon(currentSlug, currentLang)
             newSlug = getSlugForLang(rasmiyElon, newLang)
@@ -256,7 +205,6 @@ export function Navbar() {
         }
 
         const newPath = `/${newLang}/${resourceType}/${newSlug}`
-        console.log("[v0] Redirecting to:", newPath)
         router.push(newPath)
 
         window.dispatchEvent(
@@ -375,37 +323,21 @@ export function Navbar() {
           </div>
 
           <div className="flex items-center space-x-2 sm:space-x-4">
-            <DropdownMenu open={isLangDropdownOpen} onOpenChange={setIsLangDropdownOpen}>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-1 sm:gap-2 bg-transparent border-blue-300 text-blue-100 hover:bg-blue-800 hover:text-white px-2 sm:px-3"
-                  onClick={() => {
-                    console.log("[v0] Language button clicked, current state:", isLangDropdownOpen)
-                    setIsLangDropdownOpen(!isLangDropdownOpen)
-                  }}
+            <div className="hidden sm:flex items-center gap-1 bg-white/10 rounded-md p-1">
+              {["uz", "ru", "en"].map((langCode) => (
+                <button
+                  key={langCode}
+                  onClick={() => handleLanguageChange(langCode)}
+                  className={`px-3 py-1.5 text-sm font-medium rounded transition-all ${
+                    lang === langCode
+                      ? "bg-white text-[#003D7F] shadow-sm"
+                      : "text-blue-100 hover:text-white hover:bg-white/10"
+                  }`}
                 >
-                  <Globe className="h-3 w-3 sm:h-4 sm:w-4" />
-                  <span className="text-xs sm:text-sm">{currentLang}</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="z-[9999] pointer-events-auto bg-white">
-                {languages.map((language) => (
-                  <DropdownMenuItem
-                    key={language.code}
-                    onClick={() => {
-                      console.log("[v0] Language item clicked:", language.code)
-                      handleLanguageChange(language.code)
-                    }}
-                    className="gap-2 cursor-pointer hover:bg-gray-100"
-                  >
-                    <span>{language.flag}</span>
-                    <span>{language.name}</span>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  {langCode.toUpperCase()}
+                </button>
+              ))}
+            </div>
 
             {!isLoadingUser && isLoggedIn && user ? (
               <div className="hidden sm:block">
@@ -471,6 +403,25 @@ export function Navbar() {
                   <SheetTitle>{t.menu}</SheetTitle>
                 </SheetHeader>
                 <div className="flex flex-col space-y-4 mt-6">
+                  <div className="flex items-center gap-2 bg-gray-100 rounded-md p-1">
+                    {["uz", "ru", "en"].map((langCode) => (
+                      <button
+                        key={langCode}
+                        onClick={() => {
+                          handleLanguageChange(langCode)
+                          setIsMenuOpen(false)
+                        }}
+                        className={`flex-1 px-3 py-2 text-sm font-medium rounded transition-all ${
+                          lang === langCode
+                            ? "bg-white text-[#003D7F] shadow-sm"
+                            : "text-gray-600 hover:text-gray-900 hover:bg-white/50"
+                        }`}
+                      >
+                        {langCode.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
+
                   <div className="space-y-2">
                     {centerNavItems.map((item) => {
                       const Icon = item.icon

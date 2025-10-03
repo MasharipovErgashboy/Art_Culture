@@ -26,7 +26,28 @@ interface YangiliklarAPIResponse {
   "10_data": Yangilik[]
 }
 
-const API_BASE = "http://127.0.0.1:8000"
+const API_BASE = "https://artculture.pythonanywhere.com"
+const API_TIMEOUT = 15000 // 15 seconds timeout
+
+async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout = API_TIMEOUT) {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), timeout)
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    })
+    clearTimeout(timeoutId)
+    return response
+  } catch (error) {
+    clearTimeout(timeoutId)
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error("Server bilan bog'lanish vaqti tugadi. Iltimos, qaytadan urinib ko'ring.")
+    }
+    throw error
+  }
+}
 
 export default function YangiliklarPage() {
   const params = useParams()
@@ -51,15 +72,8 @@ export default function YangiliklarPage() {
         setError(null)
 
         if (isListView) {
-          const response = await fetch(`${API_BASE}/${lang}/yangiliklar/`)
-          if (!response.ok) throw new Error("Ma'lumot yuklanmadi")
-          const data: Yangilik[] = await response.json()
-          setAllNews(data)
-          if (!featuredNews && data.length > 0) {
-            setFeaturedNews(data[0])
-          }
-        } else {
-          const response = await fetch(`${API_BASE}/${lang}/yangiliklar/${slug}/`, {
+          console.log("[v0] Fetching yangiliklar list from:", `${API_BASE}/${lang}/yangiliklar/`)
+          const response = await fetchWithTimeout(`${API_BASE}/${lang}/yangiliklar/`, {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
@@ -70,23 +84,58 @@ export default function YangiliklarPage() {
           })
 
           if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`)
+            throw new Error(`Ma'lumot yuklanmadi (Status: ${response.status})`)
+          }
+
+          const data: Yangilik[] = await response.json()
+          console.log("[v0] Yangiliklar list response:", data)
+          setAllNews(data)
+          if (!featuredNews && data.length > 0) {
+            setFeaturedNews(data[0])
+          }
+        } else {
+          const url = `${API_BASE}/${lang}/yangiliklar/${slug}/`
+          console.log("[v0] Fetching yangilik detail from:", url)
+          console.log("[v0] Request params - lang:", lang, "slug:", slug)
+
+          const response = await fetchWithTimeout(url, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+              "Accept-Language": lang,
+            },
+            mode: "cors",
+          })
+
+          console.log("[v0] Response status:", response.status, response.statusText)
+
+          if (!response.ok) {
+            throw new Error(`Server xatosi: ${response.status} ${response.statusText}`)
           }
 
           const data: YangiliklarAPIResponse = await response.json()
+          console.log("[v0] Yangilik detail response:", data)
 
           if (data.detail) {
+            console.log("[v0] Setting detail yangilik:", data.detail)
             setDetailYangilik(data.detail)
             if (data["10_data"] && data["10_data"].length > 0) {
+              console.log("[v0] Setting related news:", data["10_data"].length, "items")
               setAllNews(data["10_data"])
             }
           } else {
+            console.error("[v0] API response missing detail field:", data)
             throw new Error("Yangilik topilmadi")
           }
         }
       } catch (err) {
-        console.error("[v0] Error fetching news:", err)
-        setError(err instanceof Error ? err.message : "Xatolik yuz berdi")
+        console.error("[v0] Error fetching yangiliklar:", err)
+        if (err instanceof Error) {
+          setError(err.message)
+        } else {
+          setError("Xatolik yuz berdi. Iltimos, qaytadan urinib ko'ring.")
+        }
       } finally {
         setIsLoading(false)
       }
