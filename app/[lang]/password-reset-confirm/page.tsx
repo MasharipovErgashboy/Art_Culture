@@ -12,9 +12,78 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Eye, EyeOff, Lock, CheckCircle, AlertCircle } from "lucide-react"
 
-const AUTH_BASE = "https://artculture.pythonanywhere.com/"
+const AUTH_BASE = "https://artculture.pythonanywhere.com"
 
-export default function PasswordResetConfirmPage() {
+const translations = {
+  uz: {
+    title: "Yangi parol o'rnating",
+    description: "Quyida yangi parolingizni kiriting",
+    passwordLabel: "Yangi parol",
+    passwordPlaceholder: "Yangi parolingizni kiriting",
+    resetButton: "Parolni tiklash",
+    resettingButton: "Parol tiklanmoqda...",
+    successTitle: "Parol muvaffaqiyatli tiklandi",
+    successDescription:
+      "Parolingiz muvaffaqiyatli yangilandi. Bir necha soniyadan keyin login sahifasiga yo'naltirilasiz.",
+    loginButton: "Tizimga kirish",
+    loginNote: "Endi yangi parolingiz bilan tizimga kirishingiz mumkin",
+    backToLogin: "Tizimga kirish sahifasiga qaytish",
+    newRequestLink: "yangi tiklash so'rovi yuboring",
+    problemText: "Agar muammo bo'lsa,",
+    errorInvalidToken: "Noto'g'ri tiklash havolasi. Iltimos, yangi parol tiklash so'rovini yuboring.",
+    errorInvalidTokenShort: "Noto'g'ri tiklash tokeni",
+    errorPasswordLength: "Parol kamida 6 ta belgidan iborat bo'lishi kerak",
+    errorDefault: "Parolni tiklashda xatolik yuz berdi. Qaytadan urinib ko'ring.",
+    errorNetwork: "Tarmoq xatosi. Internetga ulanishni tekshiring va qaytadan urinib ko'ring.",
+  },
+  ru: {
+    title: "Установите новый пароль",
+    description: "Введите ваш новый пароль ниже",
+    passwordLabel: "Новый пароль",
+    passwordPlaceholder: "Введите новый пароль",
+    resetButton: "Сбросить пароль",
+    resettingButton: "Сброс пароля...",
+    successTitle: "Пароль успешно сброшен",
+    successDescription:
+      "Ваш пароль успешно обновлен. Через несколько секунд вы будете перенаправлены на страницу входа.",
+    loginButton: "Войти в систему",
+    loginNote: "Теперь вы можете войти с новым паролем",
+    backToLogin: "Вернуться на страницу входа",
+    newRequestLink: "отправить новый запрос на сброс",
+    problemText: "Если возникла проблема,",
+    errorInvalidToken: "Неверная ссылка для сброса. Пожалуйста, отправьте новый запрос на сброс пароля.",
+    errorInvalidTokenShort: "Неверный токен сброса",
+    errorPasswordLength: "Пароль должен содержать не менее 6 символов",
+    errorDefault: "Ошибка при сбросе пароля. Попробуйте еще раз.",
+    errorNetwork: "Ошибка сети. Проверьте подключение к интернету и попробуйте снова.",
+  },
+  en: {
+    title: "Set New Password",
+    description: "Enter your new password below",
+    passwordLabel: "New Password",
+    passwordPlaceholder: "Enter your new password",
+    resetButton: "Reset Password",
+    resettingButton: "Resetting Password...",
+    successTitle: "Password Successfully Reset",
+    successDescription:
+      "Your password has been successfully updated. You will be redirected to the login page in a few seconds.",
+    loginButton: "Login",
+    loginNote: "You can now login with your new password",
+    backToLogin: "Back to login page",
+    newRequestLink: "submit a new reset request",
+    problemText: "If there's a problem,",
+    errorInvalidToken: "Invalid reset link. Please submit a new password reset request.",
+    errorInvalidTokenShort: "Invalid reset token",
+    errorPasswordLength: "Password must be at least 6 characters long",
+    errorDefault: "Error resetting password. Please try again.",
+    errorNetwork: "Network error. Check your internet connection and try again.",
+  },
+}
+
+export default function PasswordResetConfirmPage({ params }: { params: { lang: string } }) {
+  const lang = params.lang || "uz"
+  const t = translations[lang as keyof typeof translations] || translations.uz
+
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -30,20 +99,20 @@ export default function PasswordResetConfirmPage() {
     if (tokenParam) {
       setToken(tokenParam)
     } else {
-      setError("Noto'g'ri tiklash havolasi. Iltimos, yangi parol tiklash so'rovini yuboring.")
+      setError(t.errorInvalidToken)
     }
-  }, [searchParams])
+  }, [searchParams, t])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!token) {
-      setError("Noto'g'ri tiklash tokeni")
+      setError(t.errorInvalidTokenShort)
       return
     }
 
     if (password.length < 6) {
-      setError("Parol kamida 6 ta belgidan iborat bo'lishi kerak")
+      setError(t.errorPasswordLength)
       return
     }
 
@@ -72,10 +141,10 @@ export default function PasswordResetConfirmPage() {
           router.push("/login")
         }, 3000)
       } else {
-        setError(data.detail || data.message || "Parolni tiklashda xatolik yuz berdi. Qaytadan urinib ko'ring.")
+        setError(data.detail || data.message || t.errorDefault)
       }
     } catch (error) {
-      setError("Tarmoq xatosi. Internetga ulanishni tekshiring va qaytadan urinib ko'ring.")
+      setError(t.errorNetwork)
     } finally {
       setIsLoading(false)
     }
@@ -91,19 +160,17 @@ export default function PasswordResetConfirmPage() {
               <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
                 <CheckCircle className="w-8 h-8 text-green-600" />
               </div>
-              <CardTitle className="text-2xl font-bold text-green-600">Parol muvaffaqiyatli tiklandi</CardTitle>
-              <CardDescription className="text-muted-foreground">
-                Parolingiz muvaffaqiyatli yangilandi. Bir necha soniyadan keyin login sahifasiga yo'naltirilasiz.
-              </CardDescription>
+              <CardTitle className="text-2xl font-bold text-green-600">{t.successTitle}</CardTitle>
+              <CardDescription className="text-muted-foreground">{t.successDescription}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <Link href="/login">
                 <Button className="w-full" size="lg">
-                  Tizimga kirish
+                  {t.loginButton}
                 </Button>
               </Link>
               <div className="text-center">
-                <p className="text-sm text-muted-foreground">Endi yangi parolingiz bilan tizimga kirishingiz mumkin</p>
+                <p className="text-sm text-muted-foreground">{t.loginNote}</p>
               </div>
             </CardContent>
           </Card>
@@ -123,13 +190,13 @@ export default function PasswordResetConfirmPage() {
               <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
                 <Lock className="w-8 h-8 text-primary" />
               </div>
-              <CardTitle className="text-2xl font-bold text-foreground">Yangi parol o'rnating</CardTitle>
-              <CardDescription className="text-muted-foreground">Quyida yangi parolingizni kiriting</CardDescription>
+              <CardTitle className="text-2xl font-bold text-foreground">{t.title}</CardTitle>
+              <CardDescription className="text-muted-foreground">{t.description}</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="password">Yangi parol</Label>
+                  <Label htmlFor="password">{t.passwordLabel}</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                     <Input
@@ -137,7 +204,7 @@ export default function PasswordResetConfirmPage() {
                       type={showPassword ? "text" : "password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Yangi parolingizni kiriting"
+                      placeholder={t.passwordPlaceholder}
                       required
                       className="pl-10 pr-10"
                     />
@@ -159,20 +226,20 @@ export default function PasswordResetConfirmPage() {
                 )}
 
                 <Button type="submit" className="w-full" size="lg" disabled={isLoading || !token}>
-                  {isLoading ? "Parol tiklanmoqda..." : "Parolni tiklash"}
+                  {isLoading ? t.resettingButton : t.resetButton}
                 </Button>
 
                 <div className="text-center">
                   <Link href="/login" className="text-sm text-primary hover:underline">
-                    Tizimga kirish sahifasiga qaytish
+                    {t.backToLogin}
                   </Link>
                 </div>
 
                 <div className="text-center">
                   <p className="text-xs text-muted-foreground">
-                    Agar muammo bo'lsa,{" "}
-                    <Link href="/forgot-password" className="text-primary hover:underline">
-                      yangi tiklash so'rovi yuboring
+                    {t.problemText}{" "}
+                    <Link href={`/${lang}/forgot-password`} className="text-primary hover:underline">
+                      {t.newRequestLink}
                     </Link>
                   </p>
                 </div>

@@ -68,7 +68,7 @@ export function JournalCard({ journal, lang }: JournalCardProps) {
     const authenticated = isAuthenticated()
 
     if (!authenticated) {
-      router.push(`/login?returnUrl=${encodeURIComponent(`/${lang}/journals/${journalSlug}`)}`)
+      router.push(`/${lang}/login?returnUrl=${encodeURIComponent(`/${lang}/journals/${journalSlug}`)}`)
       return
     }
 
