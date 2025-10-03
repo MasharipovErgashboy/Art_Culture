@@ -90,7 +90,7 @@ export function Navbar() {
 
       try {
         console.log("[v0] Fetching user profile from API...")
-        const response = await fetch("http://127.0.0.1:8000/auth/me/", {
+        const response = await fetch("https://artculture.pythonanywhere.com/auth/me/", {
           method: "GET",
           headers: {
             accept: "application/json",

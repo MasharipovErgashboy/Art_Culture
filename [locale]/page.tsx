@@ -17,8 +17,8 @@ export default function HomePage({ params }: { params: { locale: string } }) {
         // API URL tilga qarab tanlanadi
         const apiUrl =
           locale === "uz"
-            ? "http://127.0.0.1:8000/" // default
-            : `http://127.0.0.1:8000/${locale}`
+            ? "https://artculture.pythonanywhere.com/" // default
+            : `https://artculture.pythonanywhere.com/${locale}`
 
         const res = await fetch(apiUrl)
         if (!res.ok) throw new Error(`API error: ${res.status}`)

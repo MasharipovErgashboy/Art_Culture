@@ -10,9 +10,37 @@ import { fetchJournals, type Journal } from "@/lib/api"
 import { BookOpen, AlertCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
+const translations = {
+  uz: {
+    pageTitle: "Ilmiy Jurnallar",
+    pageDescription:
+      "Eng so'nggi ilmiy tadqiqotlar va maqolalar to'plami. Turli sohalardagi ekspert fikrlari va yangiliklar.",
+    loading: "Jurnallar yuklanmoqda...",
+    noJournals: "Hozircha jurnallar mavjud emas",
+    noJournalsDesc: "Tez orada yangi jurnallar qo'shiladi.",
+  },
+  ru: {
+    pageTitle: "Научные Журналы",
+    pageDescription:
+      "Сборник последних научных исследований и статей. Экспертные мнения и новости из различных областей.",
+    loading: "Загрузка журналов...",
+    noJournals: "Пока нет доступных журналов",
+    noJournalsDesc: "Скоро будут добавлены новые журналы.",
+  },
+  en: {
+    pageTitle: "Scientific Journals",
+    pageDescription:
+      "Collection of the latest scientific research and articles. Expert opinions and news from various fields.",
+    loading: "Loading journals...",
+    noJournals: "No journals available yet",
+    noJournalsDesc: "New journals will be added soon.",
+  },
+}
+
 export default function JournalsPage() {
   const params = useParams()
-  const lang = (params.lang as string) || "en"
+  const lang = (params.lang as string) || "uz"
+  const t = translations[lang as keyof typeof translations] || translations.uz
 
   const [journals, setJournals] = useState<Journal[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -26,7 +54,7 @@ export default function JournalsPage() {
         const data = await fetchJournals(lang)
         setJournals(data)
       } catch (err) {
-        console.error("Error loading journals:", err)
+        console.error("[v0] Error loading journals:", err)
         if (err instanceof TypeError && err.message.includes("fetch")) {
           setError("Django server bilan bog'lanish xatoligi. Server ishlamayapti yoki CORS sozlamalari noto'g'ri.")
         } else {
@@ -46,21 +74,19 @@ export default function JournalsPage() {
 
       <main className="container mx-auto px-4 py-8">
         {/* Header */}
-        {/* <div className="text-center mb-12">
+        <div className="text-center mb-12">
           <div className="flex items-center justify-center gap-3 mb-4">
             <div className="p-3 rounded-full bg-primary/10">
               <BookOpen className="h-8 w-8 text-primary" />
             </div>
           </div>
-          <h1 className="text-4xl font-bold text-foreground mb-4">Ilmiy Jurnallar</h1>
-          <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
-            Eng so'nggi ilmiy tadqiqotlar va maqolalar to'plami. Turli sohalardagi ekspert fikrlari va yangiliklar.
-          </p>
-        </div> */}
+          <h1 className="text-4xl font-bold text-foreground mb-4">{t.pageTitle}</h1>
+          <p className="text-muted-foreground max-w-2xl mx-auto text-lg">{t.pageDescription}</p>
+        </div>
 
         {/* Content */}
         {isLoading ? (
-          <Loader message="Jurnallar yuklanmoqda..." />
+          <Loader message={t.loading} />
         ) : error ? (
           <Alert className="max-w-2xl mx-auto">
             <AlertCircle className="h-4 w-4" />
@@ -69,13 +95,13 @@ export default function JournalsPage() {
         ) : journals.length === 0 ? (
           <div className="text-center py-12">
             <BookOpen className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-muted-foreground mb-2">Hozircha jurnallar mavjud emas</h3>
-            <p className="text-muted-foreground">Tez orada yangi jurnallar qo'shiladi.</p>
+            <h3 className="text-xl font-semibold text-muted-foreground mb-2">{t.noJournals}</h3>
+            <p className="text-muted-foreground">{t.noJournalsDesc}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {journals.map((journal) => (
-              <JournalCard key={journal.id} journal={journal} lang={lang} />
+              <JournalCard key={journal.slug_uz} journal={journal} lang={lang} />
             ))}
           </div>
         )}
@@ -84,4 +110,4 @@ export default function JournalsPage() {
       <Footer />
     </div>
   )
-} 
+}

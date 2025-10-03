@@ -23,7 +23,7 @@ interface Reklama {
   author?: string
 }
 
-const API_BASE = "http://127.0.0.1:8000"
+const API_BASE = "https://artculture.pythonanywhere.com"
 
 const decodeHtmlEntities = (text: string) => {
   const textarea = document.createElement("textarea")

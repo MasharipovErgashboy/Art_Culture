@@ -40,7 +40,7 @@ export default function BookCategoriesPage() {
         setLoading(true)
         setError(null)
 
-        const response = await fetch("http://127.0.0.1:8000/book-categories/", {
+        const response = await fetch("https://artculture.pythonanywhere.com/book-categories/", {
           method: "GET",
           headers: {
             "Content-Type": "application/json",

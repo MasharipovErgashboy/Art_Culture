@@ -1,4 +1,4 @@
-const API_BASE = "http://127.0.0.1:8000"
+const API_BASE = "https://artculture.pythonanywhere.com"
 const API_TIMEOUT = 10000 // 10 seconds timeout
 
 // Helper function to create fetch with timeout

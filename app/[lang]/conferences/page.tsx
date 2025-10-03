@@ -13,13 +13,99 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Link from "next/link"
 import Image from "next/image"
 
-const API_BASE = "http://127.0.0.1:8000"
+const API_BASE = "https://artculture.pythonanywhere.com"
+
+const translations = {
+  uz: {
+    pageTitle: "Konferensiyalar",
+    pageDescription:
+      "Ilmiy konferensiyalar va tadbirlar haqida ma'lumotlar. Eng so'nggi tadbirlar va ularning natijalari.",
+    loading: "Konferensiyalar yuklanmoqda...",
+    apiError: "API xatolik:",
+    staticDataShown: "Statik ma'lumotlar ko'rsatilmoqda",
+    upcomingTab: "Kelayotgan tadbirlar",
+    pastTab: "O'tgan tadbirlar",
+    noUpcoming: "Kelayotgan konferensiyalar mavjud emas",
+    noUpcomingDesc: "Tez orada yangi konferensiyalar qo'shiladi.",
+    noPast: "O'tgan konferensiyalar mavjud emas",
+    noPastDesc: "Hozircha o'tgan tadbirlar ro'yxati bo'sh.",
+    international: "Xalqaro",
+    registrationOpen: "Ro'yxatdan o'tish ochiq",
+    completed: "Yakunlangan",
+    detailsButton: "Batafsil ma'lumot",
+    viewButton: "Ko'rish",
+    materialsButton: "Materiallar",
+    sidebarTitle: "Konferensiya ma'lumotlari",
+    upcomingConferences: "Kelayotgan konferensiyalar",
+    pastConferences: "O'tgan konferensiyalar",
+    detailsShort: "Batafsil",
+    organizeTitle: "Tadbir tashkil qilish",
+    organizeDesc: "O'zingizning konferensiyangizni tashkil qiling va ilmiy hamjamiyat bilan bo'lishing.",
+    submitProposal: "Taklif yuborish",
+    downloadGuide: "Qo'llanma yuklab olish",
+  },
+  ru: {
+    pageTitle: "Конференции",
+    pageDescription: "Информация о научных конференциях и мероприятиях. Последние события и их результаты.",
+    loading: "Загрузка конференций...",
+    apiError: "Ошибка API:",
+    staticDataShown: "Показаны статические данные",
+    upcomingTab: "Предстоящие мероприятия",
+    pastTab: "Прошедшие мероприятия",
+    noUpcoming: "Нет предстоящих конференций",
+    noUpcomingDesc: "Скоро будут добавлены новые конференции.",
+    noPast: "Нет прошедших конференций",
+    noPastDesc: "Пока список прошедших мероприятий пуст.",
+    international: "Международная",
+    registrationOpen: "Регистрация открыта",
+    completed: "Завершена",
+    detailsButton: "Подробная информация",
+    viewButton: "Просмотр",
+    materialsButton: "Материалы",
+    sidebarTitle: "Информация о конференции",
+    upcomingConferences: "Предстоящие конференции",
+    pastConferences: "Прошедшие конференции",
+    detailsShort: "Подробнее",
+    organizeTitle: "Организация мероприятия",
+    organizeDesc: "Организуйте свою конференцию и поделитесь с научным сообществом.",
+    submitProposal: "Отправить предложение",
+    downloadGuide: "Скачать руководство",
+  },
+  en: {
+    pageTitle: "Conferences",
+    pageDescription: "Information about scientific conferences and events. Latest events and their results.",
+    loading: "Loading conferences...",
+    apiError: "API error:",
+    staticDataShown: "Showing static data",
+    upcomingTab: "Upcoming Events",
+    pastTab: "Past Events",
+    noUpcoming: "No upcoming conferences",
+    noUpcomingDesc: "New conferences will be added soon.",
+    noPast: "No past conferences",
+    noPastDesc: "The list of past events is currently empty.",
+    international: "International",
+    registrationOpen: "Registration Open",
+    completed: "Completed",
+    detailsButton: "More Details",
+    viewButton: "View",
+    materialsButton: "Materials",
+    sidebarTitle: "Conference Information",
+    upcomingConferences: "Upcoming Conferences",
+    pastConferences: "Past Conferences",
+    detailsShort: "Details",
+    organizeTitle: "Organize an Event",
+    organizeDesc: "Organize your own conference and share with the scientific community.",
+    submitProposal: "Submit Proposal",
+    downloadGuide: "Download Guide",
+  },
+}
 
 export default function ConferencesPage() {
   const params = useParams()
   const searchParams = useSearchParams()
   const router = useRouter()
   const lang = (params.lang as string) || "en"
+  const t = translations[lang as keyof typeof translations] || translations.en
 
   const [conferences, setConferences] = useState<Conference[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -50,7 +136,7 @@ export default function ConferencesPage() {
       console.error("[v0] Error loading conferences:", err)
       if (err instanceof TypeError && err.message.includes("fetch")) {
         setError(
-          "Django server bilan bog'lanish xatoligi. Iltimos, Django server ishlab turganligini tekshiring (http://127.0.0.1:8000) va CORS sozlamalari to'g'ri ekanligini tasdiqlang.",
+          "Django server bilan bog'lanish xatoligi. Iltimos, Django server ishlab turganligini tekshiring (https://artculture.pythonanywhere.com) va CORS sozlamalari to'g'ri ekanligini tasdiqlang.",
         )
       } else {
         setError(err instanceof Error ? err.message : "Konferensiyalarni yuklashda xatolik yuz berdi")
@@ -100,7 +186,7 @@ export default function ConferencesPage() {
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Konferensiyalar yuklanmoqda...</p>
+            <p className="text-muted-foreground">{t.loading}</p>
           </div>
         </div>
         <Footer />
@@ -112,7 +198,22 @@ export default function ConferencesPage() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-
+      <section className="py-12 sm:py-16 lg:py-20 px-4 bg-gradient-to-b from-primary/5 to-background">
+        <div className="container mx-auto text-center">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-4 sm:mb-6 text-balance">
+            {t.pageTitle}
+          </h1>
+          <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto text-pretty">{t.pageDescription}</p>
+          {error && (
+            <div className="mt-4 p-3 bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-lg max-w-md mx-auto">
+              <p className="text-sm">
+                {t.apiError} {error}
+              </p>
+              <p className="text-xs mt-1">{t.staticDataShown}</p>
+            </div>
+          )}
+        </div>
+      </section>
 
       <section className="py-12 sm:py-16 px-4">
         <div className="container mx-auto">
@@ -121,18 +222,16 @@ export default function ConferencesPage() {
             <div className="col-span-12 lg:col-span-8">
               <Tabs defaultValue="upcoming" className="w-full">
                 <TabsList className="grid w-full grid-cols-2 max-w-md mb-8">
-                  <TabsTrigger value="upcoming">Kelayotgan tadbirlar</TabsTrigger>
-                  <TabsTrigger value="past">O'tgan tadbirlar</TabsTrigger>
+                  <TabsTrigger value="upcoming">{t.upcomingTab}</TabsTrigger>
+                  <TabsTrigger value="past">{t.pastTab}</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="upcoming" className="space-y-6">
                   {upcomingConferences.length === 0 ? (
                     <div className="text-center py-12">
                       <Calendar className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="text-xl font-semibold text-muted-foreground mb-2">
-                        Kelayotgan konferensiyalar mavjud emas
-                      </h3>
-                      <p className="text-muted-foreground">Tez orada yangi konferensiyalar qo'shiladi.</p>
+                      <h3 className="text-xl font-semibold text-muted-foreground mb-2">{t.noUpcoming}</h3>
+                      <p className="text-muted-foreground">{t.noUpcomingDesc}</p>
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -178,10 +277,10 @@ export default function ConferencesPage() {
 
                               <div className="absolute top-4 left-4 right-4 flex justify-between">
                                 <Badge className="bg-primary/90 text-primary-foreground border-0 shadow-lg">
-                                  Xalqaro
+                                  {t.international}
                                 </Badge>
                                 <Badge variant="outline" className="border-0 shadow-lg bg-green-500/90 text-white">
-                                  Ro'yxatdan o'tish ochiq
+                                  {t.registrationOpen}
                                 </Badge>
                               </div>
                             </div>
@@ -214,7 +313,7 @@ export default function ConferencesPage() {
                               </div>
 
                               <Button asChild className="w-full hover:shadow-lg transition-all duration-300">
-                                <Link href={`/${lang}/conferences/${conferenceSlug}`}>Batafsil ma'lumot</Link>
+                                <Link href={`/${lang}/conferences/${conferenceSlug}`}>{t.detailsButton}</Link>
                               </Button>
                             </CardContent>
                           </Card>
@@ -228,10 +327,8 @@ export default function ConferencesPage() {
                   {pastConferences.length === 0 ? (
                     <div className="text-center py-12">
                       <Calendar className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="text-xl font-semibold text-muted-foreground mb-2">
-                        O'tgan konferensiyalar mavjud emas
-                      </h3>
-                      <p className="text-muted-foreground">Hozircha o'tgan tadbirlar ro'yxati bo'sh.</p>
+                      <h3 className="text-xl font-semibold text-muted-foreground mb-2">{t.noPast}</h3>
+                      <p className="text-muted-foreground">{t.noPastDesc}</p>
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -274,9 +371,11 @@ export default function ConferencesPage() {
                               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
                               <div className="absolute top-4 left-4 right-4 flex justify-between">
-                                <Badge className="bg-muted/90 text-muted-foreground border-0 shadow-lg">Xalqaro</Badge>
+                                <Badge className="bg-muted/90 text-muted-foreground border-0 shadow-lg">
+                                  {t.international}
+                                </Badge>
                                 <Badge variant="outline" className="bg-gray-500/90 text-white border-0 shadow-lg">
-                                  Yakunlangan
+                                  {t.completed}
                                 </Badge>
                               </div>
                             </div>
@@ -310,11 +409,11 @@ export default function ConferencesPage() {
 
                               <div className="flex space-x-2">
                                 <Button asChild className="flex-1 hover:shadow-lg transition-all duration-300">
-                                  <Link href={`/${lang}/conferences/${conferenceSlug}`}>Ko'rish</Link>
+                                  <Link href={`/${lang}/conferences/${conferenceSlug}`}>{t.viewButton}</Link>
                                 </Button>
                                 {conference.pdf && (
                                   <Button variant="outline" className="bg-transparent">
-                                    Materiallar
+                                    {t.materialsButton}
                                   </Button>
                                 )}
                               </div>
@@ -333,14 +432,14 @@ export default function ConferencesPage() {
                 <aside className="w-full bg-gray-50 dark:bg-gray-800 rounded-lg overflow-hidden">
                   <div className="p-4">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-                      Konferensiya ma'lumotlari
+                      {t.sidebarTitle}
                     </h3>
 
                     {/* Upcoming Conferences Section */}
                     <div className="mb-6">
                       <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center">
                         <Calendar className="h-4 w-4 mr-2 text-green-600" />
-                        Kelayotgan konferensiyalar
+                        {t.upcomingConferences}
                       </h4>
                       <ul className="space-y-2">
                         {upcomingConferences.slice(0, 3).map((conference) => {
@@ -371,7 +470,7 @@ export default function ConferencesPage() {
                                   className="w-full mt-2 bg-green-600 hover:bg-green-700 text-white text-xs"
                                   asChild
                                 >
-                                  <Link href={`/${lang}/conferences/${conferenceSlug}`}>Batafsil</Link>
+                                  <Link href={`/${lang}/conferences/${conferenceSlug}`}>{t.detailsShort}</Link>
                                 </Button>
                               </div>
                             </li>
@@ -384,7 +483,7 @@ export default function ConferencesPage() {
                     <div>
                       <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center">
                         <Calendar className="h-4 w-4 mr-2 text-red-600" />
-                        O'tgan konferensiyalar
+                        {t.pastConferences}
                       </h4>
                       <ul className="space-y-2">
                         {pastConferences.slice(0, 3).map((conference) => {
@@ -416,7 +515,7 @@ export default function ConferencesPage() {
                                   className="w-full mt-2 bg-red-600 hover:bg-red-700 text-xs"
                                   asChild
                                 >
-                                  <Link href={`/${lang}/conferences/${conferenceSlug}`}>Ko'rish</Link>
+                                  <Link href={`/${lang}/conferences/${conferenceSlug}`}>{t.viewButton}</Link>
                                 </Button>
                               </div>
                             </li>
@@ -435,15 +534,15 @@ export default function ConferencesPage() {
       <section className="py-16 px-4 bg-gradient-to-b from-primary/5 to-muted/30">
         <div className="container mx-auto text-center">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-4 sm:mb-6 text-balance">
-            Tadbir tashkil qilish
+            {t.organizeTitle}
           </h2>
           <p className="text-lg sm:text-xl text-muted-foreground mb-8 sm:mb-12 max-w-3xl mx-auto text-pretty">
-            O'zingizning konferensiyangizni tashkil qiling va ilmiy hamjamiyat bilan bo'lishing.
+            {t.organizeDesc}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-md mx-auto">
-            <Button size="lg">Taklif yuborish</Button>
+            <Button size="lg">{t.submitProposal}</Button>
             <Button variant="outline" size="lg" className="bg-transparent">
-              Qo'llanma yuklab olish
+              {t.downloadGuide}
             </Button>
           </div>
         </div>

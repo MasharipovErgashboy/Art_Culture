@@ -18,7 +18,7 @@ interface ConferenceCardProps {
 
 export function ConferenceCard({ conference, lang }: ConferenceCardProps) {
   const router = useRouter()
-  const imageUrl = conference.image ? `http://127.0.0.1:8000${conference.image}` : null
+  const imageUrl = conference.image ? `https://artculture.pythonanywhere.com${conference.image}` : null
   const conferenceSlug = getSlugForLang(conference, lang)
 
   const [imageError, setImageError] = useState(false)

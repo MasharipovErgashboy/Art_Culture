@@ -172,7 +172,7 @@ export default function JournalDetailPage() {
     )
   }
 
-  const imageUrl = journal.image ? `http://127.0.0.1:8000${journal.image}` : null
+  const imageUrl = journal.image ? `https://artculture.pythonanywhere.com${journal.image}` : null
 
   return (
     <div className="min-h-screen bg-background">

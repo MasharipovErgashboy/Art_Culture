@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import Image from "next/image"
 
-const API_BASE = "http://127.0.0.1:8000"
+const API_BASE = "https://artculture.pythonanywhere.com"
 
 const translations = {
   uz: {

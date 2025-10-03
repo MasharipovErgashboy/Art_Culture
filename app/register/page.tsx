@@ -13,7 +13,7 @@ import { Eye, EyeOff, Mail, Lock, User } from "lucide-react"
 import Link from "next/link"
 import { useRouter, useParams } from "next/navigation"
 
-const AUTH_BASE = "http://127.0.0.1:8000/auth"
+const AUTH_BASE = "https://artculture.pythonanywhere.com/auth"
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)

@@ -1,4 +1,4 @@
-const API_BASE = "http://127.0.0.1:8000"
+const API_BASE = "https://artculture.pythonanywhere.com"
 const API_TIMEOUT = 10000 // 10 seconds timeout
 
 // Helper function to create fetch with timeout
@@ -278,7 +278,7 @@ export async function fetchConferences(
     console.error("[v0] Error fetching conferences:", error)
     if (error instanceof TypeError && error.message.includes("fetch")) {
       console.error("[v0] Network error - possible causes:")
-      console.error("  1. Django server is not running on http://127.0.0.1:8000")
+      console.error("  1. Django server is not running on https://artculture.pythonanywhere.com")
       console.error("  2. CORS is not configured properly on Django backend")
       console.error("  3. Check Django CORS settings: CORS_ALLOWED_ORIGINS should include http://localhost:3000")
     }

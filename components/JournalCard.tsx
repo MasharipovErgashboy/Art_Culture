@@ -11,6 +11,24 @@ import { getSlugForLang } from "@/lib/api"
 import { useRouter } from "next/navigation"
 import { isAuthenticated } from "@/lib/auth"
 
+const translations = {
+  uz: {
+    issues: "son",
+    noImage: "Rasm mavjud emas",
+    viewJournal: "Jurnalni ko'rish",
+  },
+  ru: {
+    issues: "выпуск",
+    noImage: "Изображение недоступно",
+    viewJournal: "Просмотреть журнал",
+  },
+  en: {
+    issues: "issues",
+    noImage: "No image available",
+    viewJournal: "View Journal",
+  },
+}
+
 interface JournalCardProps {
   journal: Journal
   lang: string
@@ -21,6 +39,7 @@ export function JournalCard({ journal, lang }: JournalCardProps) {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [imageError, setImageError] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
+  const t = translations[lang as keyof typeof translations] || translations.uz
 
   const imageUrl = journal.image ? `http://127.0.0.1:8000${journal.image}` : null
   const journalSlug = getSlugForLang(journal, lang)
@@ -28,7 +47,6 @@ export function JournalCard({ journal, lang }: JournalCardProps) {
   useEffect(() => {
     const checkAuth = () => {
       const authStatus = isAuthenticated()
-      console.log("[v0] Authentication check:", authStatus)
       setIsLoggedIn(authStatus)
     }
 
@@ -48,10 +66,12 @@ export function JournalCard({ journal, lang }: JournalCardProps) {
     e.preventDefault()
 
     const authenticated = isAuthenticated()
-    console.log("[v0] Click handler - authenticated:", authenticated)
-    console.log("[v0] Access token:", localStorage.getItem("access_token"))
 
-    console.log("[v0] Authenticated, navigating to journal:", journalSlug)
+    if (!authenticated) {
+      router.push(`/${lang}/login?returnUrl=${encodeURIComponent(`/${lang}/journals/${journalSlug}`)}`)
+      return
+    }
+
     router.push(`/${lang}/journals/${journalSlug}`)
   }
 
@@ -89,7 +109,7 @@ export function JournalCard({ journal, lang }: JournalCardProps) {
         <div className="relative aspect-[16/10] w-full overflow-hidden bg-gradient-to-br from-primary/10 via-primary/5 to-primary/20 flex items-center justify-center">
           <div className="text-center">
             <BookOpen className="h-16 w-16 text-primary/40 mx-auto mb-4" />
-            <p className="text-primary/60 font-medium">Rasm mavjud emas</p>
+            <p className="text-primary/60 font-medium">{t.noImage}</p>
           </div>
         </div>
       )}
@@ -101,7 +121,9 @@ export function JournalCard({ journal, lang }: JournalCardProps) {
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <FileText className="h-4 w-4" />
-            <span>{journal.issues_count} son</span>
+            <span>
+              {journal.issues_count} {t.issues}
+            </span>
           </div>
         </div>
         <CardTitle className="text-xl font-semibold group-hover:text-primary transition-colors line-clamp-2">
@@ -116,7 +138,7 @@ export function JournalCard({ journal, lang }: JournalCardProps) {
         >
           <span className="flex items-center gap-2">
             {!isLoggedIn && <Lock className="h-4 w-4" />}
-            Jurnalni ko'rish
+            {t.viewJournal}
           </span>
         </Button>
       </CardContent>

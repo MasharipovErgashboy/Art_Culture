@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Eye, EyeOff, Lock, CheckCircle, AlertCircle } from "lucide-react"
 
-const AUTH_BASE = "http://127.0.0.1:8000/"
+const AUTH_BASE = "https://artculture.pythonanywhere.com/"
 
 export default function PasswordResetConfirmPage() {
   const [password, setPassword] = useState("")

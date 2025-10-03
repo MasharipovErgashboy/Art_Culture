@@ -5,6 +5,24 @@ import Link from "next/link"
 import type { JournalIssue } from "@/lib/api"
 import { getSlugForLang } from "@/lib/api"
 
+const translations = {
+  uz: {
+    sections: "bo'lim",
+    noDescription: "Tavsif mavjud emas",
+    viewDetails: "Batafsil ko'rish",
+  },
+  ru: {
+    sections: "раздел",
+    noDescription: "Описание недоступно",
+    viewDetails: "Подробнее",
+  },
+  en: {
+    sections: "sections",
+    noDescription: "No description available",
+    viewDetails: "View Details",
+  },
+}
+
 interface JournalIssueCardProps {
   issue: JournalIssue
   lang: string
@@ -13,6 +31,7 @@ interface JournalIssueCardProps {
 export function JournalIssueCard({ issue, lang }: JournalIssueCardProps) {
   const API_BASE = "http://127.0.0.1:8000"
   const issueSlug = getSlugForLang(issue, lang)
+  const t = translations[lang as keyof typeof translations] || translations.uz
 
   return (
     <Card className="group hover:shadow-2xl transition-all duration-500 border-0 bg-white rounded-2xl overflow-hidden hover:-translate-y-2 shadow-lg">
@@ -26,7 +45,9 @@ export function JournalIssueCard({ issue, lang }: JournalIssueCardProps) {
             </div>
             <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 px-3 py-1 rounded-full">
               <FileText className="h-4 w-4" />
-              <span className="font-medium">{issue.sections_count} bo'lim</span>
+              <span className="font-medium">
+                {issue.sections_count} {t.sections}
+              </span>
             </div>
           </div>
         </div>
@@ -43,7 +64,7 @@ export function JournalIssueCard({ issue, lang }: JournalIssueCardProps) {
             ?.replace(/&lt;/g, "<") // Replace HTML entities
             ?.replace(/&gt;/g, ">") // Replace HTML entities
             ?.replace(/\s+/g, " ") // Replace multiple spaces with single space
-            ?.trim() || "Tavsif mavjud emas"}
+            ?.trim() || t.noDescription}
         </CardDescription>
       </CardHeader>
 
@@ -54,7 +75,7 @@ export function JournalIssueCard({ issue, lang }: JournalIssueCardProps) {
             className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 group/btn"
           >
             <Link href={`/${lang}/journal-soni/${issueSlug}`} className="flex items-center justify-center gap-2">
-              Batafsil ko'rish
+              {t.viewDetails}
               <ArrowRight className="h-4 w-4 group-hover/btn:translate-x-1 transition-transform duration-300" />
             </Link>
           </Button>
