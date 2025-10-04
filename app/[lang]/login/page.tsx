@@ -104,11 +104,17 @@ export default function LoginPage() {
         localStorage.setItem("refresh_token", data.refresh)
         localStorage.setItem("user_email", formData.email)
 
-        if (returnUrl) {
-          router.push(returnUrl)
-        } else {
-          router.push(`/${lang}`)
-        }
+        // Dispatch custom event to notify navbar that user logged in
+        window.dispatchEvent(new Event("userLoggedIn"))
+
+        // Small delay to ensure navbar updates before redirect
+        setTimeout(() => {
+          if (returnUrl) {
+            router.push(returnUrl)
+          } else {
+            router.push(`/${lang}`)
+          }
+        }, 100)
       } else {
         setError(JSON.stringify(data))
       }

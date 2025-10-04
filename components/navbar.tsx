@@ -6,6 +6,14 @@ import { usePathname, useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Menu, BookOpen, Calendar, FileText, User, LogOut } from "lucide-react"
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
   fetchJournal,
   fetchConference,
   fetchJournalIssue,
@@ -16,12 +24,6 @@ import {
 } from "@/lib/api"
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { logout } from "@/lib/auth"
-
-interface UserProfile {
-  email: string
-  username: string
-  subscription?: any
-}
 
 const navTranslations = {
   uz: {
@@ -65,9 +67,8 @@ const navTranslations = {
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [user, setUser] = useState<UserProfile | null>(null)
+  const [user, setUser] = useState<any | null>(null)
   const [isLoadingUser, setIsLoadingUser] = useState(true)
-  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false)
   const pathname = usePathname()
   const params = useParams()
   const router = useRouter()
@@ -76,7 +77,7 @@ export function Navbar() {
   const t = navTranslations[lang as keyof typeof navTranslations] || navTranslations.uz
 
   useEffect(() => {
-    const fetchUserProfile = async () => {
+    const loadUserProfile = async () => {
       const token = localStorage.getItem("access_token")
 
       if (!token) {
@@ -87,54 +88,44 @@ export function Navbar() {
       }
 
       try {
-        console.log("[v0] Fetching user profile from API...")
         const response = await fetch("https://artculture.pythonanywhere.com/auth/me/", {
           method: "GET",
           headers: {
             accept: "application/json",
             Authorization: `Bearer ${token}`,
-            "X-CSRFTOKEN": localStorage.getItem("csrf_token") || "",
           },
+          mode: "cors",
         })
 
         if (!response.ok) {
-          console.error("[v0] Failed to fetch profile:", response.status)
-          if (response.status === 401) {
-            // Token expired or invalid
-            localStorage.removeItem("access_token")
-            localStorage.removeItem("refresh_token")
-            localStorage.removeItem("user")
-          }
-          setIsLoggedIn(false)
-          setUser(null)
-          setIsLoadingUser(false)
-          return
+          throw new Error(`HTTP error! status: ${response.status}`)
         }
 
         const userData = await response.json()
-        console.log("[v0] User profile fetched:", userData)
-
         setUser(userData)
         setIsLoggedIn(true)
         setIsLoadingUser(false)
       } catch (error) {
-        console.error("[v0] Error fetching user profile:", error)
+        console.error("[v0] Failed to fetch profile:", error)
+        localStorage.removeItem("access_token")
+        localStorage.removeItem("refresh_token")
+        localStorage.removeItem("user")
         setIsLoggedIn(false)
         setUser(null)
         setIsLoadingUser(false)
       }
     }
 
-    fetchUserProfile()
+    loadUserProfile()
 
     const handleStorageChange = () => {
-      fetchUserProfile()
+      loadUserProfile()
     }
 
     window.addEventListener("storage", handleStorageChange)
 
     const handleLoginEvent = () => {
-      fetchUserProfile()
+      loadUserProfile()
     }
 
     window.addEventListener("userLoggedIn", handleLoginEvent)
@@ -341,55 +332,51 @@ export function Navbar() {
 
             {!isLoadingUser && isLoggedIn && user ? (
               <div className="hidden sm:block">
-                <div
-                  className="relative"
-                  onMouseEnter={() => setIsProfileDropdownOpen(true)}
-                  onMouseLeave={() => setIsProfileDropdownOpen(false)}
-                >
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-10 w-10 rounded-full p-0 hover:ring-2 hover:ring-white/50 hover:ring-offset-2 hover:ring-offset-[#003D7F] transition-all duration-200"
-                  >
-                    <div className="h-full w-full rounded-full bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-base shadow-lg hover:shadow-xl transition-shadow">
-                      {getUserInitial()}
-                    </div>
-                  </Button>
-
-                  {isProfileDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-56 bg-white shadow-xl border border-gray-200 rounded-lg p-2 z-[9999] animate-in fade-in slide-in-from-top-2 duration-200">
-                      <div className="px-3 py-2 mb-2 bg-gradient-to-br from-blue-50 to-blue-100 rounded-md">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-sm shadow-md">
-                            {getUserInitial()}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="font-semibold text-sm text-gray-900 truncate">{user.username}</div>
-                            <div className="text-xs text-gray-600 truncate">{user.email}</div>
-                          </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-10 w-10 rounded-full p-0 hover:ring-2 hover:ring-white/50 hover:ring-offset-2 hover:ring-offset-[#003D7F] transition-all duration-200"
+                    >
+                      <div className="h-full w-full rounded-full bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-base shadow-lg hover:shadow-xl transition-shadow">
+                        {getUserInitial()}
+                      </div>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel>
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-sm shadow-md">
+                          {getUserInitial()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-sm text-gray-900 truncate">{user.username}</div>
+                          <div className="text-xs text-gray-600 truncate">{user.email}</div>
                         </div>
                       </div>
-                      <Link
-                        href={`/${lang}/profile`}
-                        className="flex items-center gap-3 px-3 py-2 cursor-pointer rounded-md hover:bg-blue-50 transition-colors"
-                      >
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href={`/${lang}/profile`} className="flex items-center gap-3 cursor-pointer">
                         <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
                           <User className="h-4 w-4 text-blue-600" />
                         </div>
                         <span className="font-medium text-gray-700">{t.profile}</span>
                       </Link>
-                      <button
-                        onClick={handleLogout}
-                        className="w-full flex items-center gap-3 px-3 py-2 cursor-pointer rounded-md hover:bg-red-50 transition-colors text-red-600 hover:text-red-700"
-                      >
-                        <div className="h-8 w-8 rounded-full bg-red-100 flex items-center justify-center">
-                          <LogOut className="h-4 w-4" />
-                        </div>
-                        <span className="font-medium">{t.logout}</span>
-                      </button>
-                    </div>
-                  )}
-                </div>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={handleLogout}
+                      className="flex items-center gap-3 cursor-pointer text-red-600 focus:text-red-700 focus:bg-red-50"
+                    >
+                      <div className="h-8 w-8 rounded-full bg-red-100 flex items-center justify-center">
+                        <LogOut className="h-4 w-4" />
+                      </div>
+                      <span className="font-medium">{t.logout}</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             ) : !isLoadingUser ? (
               <div className="hidden sm:flex items-center space-x-2">
