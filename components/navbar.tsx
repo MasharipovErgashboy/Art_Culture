@@ -69,12 +69,17 @@ export function Navbar() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [user, setUser] = useState<any | null>(null)
   const [isLoadingUser, setIsLoadingUser] = useState(true)
+  const [mounted, setMounted] = useState(false)
   const pathname = usePathname()
   const params = useParams()
   const router = useRouter()
 
   const lang = (params?.lang as string) || "uz"
   const t = navTranslations[lang as keyof typeof navTranslations] || navTranslations.uz
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     const loadUserProfile = async () => {
@@ -330,7 +335,7 @@ export function Navbar() {
               ))}
             </div>
 
-            {!isLoadingUser && isLoggedIn && user ? (
+            {!isLoadingUser && isLoggedIn && user && mounted ? (
               <div className="hidden sm:block">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -378,7 +383,7 @@ export function Navbar() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
-            ) : !isLoadingUser ? (
+            ) : !isLoadingUser && mounted ? (
               <div className="hidden sm:flex items-center space-x-2">
                 <Button
                   variant="ghost"
@@ -467,7 +472,7 @@ export function Navbar() {
                   </div>
 
                   <div className="border-t pt-4 space-y-2">
-                    {!isLoadingUser && isLoggedIn && user ? (
+                    {!isLoadingUser && isLoggedIn && user && mounted ? (
                       <>
                         <div className="px-4 py-2 bg-gray-50 rounded-lg mb-2">
                           <div className="flex items-center gap-3">
@@ -503,7 +508,7 @@ export function Navbar() {
                           {t.logout}
                         </Button>
                       </>
-                    ) : !isLoadingUser ? (
+                    ) : !isLoadingUser && mounted ? (
                       <>
                         <Button
                           variant="outline"
