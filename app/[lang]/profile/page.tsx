@@ -1,6 +1,7 @@
 "use client"
 
-import { use, useState, useEffect } from "react"
+import { useState, useEffect } from "react"
+import { useParams } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -150,9 +151,10 @@ interface UserProfile {
   } | null
 }
 
-export default function ProfilePage({ params }: { params: Promise<{ lang: string }> }) {
-  const { lang } = use(params)
-  const currentLang = lang || "uz"
+export default function ProfilePage() {
+  const params = useParams()
+  const lang = (params?.lang as string) || "uz"
+  const currentLang = lang
   const t = translations[currentLang as keyof typeof translations] || translations.uz
 
   const [profile, setProfile] = useState<UserProfile | null>(null)
@@ -319,10 +321,10 @@ export default function ProfilePage({ params }: { params: Promise<{ lang: string
                   <div className="flex flex-col items-center text-center space-y-6">
                     <div className="relative">
                       <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-4xl font-bold shadow-lg">
-                        {profile.username.charAt(0).toUpperCase()}
+                        {profile?.username.charAt(0).toUpperCase()}
                       </div>
                       <div className="absolute -bottom-2 -right-2 bg-white rounded-full p-2 shadow-lg">
-                        {profile.subscription?.active && profile.subscription.active.length > 0 ? (
+                        {profile?.subscription?.active && profile.subscription.active.length > 0 ? (
                           <Crown className="w-6 h-6 text-yellow-500" />
                         ) : (
                           <Star className="w-6 h-6 text-gray-400" />
@@ -331,8 +333,8 @@ export default function ProfilePage({ params }: { params: Promise<{ lang: string
                     </div>
 
                     <div className="space-y-2 w-full">
-                      <h2 className="text-2xl font-bold text-gray-900 break-words">{profile.username}</h2>
-                      <p className="text-sm text-gray-600 break-all">{profile.email}</p>
+                      <h2 className="text-2xl font-bold text-gray-900 break-words">{profile?.username}</h2>
+                      <p className="text-sm text-gray-600 break-all">{profile?.email}</p>
                     </div>
 
                     <Separator />
@@ -341,7 +343,7 @@ export default function ProfilePage({ params }: { params: Promise<{ lang: string
                       <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">
                         {t.subscriptionStatus}
                       </p>
-                      <div className="flex justify-center">{getSubscriptionBadge(profile.subscription)}</div>
+                      <div className="flex justify-center">{getSubscriptionBadge(profile?.subscription)}</div>
                     </div>
                   </div>
                 </CardContent>
@@ -359,7 +361,7 @@ export default function ProfilePage({ params }: { params: Promise<{ lang: string
                     <h3 className="text-2xl font-bold text-gray-900">{t.subscriptionStatus}</h3>
                   </div>
 
-                  {profile.subscription?.active && profile.subscription.active.length > 0 ? (
+                  {profile?.subscription?.active && profile.subscription.active.length > 0 ? (
                     <div className="space-y-4">
                       {profile.subscription.active.map((sub) => (
                         <div
@@ -431,7 +433,7 @@ export default function ProfilePage({ params }: { params: Promise<{ lang: string
                         </div>
                       ))}
                     </div>
-                  ) : profile.subscription?.ended && profile.subscription.ended.length > 0 ? (
+                  ) : profile?.subscription?.ended && profile.subscription.ended.length > 0 ? (
                     <div className="space-y-6">
                       {profile.subscription.ended.map((sub) => (
                         <div
