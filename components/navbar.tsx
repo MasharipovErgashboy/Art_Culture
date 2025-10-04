@@ -1,18 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { usePathname, useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Menu, BookOpen, Calendar, FileText, User, LogOut } from "lucide-react"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import {
   fetchJournal,
   fetchConference,
@@ -70,6 +62,9 @@ export function Navbar() {
   const [user, setUser] = useState<any | null>(null)
   const [isLoadingUser, setIsLoadingUser] = useState(true)
   const [mounted, setMounted] = useState(false)
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const closeTimerRef = useRef<NodeJS.Timeout | null>(null)
+
   const pathname = usePathname()
   const params = useParams()
   const router = useRouter()
@@ -259,6 +254,28 @@ export function Navbar() {
     return "U"
   }
 
+  const handleMouseEnter = () => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current)
+      closeTimerRef.current = null
+    }
+    setIsDropdownOpen(true)
+  }
+
+  const handleMouseLeave = () => {
+    closeTimerRef.current = setTimeout(() => {
+      setIsDropdownOpen(false)
+    }, 5000) // 5 seconds delay
+  }
+
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current) {
+        clearTimeout(closeTimerRef.current)
+      }
+    }
+  }, [])
+
   return (
     <nav
       className="sticky top-0 z-50 w-full border-b backdrop-blur supports-[backdrop-filter]:bg-[#003D7F]/95"
@@ -336,21 +353,16 @@ export function Navbar() {
             </div>
 
             {!isLoadingUser && isLoggedIn && user && mounted ? (
-              <div className="hidden sm:block">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-10 w-10 rounded-full p-0 hover:ring-2 hover:ring-white/50 hover:ring-offset-2 hover:ring-offset-[#003D7F] transition-all duration-200"
-                    >
-                      <div className="h-full w-full rounded-full bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-base shadow-lg hover:shadow-xl transition-shadow">
-                        {getUserInitial()}
-                      </div>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuLabel>
+              <div className="hidden sm:block relative" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+                <button className="h-10 w-10 rounded-full p-0 hover:ring-2 hover:ring-white/50 hover:ring-offset-2 hover:ring-offset-[#003D7F] transition-all duration-200">
+                  <div className="h-full w-full rounded-full bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-base shadow-lg hover:shadow-xl transition-shadow">
+                    {getUserInitial()}
+                  </div>
+                </button>
+
+                {isDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                    <div className="px-4 py-3 border-b border-gray-100">
                       <div className="flex items-center gap-3">
                         <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-sm shadow-md">
                           {getUserInitial()}
@@ -360,28 +372,31 @@ export function Navbar() {
                           <div className="text-xs text-gray-600 truncate">{user.email}</div>
                         </div>
                       </div>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link href={`/${lang}/profile`} className="flex items-center gap-3 cursor-pointer">
-                        <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                          <User className="h-4 w-4 text-blue-600" />
-                        </div>
-                        <span className="font-medium text-gray-700">{t.profile}</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={handleLogout}
-                      className="flex items-center gap-3 cursor-pointer text-red-600 focus:text-red-700 focus:bg-red-50"
+                    </div>
+
+                    <Link
+                      href={`/${lang}/profile`}
+                      className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
                     >
-                      <div className="h-8 w-8 rounded-full bg-red-100 flex items-center justify-center">
-                        <LogOut className="h-4 w-4" />
+                      <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                        <User className="h-4 w-4 text-blue-600" />
                       </div>
-                      <span className="font-medium">{t.logout}</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                      <span className="font-medium text-gray-700">{t.profile}</span>
+                    </Link>
+
+                    <div className="border-t border-gray-100 mt-1 pt-1">
+                      <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-3 px-4 py-2 hover:bg-red-50 transition-colors text-red-600"
+                      >
+                        <div className="h-8 w-8 rounded-full bg-red-100 flex items-center justify-center">
+                          <LogOut className="h-4 w-4" />
+                        </div>
+                        <span className="font-medium">{t.logout}</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : !isLoadingUser && mounted ? (
               <div className="hidden sm:flex items-center space-x-2">
