@@ -472,12 +472,30 @@ export function getSlugForLang(item: { slug_uz?: string; slug_en?: string; slug_
   return slug
 }
 
+export interface SubscriptionType {
+  id: number
+  name: string
+  duration_days: number
+  price: string
+  books_count: number
+  journals_count: number
+  conferences_count: number
+}
+
+export interface Subscription {
+  id: number
+  subscription_type: SubscriptionType
+  start_date: string
+  end_date: string
+  is_active: boolean
+}
+
 export interface UserProfile {
   email: string
   username: string
   subscription: {
-    active: string[]
-    ended: string[]
+    active: Subscription[]
+    ended: Subscription[]
   } | null
 }
 
@@ -520,4 +538,151 @@ interface Conference {
   name: string
   image: string
   // Add other Conference properties here
+}
+
+export interface BookCategory {
+  slug_uz: string
+  slug_en: string
+  slug_ru: string
+  name: string
+  books_count: number
+  description: string
+}
+
+export interface Book {
+  slug_uz: string
+  slug_en: string
+  slug_ru: string
+  name: string
+  author_name: string
+  image: string
+  isbn: string
+  year: number
+  description: string
+  page_count: number
+  pdf_file: string
+}
+
+// Fetch book category with optional token
+export async function fetchBookCategory(slug: string, lang = "en", token?: string): Promise<BookCategory> {
+  try {
+    const url = `${API_BASE}/${lang}/book-categories/${slug}/`
+
+    // Get token from localStorage if not provided
+    const authToken = token || (typeof window !== "undefined" ? localStorage.getItem("access_token") : null)
+
+    console.log("[v0] ========== FETCH BOOK CATEGORY DEBUG ==========")
+    console.log("[v0] URL:", url)
+    console.log("[v0] Language:", lang)
+    console.log("[v0] Slug:", slug)
+    console.log("[v0] Token exists:", !!authToken)
+    console.log("[v0] Token preview:", authToken ? `${authToken.substring(0, 10)}...` : "No token")
+
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      "Accept-Language": lang,
+    }
+
+    if (authToken) {
+      headers.Authorization = `Bearer ${authToken}`
+    }
+
+    console.log("[v0] Request headers:", headers)
+
+    const response = await fetchWithTimeout(url, {
+      method: "GET",
+      headers,
+      mode: "cors",
+    })
+
+    console.log("[v0] Response status:", response.status)
+    console.log("[v0] Response ok:", response.ok)
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error("[v0] API error response:", errorText)
+      throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`)
+    }
+
+    const data = await response.json()
+    console.log("[v0] Book category data received:", data)
+    console.log("[v0] Slugs in data:", {
+      slug_uz: data.slug_uz,
+      slug_en: data.slug_en,
+      slug_ru: data.slug_ru,
+    })
+    console.log("[v0] ========== FETCH BOOK CATEGORY SUCCESS ==========")
+
+    return data
+  } catch (error) {
+    console.error("[v0] ========== FETCH BOOK CATEGORY ERROR ==========")
+    console.error("[v0] Error type:", error instanceof Error ? error.constructor.name : typeof error)
+    console.error("[v0] Error message:", error instanceof Error ? error.message : String(error))
+    console.error("[v0] Error stack:", error instanceof Error ? error.stack : "No stack")
+    console.error("[v0] ========== FETCH BOOK CATEGORY ERROR END ==========")
+    throw error
+  }
+}
+
+// Fetch book with optional token
+export async function fetchBook(slug: string, lang = "en", token?: string): Promise<Book> {
+  try {
+    const url = `${API_BASE}/${lang}/books/${slug}/`
+
+    // Get token from localStorage if not provided
+    const authToken = token || (typeof window !== "undefined" ? localStorage.getItem("access_token") : null)
+
+    console.log("[v0] ========== FETCH BOOK DEBUG ==========")
+    console.log("[v0] URL:", url)
+    console.log("[v0] Language:", lang)
+    console.log("[v0] Slug:", slug)
+    console.log("[v0] Token exists:", !!authToken)
+    console.log("[v0] Token preview:", authToken ? `${authToken.substring(0, 10)}...` : "No token")
+
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      "Accept-Language": lang,
+    }
+
+    if (authToken) {
+      headers.Authorization = `Bearer ${authToken}`
+    }
+
+    console.log("[v0] Request headers:", headers)
+
+    const response = await fetchWithTimeout(url, {
+      method: "GET",
+      headers,
+      mode: "cors",
+    })
+
+    console.log("[v0] Response status:", response.status)
+    console.log("[v0] Response ok:", response.ok)
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error("[v0] API error response:", errorText)
+      throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`)
+    }
+
+    const data = await response.json()
+    console.log("[v0] Book data received:", data)
+    console.log("[v0] Slugs in data:", {
+      slug_uz: data.slug_uz,
+      slug_en: data.slug_en,
+      slug_ru: data.slug_ru,
+    })
+    console.log("[v0] ========== FETCH BOOK SUCCESS ==========")
+
+    return data
+  } catch (error) {
+    console.error("[v0] ========== FETCH BOOK ERROR ==========")
+    console.error("[v0] Error type:", error instanceof Error ? error.constructor.name : typeof error)
+    console.error("[v0] Error message:", error instanceof Error ? error.message : String(error))
+    console.error("[v0] Error stack:", error instanceof Error ? error.stack : "No stack")
+    console.error("[v0] ========== FETCH BOOK ERROR END ==========")
+    throw error
+  }
 }

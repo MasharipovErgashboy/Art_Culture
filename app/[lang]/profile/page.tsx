@@ -238,7 +238,7 @@ export default function ProfilePage() {
     const date = new Date(dateString)
     return date.toLocaleDateString(currentLang === "uz" ? "uz-UZ" : currentLang === "ru" ? "ru-RU" : "en-US", {
       year: "numeric",
-      month: "long",
+      month: currentLang === "uz" ? "2-digit" : "long",
       day: "numeric",
     })
   }
@@ -363,75 +363,79 @@ export default function ProfilePage() {
 
                   {profile?.subscription?.active && profile.subscription.active.length > 0 ? (
                     <div className="space-y-4">
-                      {profile.subscription.active.map((sub) => (
-                        <div
-                          key={sub.id}
-                          className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl p-6 border border-emerald-100"
-                        >
-                          <div className="flex items-start justify-between mb-4">
-                            <div>
-                              <p className="text-sm font-semibold text-emerald-700 uppercase tracking-wide mb-2">
-                                {t.currentPlan}
-                              </p>
-                              <div className="flex items-center gap-3">
-                                <Crown className="w-6 h-6 text-yellow-500" />
-                                <span className="text-2xl font-bold text-gray-900">{sub.subscription_type.name}</span>
-                              </div>
-                            </div>
-                            <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white border-0 px-4 py-1">
-                              <CheckCircle className="w-3 h-3 mr-1" />
-                              {t.active}
-                            </Badge>
-                          </div>
-
-                          <div className="space-y-3 mt-6">
-                            <div className="flex items-center gap-3 text-gray-700">
-                              <Calendar className="w-5 h-5 text-emerald-600" />
+                      {profile.subscription.active
+                        .sort((a, b) => new Date(b.end_date).getTime() - new Date(a.end_date).getTime())
+                        .map((sub, index) => (
+                          <div
+                            key={sub.id}
+                            className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl p-6 border border-emerald-100"
+                          >
+                            <div className="flex items-start justify-between mb-4">
                               <div>
-                                <p className="text-sm font-medium text-gray-500">{t.startDate}</p>
-                                <p className="font-semibold">{formatDate(sub.start_date)}</p>
+                                <p className="text-sm font-semibold text-emerald-700 uppercase tracking-wide mb-2">
+                                  {index === 0 ? t.currentPlan : "Oldingi reja"}
+                                </p>
+                                <div className="flex items-center gap-3">
+                                  <Crown className="w-6 h-6 text-yellow-500" />
+                                  <span className="text-2xl font-bold text-gray-900">{sub.subscription_type.name}</span>
+                                </div>
+                              </div>
+                              <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white border-0 px-4 py-1">
+                                <CheckCircle className="w-3 h-3 mr-1" />
+                                {t.active}
+                              </Badge>
+                            </div>
+
+                            <div className="space-y-3 mt-6">
+                              <div className="flex items-center gap-3 text-gray-700">
+                                <Calendar className="w-5 h-5 text-emerald-600" />
+                                <div>
+                                  <p className="text-sm font-medium text-gray-500">{t.startDate}</p>
+                                  <p className="font-semibold">{formatDate(sub.start_date)}</p>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-3 text-gray-700">
+                                <Calendar className="w-5 h-5 text-emerald-600" />
+                                <div>
+                                  <p className="text-sm font-medium text-gray-500">{t.endDate}</p>
+                                  <p className="font-semibold">{formatDate(sub.end_date)}</p>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-3 text-gray-700">
+                                <DollarSign className="w-5 h-5 text-emerald-600" />
+                                <div>
+                                  <p className="text-sm font-medium text-gray-500">{t.price}</p>
+                                  <p className="font-semibold">{sub.subscription_type.price} UZS</p>
+                                </div>
                               </div>
                             </div>
 
-                            <div className="flex items-center gap-3 text-gray-700">
-                              <Calendar className="w-5 h-5 text-emerald-600" />
-                              <div>
-                                <p className="text-sm font-medium text-gray-500">{t.endDate}</p>
-                                <p className="font-semibold">{formatDate(sub.end_date)}</p>
-                              </div>
-                            </div>
+                            <Separator className="my-4" />
 
-                            <div className="flex items-center gap-3 text-gray-700">
-                              <DollarSign className="w-5 h-5 text-emerald-600" />
-                              <div>
-                                <p className="text-sm font-medium text-gray-500">{t.price}</p>
-                                <p className="font-semibold">{sub.subscription_type.price} UZS</p>
+                            <div className="grid grid-cols-3 gap-4 text-center">
+                              <div className="bg-white rounded-lg p-3">
+                                <p className="text-2xl font-bold text-emerald-600">
+                                  {sub.subscription_type.books_count}
+                                </p>
+                                <p className="text-xs text-gray-600 mt-1">{t.books}</p>
+                              </div>
+                              <div className="bg-white rounded-lg p-3">
+                                <p className="text-2xl font-bold text-emerald-600">
+                                  {sub.subscription_type.journals_count}
+                                </p>
+                                <p className="text-xs text-gray-600 mt-1">{t.journals}</p>
+                              </div>
+                              <div className="bg-white rounded-lg p-3">
+                                <p className="text-2xl font-bold text-emerald-600">
+                                  {sub.subscription_type.conferences_count}
+                                </p>
+                                <p className="text-xs text-gray-600 mt-1">{t.conferences}</p>
                               </div>
                             </div>
                           </div>
-
-                          <Separator className="my-4" />
-
-                          <div className="grid grid-cols-3 gap-4 text-center">
-                            <div className="bg-white rounded-lg p-3">
-                              <p className="text-2xl font-bold text-emerald-600">{sub.subscription_type.books_count}</p>
-                              <p className="text-xs text-gray-600 mt-1">{t.books}</p>
-                            </div>
-                            <div className="bg-white rounded-lg p-3">
-                              <p className="text-2xl font-bold text-emerald-600">
-                                {sub.subscription_type.journals_count}
-                              </p>
-                              <p className="text-xs text-gray-600 mt-1">{t.journals}</p>
-                            </div>
-                            <div className="bg-white rounded-lg p-3">
-                              <p className="text-2xl font-bold text-emerald-600">
-                                {sub.subscription_type.conferences_count}
-                              </p>
-                              <p className="text-xs text-gray-600 mt-1">{t.conferences}</p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
+                        ))}
                     </div>
                   ) : profile?.subscription?.ended && profile.subscription.ended.length > 0 ? (
                     <div className="space-y-6">

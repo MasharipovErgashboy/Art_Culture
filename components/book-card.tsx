@@ -1,118 +1,137 @@
 "use client"
 
-import type React from "react"
-import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Library, BookOpen, Lock } from "lucide-react"
+import { BookOpen, Calendar, FileText, User } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { isAuthenticated } from "@/lib/auth"
+import { useState } from "react"
 
 const translations = {
   uz: {
-    booksCount: "kitob",
-    viewBooks: "Kitoblarni ko'rish",
+    author: "Muallif",
+    year: "Yil",
+    pages: "Sahifalar",
+    isbn: "ISBN",
+    readBook: "Kitobni o'qish",
   },
   ru: {
-    booksCount: "книг",
-    viewBooks: "Посмотреть книги",
+    author: "Автор",
+    year: "Год",
+    pages: "Страницы",
+    isbn: "ISBN",
+    readBook: "Читать книгу",
   },
   en: {
-    booksCount: "books",
-    viewBooks: "View Books",
+    author: "Author",
+    year: "Year",
+    pages: "Pages",
+    isbn: "ISBN",
+    readBook: "Read Book",
   },
 }
 
-interface BookCategory {
+interface Book {
+  category_name: string
+  author_name: string
+  image: string
+  name: string
   slug_uz: string
   slug_en: string
   slug_ru: string
-  name: string
-  books_count: number
+  isbn: string
+  year: number
   description: string
+  page_count: number
+  tags: string
+  pages: string | null
+  pdf_file: string
 }
 
 interface BookCardProps {
-  category: BookCategory
+  book: Book
   lang: string
 }
 
-export function BookCard({ category, lang }: BookCardProps) {
-  const router = useRouter()
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
+export function BookCard({ book, lang }: BookCardProps) {
   const t = translations[lang as keyof typeof translations] || translations.uz
+  const router = useRouter()
+  const [imageError, setImageError] = useState(false)
 
-  const categorySlug = lang === "uz" ? category.slug_uz : lang === "ru" ? category.slug_ru : category.slug_en
-
-  useEffect(() => {
-    const checkAuth = () => {
-      const authStatus = isAuthenticated()
-      setIsLoggedIn(authStatus)
-    }
-
-    checkAuth()
-
-    window.addEventListener("focus", checkAuth)
-    window.addEventListener("storage", checkAuth)
-
-    return () => {
-      window.removeEventListener("focus", checkAuth)
-      window.removeEventListener("storage", checkAuth)
-    }
-  }, [])
-
-  const handleBookAccess = (e: React.MouseEvent) => {
-    e.preventDefault()
-
-    const authenticated = isAuthenticated()
-
-    if (!authenticated) {
-      router.push(`/${lang}/login?returnUrl=${encodeURIComponent(`/${lang}/books/${categorySlug}`)}`)
-      return
-    }
-
-    router.push(`/${lang}/books/${categorySlug}`)
+  const getBookSlug = () => {
+    if (lang === "uz") return book.slug_uz
+    if (lang === "ru") return book.slug_ru
+    if (lang === "en") return book.slug_en
+    return book.slug_uz
   }
 
+  const handleReadBook = () => {
+    const slug = getBookSlug()
+    router.push(`/${lang}/books/${slug}`)
+  }
+
+  const getImageUrl = () => {
+    if (!book.image) return null
+    if (book.image.startsWith("http")) return book.image
+    const url = `https://artculture.pythonanywhere.com${book.image}`
+    console.log("[v0] Book image URL:", url)
+    return url
+  }
+
+  const imageUrl = getImageUrl()
+
   return (
-    <Card className="group hover:shadow-xl transition-all duration-300 border hover:border-primary/30 hover:scale-[1.02] bg-white/80 backdrop-blur-sm overflow-hidden">
-      <div className="relative aspect-[16/10] w-full overflow-hidden bg-gradient-to-br from-primary/10 via-primary/5 to-primary/20 flex items-center justify-center">
-        <div className="text-center">
-          <Library className="h-16 w-16 text-primary/40 mx-auto mb-4 group-hover:scale-110 transition-transform duration-300" />
-          <Badge variant="secondary" className="text-sm font-semibold">
-            {category.books_count} {t.booksCount}
-          </Badge>
-        </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+    <Card className="group hover:shadow-xl transition-all duration-300 overflow-hidden h-full flex flex-col">
+      <div className="relative aspect-[4/5] overflow-hidden bg-muted">
+        {imageUrl && !imageError ? (
+          <img
+            src={imageUrl || "/placeholder.svg"}
+            alt={book.name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            onError={(e) => {
+              console.log("[v0] Image failed to load:", imageUrl)
+              setImageError(true)
+            }}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
+            <BookOpen className="h-20 w-20 text-primary/40" />
+          </div>
+        )}
       </div>
 
-      <CardHeader className="pb-4">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="p-2 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors">
-            <BookOpen className="h-6 w-6 text-primary" />
+      <CardHeader className="pb-2 pt-3">
+        <CardTitle className="text-base line-clamp-2 group-hover:text-primary transition-colors leading-tight">
+          {book.name}
+        </CardTitle>
+        <CardDescription className="flex items-center gap-2 text-xs">
+          <User className="h-3 w-3" />
+          <span className="line-clamp-1">{book.author_name}</span>
+        </CardDescription>
+      </CardHeader>
+
+      <CardContent className="space-y-2 pt-0 flex-1 flex flex-col pb-3">
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <div className="flex items-center gap-1.5 text-muted-foreground">
+            <Calendar className="h-3 w-3" />
+            <span>{book.year}</span>
           </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Library className="h-4 w-4" />
+          <div className="flex items-center gap-1.5 text-muted-foreground">
+            <FileText className="h-3 w-3" />
             <span>
-              {category.books_count} {t.booksCount}
+              {book.page_count} {t.pages}
             </span>
           </div>
         </div>
-        <CardTitle className="text-xl font-semibold group-hover:text-primary transition-colors line-clamp-2">
-          {category.name}
-        </CardTitle>
-        <CardDescription className="line-clamp-3">{category.description}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Button
-          onClick={handleBookAccess}
-          className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-md hover:shadow-lg transition-all duration-300 group"
-        >
-          <span className="flex items-center gap-2">
-            {!isLoggedIn && <Lock className="h-4 w-4" />}
-            {t.viewBooks}
-          </span>
+
+        {book.isbn && (
+          <div className="text-xs text-muted-foreground line-clamp-1">
+            <span className="font-semibold">{t.isbn}:</span> {book.isbn}
+          </div>
+        )}
+
+        <Button variant="default" size="sm" className="w-full mt-auto" onClick={handleReadBook}>
+          <BookOpen className="mr-2 h-3.5 w-3.5" />
+          {t.readBook}
         </Button>
       </CardContent>
     </Card>

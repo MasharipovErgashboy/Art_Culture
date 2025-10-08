@@ -172,9 +172,9 @@ export default function ConferencesPage() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
-    return date.toLocaleDateString("uz-UZ", {
+    return date.toLocaleDateString(lang === "uz" ? "uz-UZ" : lang === "ru" ? "ru-RU" : "en-US", {
       year: "numeric",
-      month: "long",
+      month: lang === "uz" ? "2-digit" : "long",
       day: "numeric",
     })
   }
