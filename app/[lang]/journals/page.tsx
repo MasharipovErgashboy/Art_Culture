@@ -73,17 +73,6 @@ export default function JournalsPage() {
       <Navbar />
 
       <main className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="p-3 rounded-full bg-primary/10">
-              <BookOpen className="h-8 w-8 text-primary" />
-            </div>
-          </div>
-          <h1 className="text-4xl font-bold text-foreground mb-4">{t.pageTitle}</h1>
-          <p className="text-muted-foreground max-w-2xl mx-auto text-lg">{t.pageDescription}</p>
-        </div>
-
         {/* Content */}
         {isLoading ? (
           <Loader message={t.loading} />

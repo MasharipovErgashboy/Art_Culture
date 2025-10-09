@@ -150,7 +150,7 @@ const translations = {
     iltimosKuting: "Пожалуйста, подождите...",
     rasmiyElonTitle: "Официальное объявление",
     rasmiyElonEmpty:
-      "На данный момент официальных объявлений нет. Новые объявления б��дут опубликованы в ближайшее время.",
+      "На данный момент официальных объявлений нет. Новые объявления будут опубликованы в ближайшее время.",
     reklamalarTitle: "Реклама",
     reklamalarEmpty: "На данный момент рекламы нет. Запустите сервер Django или вернитесь позже.",
     asosiyBolimlar: "Основные разделы",
@@ -168,7 +168,7 @@ const translations = {
     sifatliKontentDesc: "Научные материалы, проверенные экспертами",
     globalKirish: "Глобальный доступ",
     globalKirishDesc: "Доступ 24/7 из любой точки мира",
-    hamjamiyat: "Сообщество",
+    hamjamiyat: "С��общество",
     hamjamiyatDesc: "Сообщество исследователей и ученых",
     innovatsiya: "Инновации",
     innovatsiyaDesc: "Современные технологии и подходы",
@@ -376,7 +376,7 @@ export function HomeContent({ lang }: HomeContentProps) {
             description: "Oliy ta'lim muassasalari uchun maxsus tayyorlangan darsliklar",
             image: "/swiper_konferensiya2.jpg",
             buttonText: t.korish,
-            href: `/${lang}/books`,
+            href: `/${lang}/books-category`,
           },
         ]
 
@@ -452,7 +452,7 @@ export function HomeContent({ lang }: HomeContentProps) {
       title: t.kitoblar,
       description: t.kitoblarDesc,
       icon: BookOpen,
-      href: `/${lang}/books`,
+      href: `/${lang}/books-category`,
       gradient: "from-[#003D7F] to-[#0059B2]",
       iconBg: "bg-blue-100",
       iconColor: "text-[#003D7F]",

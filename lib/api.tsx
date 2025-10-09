@@ -22,6 +22,77 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout 
   }
 }
 
+export interface Journal {
+  slug_uz: string
+  slug_en: string
+  slug_ru: string
+  name: string
+  description: string
+  issues_count: number
+  latest_issues?: JournalIssue[]
+  image?: string
+  issn?: string
+  about?: string
+  editorial_team?: string
+  article_submission?: string
+}
+
+export interface JournalIssue {
+  id: number
+  slug_uz: string
+  slug_en: string
+  slug_ru: string
+  name: string
+  description: string
+  pdf_file: string
+  sections_count: number
+  journal_name: string
+}
+
+export interface JournalSection {
+  id: number
+  slug_uz: string
+  slug_en: string
+  slug_ru: string
+  author_name: string
+  pdf: string
+  journal_issue_name: string
+}
+
+export interface Yangilik {
+  title: string
+  slug_uz: string
+  slug_en: string
+  slug_ru: string
+  media: string | null
+  homepage_content: string | null
+  description: string | null
+}
+
+export interface Reklama {
+  id?: number
+  title: string
+  slug_uz: string
+  slug_en: string
+  slug_ru: string
+  media: string | null
+  homepage_content: string | null
+  description: string | null
+  author?: string
+}
+
+export interface RasmiyElon {
+  id?: number
+  title: string
+  slug_uz: string
+  slug_en: string
+  slug_ru: string
+  media: string | null
+  homepage_content: string | null
+  description: string | null
+  author?: string
+}
+
 export interface BookCategory {
   id?: number
   slug_uz: string
@@ -45,6 +116,249 @@ export interface Book {
   description: string
   page_count: number
   pdf_file: string
+}
+
+export interface Conference {
+  slug_uz: string
+  slug_en: string
+  slug_ru: string
+  name: string
+  description: string
+  date: string
+  manzil: string
+  tashkilotchi_hamkorlar?: string
+  image?: string
+  pdf?: string
+}
+
+export interface SubscriptionType {
+  id: number
+  name: string
+  duration_days: number
+  price: string
+  books_count: number
+  journals_count: number
+  conferences_count: number
+}
+
+export interface Subscription {
+  id: number
+  subscription_type: SubscriptionType
+  start_date: string
+  end_date: string
+  is_active: boolean
+}
+
+export interface UserProfile {
+  email: string
+  username: string
+  subscription: {
+    active: Subscription[]
+    ended: Subscription[]
+  } | null
+}
+
+export async function fetchJournals(lang = "en"): Promise<Journal[]> {
+  try {
+    const response = await fetchWithTimeout(`${API_BASE}/${lang}/journals/`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "Accept-Language": lang,
+      },
+      mode: "cors",
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error("Error fetching journals:", error)
+    throw error
+  }
+}
+
+export async function fetchJournal(slug: string, lang = "en"): Promise<Journal> {
+  try {
+    const response = await fetchWithTimeout(`${API_BASE}/${lang}/journals/${slug}/`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "Accept-Language": lang,
+      },
+      mode: "cors",
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error("Error fetching journal:", error)
+    throw error
+  }
+}
+
+export const fetchJournalDetail = fetchJournal
+
+export async function fetchJournalIssues(journalName: string, lang = "en"): Promise<JournalIssue[]> {
+  try {
+    const encodedJournalName = encodeURIComponent(journalName)
+    const url = `${API_BASE}/${lang}/journal-soni/?journal_name=${encodedJournalName}`
+
+    const response = await fetchWithTimeout(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "Accept-Language": lang,
+      },
+      mode: "cors",
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
+    const filteredIssues = data.filter((issue: JournalIssue) => issue.journal_name === journalName)
+    return filteredIssues
+  } catch (error) {
+    console.error("Error fetching journal issues:", error)
+    throw error
+  }
+}
+
+export async function fetchJournalIssue(slug: string, lang = "en"): Promise<JournalIssue> {
+  try {
+    const response = await fetchWithTimeout(`${API_BASE}/${lang}/journal-soni/${slug}/`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "Accept-Language": lang,
+      },
+      mode: "cors",
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error("Error fetching journal issue:", error)
+    throw error
+  }
+}
+
+export async function fetchJournalSections(journalIssueName: string, lang = "en"): Promise<JournalSection[]> {
+  try {
+    const encodedIssueName = encodeURIComponent(journalIssueName)
+    const url = `${API_BASE}/${lang}/journal-sections/?journal_issue_name=${encodedIssueName}`
+
+    const response = await fetchWithTimeout(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "Accept-Language": lang,
+      },
+      mode: "cors",
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
+    const filteredSections = data.filter((section: JournalSection) => section.journal_issue_name === journalIssueName)
+    return filteredSections
+  } catch (error) {
+    console.error("Error fetching journal sections:", error)
+    throw error
+  }
+}
+
+export async function fetchYangilik(slug: string, lang = "en"): Promise<Yangilik> {
+  try {
+    const url = `${API_BASE}/${lang}/yangiliklar/${slug}/`
+
+    const response = await fetchWithTimeout(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "Accept-Language": lang,
+      },
+      mode: "cors",
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
+    return data.detail
+  } catch (error) {
+    console.error("Error fetching yangilik:", error)
+    throw error
+  }
+}
+
+export async function fetchReklama(slug: string, lang = "en"): Promise<Reklama> {
+  try {
+    const url = `${API_BASE}/${lang}/reklama/${slug}/`
+
+    const response = await fetchWithTimeout(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "Accept-Language": lang,
+      },
+      mode: "cors",
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
+    return data.detail || data
+  } catch (error) {
+    console.error("Error fetching reklama:", error)
+    throw error
+  }
+}
+
+export async function fetchRasmiyElon(slug: string, lang = "en"): Promise<RasmiyElon> {
+  try {
+    const response = await fetchWithTimeout(`${API_BASE}/${lang}/rasmiy-elonlar/${slug}/`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "Accept-Language": lang,
+      },
+      mode: "cors",
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
+    return data.detail || data
+  } catch (error) {
+    console.error("Error fetching rasmiy elon:", error)
+    throw error
+  }
 }
 
 export async function fetchBookCategories(lang = "en"): Promise<BookCategory[]> {
@@ -153,6 +467,94 @@ export async function fetchBook(slug: string, lang = "en", token?: string): Prom
   }
 }
 
+export async function fetchConferences(
+  lang = "en",
+  page = 1,
+): Promise<{
+  count: number
+  next: string | null
+  previous: string | null
+  results: Conference[]
+}> {
+  try {
+    const url = `${API_BASE}/${lang}/conferences/?page=${page}`
+    console.log("[v0] Fetching conferences from URL:", url)
+
+    const response = await fetchWithTimeout(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "Accept-Language": lang,
+      },
+      mode: "cors",
+      cache: "no-store",
+    })
+
+    if (!response.ok) {
+      console.error("[v0] Conferences API response not OK:", response.status, response.statusText)
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
+    console.log("[v0] Conferences API response:", data)
+    console.log("[v0] Number of conferences:", data.results?.length || 0)
+
+    return data
+  } catch (error) {
+    console.error("[v0] Error fetching conferences:", error)
+    throw error
+  }
+}
+
+export async function fetchConference(slug: string, lang = "en"): Promise<Conference> {
+  try {
+    const response = await fetchWithTimeout(`${API_BASE}/${lang}/conferences/${slug}/`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "Accept-Language": lang,
+      },
+      mode: "cors",
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error("Error fetching conference:", error)
+    throw error
+  }
+}
+
+export async function fetchUserProfile(token: string): Promise<UserProfile> {
+  try {
+    const url = `${API_BASE}/auth/me/`
+
+    const response = await fetchWithTimeout(url, {
+      method: "GET",
+      headers: {
+        accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      mode: "cors",
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
+    return data
+  } catch (error) {
+    console.error("Error fetching user profile:", error)
+    throw error
+  }
+}
+
 export function getSlugForLang(item: { slug_uz?: string; slug_en?: string; slug_ru?: string }, lang: string): string {
   console.log("[v0] getSlugForLang called with:", { item, lang })
 
@@ -172,7 +574,6 @@ export function getSlugForLang(item: { slug_uz?: string; slug_en?: string; slug_
       slug = item.slug_uz
   }
 
-  // If the requested language slug is missing, try fallbacks
   if (!slug) {
     console.warn(`[v0] Slug for language '${lang}' is missing, trying fallbacks...`)
     slug = item.slug_uz || item.slug_en || item.slug_ru
@@ -185,4 +586,8 @@ export function getSlugForLang(item: { slug_uz?: string; slug_en?: string; slug_
 
   console.log(`[v0] Returning slug for ${lang}:`, slug)
   return slug
+}
+
+export function getApiBaseUrl(): string {
+  return API_BASE
 }

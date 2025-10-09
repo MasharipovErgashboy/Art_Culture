@@ -198,23 +198,6 @@ export default function ConferencesPage() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <section className="py-12 sm:py-16 lg:py-20 px-4 bg-gradient-to-b from-primary/5 to-background">
-        <div className="container mx-auto text-center">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-4 sm:mb-6 text-balance">
-            {t.pageTitle}
-          </h1>
-          <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto text-pretty">{t.pageDescription}</p>
-          {error && (
-            <div className="mt-4 p-3 bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-lg max-w-md mx-auto">
-              <p className="text-sm">
-                {t.apiError} {error}
-              </p>
-              <p className="text-xs mt-1">{t.staticDataShown}</p>
-            </div>
-          )}
-        </div>
-      </section>
-
       <section className="py-12 sm:py-16 px-4">
         <div className="container mx-auto">
           <div className="grid grid-cols-12 gap-8">
@@ -527,23 +510,6 @@ export default function ConferencesPage() {
                 </aside>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="py-16 px-4 bg-gradient-to-b from-primary/5 to-muted/30">
-        <div className="container mx-auto text-center">
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-4 sm:mb-6 text-balance">
-            {t.organizeTitle}
-          </h2>
-          <p className="text-lg sm:text-xl text-muted-foreground mb-8 sm:mb-12 max-w-3xl mx-auto text-pretty">
-            {t.organizeDesc}
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-md mx-auto">
-            <Button size="lg">{t.submitProposal}</Button>
-            <Button variant="outline" size="lg" className="bg-transparent">
-              {t.downloadGuide}
-            </Button>
           </div>
         </div>
       </section>
