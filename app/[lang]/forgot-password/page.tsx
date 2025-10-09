@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, use } from "react"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
@@ -48,9 +48,10 @@ const translations = {
   },
 }
 
-export default function ForgotPasswordPage({ params }: { params: { lang: string } }) {
-  const lang = params.lang || "uz"
-  const t = translations[lang as keyof typeof translations] || translations.uz
+export default function ForgotPasswordPage({ params }: { params: Promise<{ lang: string }> }) {
+  const { lang } = use(params)
+  const currentLang = lang || "uz"
+  const t = translations[currentLang as keyof typeof translations] || translations.uz
 
   const [email, setEmail] = useState("")
   const [isLoading, setIsLoading] = useState(false)
