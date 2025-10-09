@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { usePathname, useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Menu, BookOpen, Calendar, FileText, User, LogOut } from "lucide-react"
+import { Menu, Calendar, FileText, User, LogOut, BookOpen } from "lucide-react"
 import {
   fetchJournal,
   fetchConference,
@@ -179,6 +179,8 @@ export function Navbar() {
 
       if (resourceType === "books-category") {
         console.log("[v0] ========== BOOKS-CATEGORY PAGE DETECTED ==========")
+        console.log("[v0] fetchBookCategory function exists:", typeof fetchBookCategory)
+        console.log("[v0] fetchBookCategory is:", fetchBookCategory)
       } else if (resourceType === "books") {
         console.log("[v0] ========== BOOKS PAGE DETECTED ==========")
       }
@@ -190,70 +192,99 @@ export function Navbar() {
         if (resourceType === "journals") {
           console.log("[v0] Fetching journal...")
           resourceData = await fetchJournal(currentSlug, currentLang)
+          console.log("[v0] Journal data received:", resourceData)
         } else if (resourceType === "conferences") {
           console.log("[v0] Fetching conference...")
           resourceData = await fetchConference(currentSlug, currentLang)
+          console.log("[v0] Conference data received:", resourceData)
         } else if (resourceType === "journal-soni") {
           console.log("[v0] Fetching journal issue...")
           resourceData = await fetchJournalIssue(currentSlug, currentLang)
+          console.log("[v0] Journal issue data received:", resourceData)
         } else if (resourceType === "yangiliklar") {
           console.log("[v0] Fetching yangilik...")
           resourceData = await fetchYangilik(currentSlug, currentLang)
+          console.log("[v0] Yangilik data received:", resourceData)
         } else if (resourceType === "reklama") {
           console.log("[v0] Fetching reklama...")
           resourceData = await fetchReklama(currentSlug, currentLang)
+          console.log("[v0] Reklama data received:", resourceData)
         } else if (resourceType === "rasmiy-elon") {
           console.log("[v0] Fetching rasmiy-elon...")
           resourceData = await fetchRasmiyElon(currentSlug, currentLang)
+          console.log("[v0] Rasmiy-elon data received:", resourceData)
         } else if (resourceType === "books-category") {
-          console.log("[v0] ========== FETCHING BOOK CATEGORY ==========")
+          console.log("[v0] ========== ABOUT TO FETCH BOOK CATEGORY ==========")
           console.log("[v0] Current slug:", currentSlug)
           console.log("[v0] Current lang:", currentLang)
-          console.log(
-            "[v0] API URL:",
-            `https://artculture.pythonanywhere.com/${currentLang}/book-categories/${currentSlug}/`,
-          )
+          console.log("[v0] Function type:", typeof fetchBookCategory)
 
           try {
+            console.log("[v0] Calling fetchBookCategory...")
             resourceData = await fetchBookCategory(currentSlug, currentLang)
             console.log("[v0] ========== BOOK CATEGORY FETCHED SUCCESSFULLY ==========")
-            console.log("[v0] Resource data:", resourceData)
+            console.log("[v0] Resource data:", JSON.stringify(resourceData, null, 2))
+            console.log("[v0] Slugs available:", {
+              uz: resourceData?.slug_uz,
+              en: resourceData?.slug_en,
+              ru: resourceData?.slug_ru,
+            })
           } catch (fetchError) {
             console.error("[v0] ========== ERROR FETCHING BOOK CATEGORY ==========")
-            console.error("[v0] Error:", fetchError)
+            console.error(
+              "[v0] Error type:",
+              fetchError instanceof Error ? fetchError.constructor.name : typeof fetchError,
+            )
+            console.error("[v0] Error message:", fetchError instanceof Error ? fetchError.message : String(fetchError))
+            console.error("[v0] Error stack:", fetchError instanceof Error ? fetchError.stack : "No stack")
             throw fetchError
           }
         } else if (resourceType === "books") {
-          console.log("[v0] ========== FETCHING BOOK ==========")
+          console.log("[v0] ========== ABOUT TO FETCH BOOK ==========")
           console.log("[v0] Current slug:", currentSlug)
           console.log("[v0] Current lang:", currentLang)
-          console.log("[v0] API URL:", `https://artculture.pythonanywhere.com/${currentLang}/books/${currentSlug}/`)
+          console.log("[v0] Function type:", typeof fetchBook)
 
           try {
+            console.log("[v0] Calling fetchBook...")
             resourceData = await fetchBook(currentSlug, currentLang)
             console.log("[v0] ========== BOOK FETCHED SUCCESSFULLY ==========")
-            console.log("[v0] Resource data:", resourceData)
+            console.log("[v0] Resource data:", JSON.stringify(resourceData, null, 2))
+            console.log("[v0] Slugs available:", {
+              uz: resourceData?.slug_uz,
+              en: resourceData?.slug_en,
+              ru: resourceData?.slug_ru,
+            })
           } catch (fetchError) {
             console.error("[v0] ========== ERROR FETCHING BOOK ==========")
-            console.error("[v0] Error:", fetchError)
+            console.error(
+              "[v0] Error type:",
+              fetchError instanceof Error ? fetchError.constructor.name : typeof fetchError,
+            )
+            console.error("[v0] Error message:", fetchError instanceof Error ? fetchError.message : String(fetchError))
+            console.error("[v0] Error stack:", fetchError instanceof Error ? fetchError.stack : "No stack")
             throw fetchError
           }
         }
 
         if (resourceData) {
           console.log("[v0] ========== EXTRACTING SLUG ==========")
-          console.log("[v0] Resource data received:", resourceData)
+          console.log("[v0] Resource data received:", JSON.stringify(resourceData, null, 2))
           console.log("[v0] Available slugs:", {
             uz: resourceData.slug_uz,
             en: resourceData.slug_en,
             ru: resourceData.slug_ru,
           })
           console.log("[v0] Target language:", newLang)
+          console.log("[v0] getSlugForLang function type:", typeof getSlugForLang)
 
           try {
+            console.log("[v0] Calling getSlugForLang...")
             newSlug = getSlugForLang(resourceData, newLang)
             console.log("[v0] ========== SLUG EXTRACTED SUCCESSFULLY ==========")
             console.log("[v0] New slug:", newSlug)
+            console.log("[v0] Old slug:", currentSlug)
+            console.log("[v0] Slug changed:", currentSlug !== newSlug)
           } catch (slugError) {
             console.error("[v0] ========== ERROR EXTRACTING SLUG ==========")
             console.error("[v0] Error:", slugError)

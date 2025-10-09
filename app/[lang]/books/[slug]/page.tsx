@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -46,6 +46,8 @@ export default function BookDetailPage() {
   const [book, setBook] = useState<Book | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [currentBookId, setCurrentBookId] = useState<number | null>(null)
+  const prevLang = useRef<string>(lang)
 
   useEffect(() => {
     const fetchBook = async () => {
@@ -61,27 +63,73 @@ export default function BookDetailPage() {
 
         console.log("[v0] ===== BOOK FETCH STARTED =====")
         console.log("[v0] Current language:", lang)
+        console.log("[v0] Previous language:", prevLang.current)
         console.log("[v0] Current slug from URL:", slug)
+        console.log("[v0] Stored book ID:", currentBookId)
 
-        const apiUrl = `https://artculture.pythonanywhere.com/${lang}/books/${slug}/`
-        console.log("[v0] Fetching book from:", apiUrl)
+        let apiUrl: string
+        let response: Response
 
-        const response = await fetch(apiUrl, {
-          method: "GET",
-          headers: {
-            accept: "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          mode: "cors",
-        })
+        const languageChanged = prevLang.current !== lang
+        console.log("[v0] Language changed?", languageChanged)
+
+        if (currentBookId && languageChanged) {
+          console.log("[v0] Language changed! Fetching by ID:", currentBookId)
+          apiUrl = `https://artculture.pythonanywhere.com/${lang}/books/id/${currentBookId}/`
+          console.log("[v0] Fetching from:", apiUrl)
+
+          response = await fetch(apiUrl, {
+            method: "GET",
+            headers: {
+              accept: "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            mode: "cors",
+          })
+        } else {
+          console.log("[v0] Fetching by slug:", slug)
+          apiUrl = `https://artculture.pythonanywhere.com/${lang}/books/${slug}/`
+          console.log("[v0] Fetching from:", apiUrl)
+
+          response = await fetch(apiUrl, {
+            method: "GET",
+            headers: {
+              accept: "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            mode: "cors",
+          })
+        }
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`)
         }
 
         const data = await response.json()
-        console.log("[v0] Book data:", data)
+        console.log("[v0] API Response:", data)
+        console.log("[v0] Book slug from API:", data.slug_uz, data.slug_en, data.slug_ru)
+        console.log("[v0] Book ID from API:", data.id)
+
+        if (data.id) {
+          setCurrentBookId(data.id)
+          console.log("[v0] Stored book ID:", data.id)
+        }
+
         setBook(data)
+
+        const correctSlug = data[`slug_${lang}`] || data.slug_uz
+        if (correctSlug && correctSlug !== slug) {
+          console.log("[v0] Slugs are different! Updating URL...")
+          console.log("[v0]   URL slug:", slug)
+          console.log("[v0]   API slug:", correctSlug)
+          console.log("[v0] New URL will be:", `/${lang}/books/${correctSlug}`)
+
+          router.replace(`/${lang}/books/${correctSlug}`)
+        }
+
+        prevLang.current = lang
+
+        console.log("[v0] ===== BOOK FETCH COMPLETED =====")
       } catch (err) {
         console.error("[v0] Failed to fetch book:", err)
         setError("Kitob ma'lumotlarini yuklashda xatolik yuz berdi")
@@ -93,7 +141,7 @@ export default function BookDetailPage() {
     if (lang && slug) {
       fetchBook()
     }
-  }, [lang, slug, router])
+  }, [lang, slug, router, currentBookId])
 
   const handleDownloadPDF = () => {
     if (book?.pdf_file) {

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -100,6 +100,8 @@ interface BookCategoryDetail {
   latest_books: Book[]
 }
 
+const API_BASE = "https://artculture.pythonanywhere.com"
+
 export default function BookCategoryPage() {
   const params = useParams()
   const router = useRouter()
@@ -112,6 +114,8 @@ export default function BookCategoryPage() {
   const [error, setError] = useState<string | null>(null)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
+  const [currentCategoryId, setCurrentCategoryId] = useState<number | null>(null)
+  const prevLang = useRef<string>(lang)
   const booksPerPage = 9
 
   useEffect(() => {
@@ -137,35 +141,93 @@ export default function BookCategoryPage() {
 
         console.log("[v0] ===== BOOK CATEGORY FETCH STARTED =====")
         console.log("[v0] Current language:", lang)
+        console.log("[v0] Previous language:", prevLang.current)
         console.log("[v0] Current slug from URL:", slug)
+        console.log("[v0] Stored category ID:", currentCategoryId)
 
-        const apiUrl = `https://artculture.pythonanywhere.com/${lang}/book-categories/${slug}/`
-        console.log("[v0] Fetching category from:", apiUrl)
+        let apiUrl: string
+        let response: Response
 
-        const response = await fetch(apiUrl, {
-          headers: {
-            Authorization: token ? `Bearer ${token}` : "",
-            Accept: "application/json",
-          },
-        })
+        const languageChanged = prevLang.current !== lang
+        console.log("[v0] Language changed?", languageChanged)
+
+        if (currentCategoryId && languageChanged) {
+          console.log("[v0] Language changed! Fetching by ID:", currentCategoryId)
+          apiUrl = `${API_BASE}/${lang}/book-categories/id/${currentCategoryId}/`
+          console.log("[v0] Fetching from:", apiUrl)
+
+          response = await fetch(apiUrl, {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : "",
+              Accept: "application/json",
+              "Content-Type": "application/json",
+              "Accept-Language": lang,
+            },
+            mode: "cors",
+          })
+        } else {
+          console.log("[v0] Fetching by slug:", slug)
+          apiUrl = `${API_BASE}/${lang}/book-categories/${slug}/`
+          console.log("[v0] Fetching from:", apiUrl)
+
+          response = await fetch(apiUrl, {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : "",
+              Accept: "application/json",
+              "Content-Type": "application/json",
+              "Accept-Language": lang,
+            },
+            mode: "cors",
+          })
+        }
+
+        console.log("[v0] Response status:", response.status)
+        console.log("[v0] Response ok:", response.ok)
 
         if (!response.ok) {
+          const errorText = await response.text()
+          console.error("[v0] API error response:", errorText)
           throw new Error("Failed to fetch category")
         }
 
         const data = await response.json()
+        console.log("[v0] API Response:", data)
         console.log("[v0] Category data:", data)
+        console.log("[v0] Category slug from API:", data.slug_uz, data.slug_en, data.slug_ru)
+        console.log("[v0] Category ID from API:", data.id)
+
+        if (data.id) {
+          setCurrentCategoryId(data.id)
+          console.log("[v0] Stored category ID:", data.id)
+        }
+
         setCategory(data)
+
+        const currentSlugForLang = lang === "uz" ? data.slug_uz : lang === "ru" ? data.slug_ru : data.slug_en
+        if (currentSlugForLang && currentSlugForLang !== slug) {
+          console.log("[v0] Slugs are different! Updating URL...")
+          console.log("[v0]   URL slug:", slug)
+          console.log("[v0]   API slug:", currentSlugForLang)
+          console.log("[v0] New URL will be:", `/${lang}/books-category/${currentSlugForLang}`)
+
+          router.replace(`/${lang}/books-category/${currentSlugForLang}`)
+        }
+
+        prevLang.current = lang
+
+        console.log("[v0] ===== BOOK CATEGORY FETCH COMPLETED =====")
       } catch (err) {
-        console.error("[v0] Category fetch error:", err)
+        console.error("[v0] Error loading category:", err)
         setError(err instanceof Error ? err.message : "An error occurred")
       } finally {
         setLoading(false)
       }
     }
 
-    fetchCategory()
-  }, [lang, slug, isLoggedIn])
+    if (slug) {
+      fetchCategory()
+    }
+  }, [slug, lang, isLoggedIn, currentCategoryId, router])
 
   if (!isLoggedIn) {
     return (
