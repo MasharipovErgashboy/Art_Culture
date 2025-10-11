@@ -158,6 +158,17 @@ export interface UserProfile {
   } | null
 }
 
+export interface Author {
+  slug_uz: string
+  slug_en: string | null
+  slug_ru: string | null
+  description: string
+  image: string | null
+  name: string
+  books_count: number
+  journals_count: number
+}
+
 export async function fetchJournals(lang = "en"): Promise<Journal[]> {
   try {
     const response = await fetchWithTimeout(`${API_BASE}/${lang}/journals/`, {
@@ -551,6 +562,67 @@ export async function fetchUserProfile(token: string): Promise<UserProfile> {
     return data
   } catch (error) {
     console.error("Error fetching user profile:", error)
+    throw error
+  }
+}
+
+export async function fetchAuthors(lang = "en"): Promise<Author[]> {
+  try {
+    const url = `${API_BASE}/${lang}/authors/`
+    console.log("[v0] Fetching authors from URL:", url)
+
+    const response = await fetchWithTimeout(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "Accept-Language": lang,
+      },
+      mode: "cors",
+    })
+
+    if (!response.ok) {
+      console.error("[v0] Authors API response not OK:", response.status, response.statusText)
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
+    console.log("[v0] Authors API response:", data)
+    console.log("[v0] Number of authors:", data.length)
+
+    return data
+  } catch (error) {
+    console.error("[v0] Error fetching authors:", error)
+    throw error
+  }
+}
+
+export async function fetchAuthor(slug: string, lang = "en"): Promise<Author> {
+  try {
+    const url = `${API_BASE}/${lang}/authors/${slug}/`
+    console.log("[v0] Fetching author from URL:", url)
+
+    const response = await fetchWithTimeout(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "Accept-Language": lang,
+      },
+      mode: "cors",
+    })
+
+    if (!response.ok) {
+      console.error("[v0] Author API response not OK:", response.status, response.statusText)
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
+    console.log("[v0] Author API response:", data)
+
+    return data
+  } catch (error) {
+    console.error("[v0] Error fetching author:", error)
     throw error
   }
 }

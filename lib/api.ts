@@ -59,6 +59,38 @@ export interface JournalSection {
   journal_issue_name: string
 }
 
+// Fetch list of book categories
+export async function fetchBookCategories(lang = "en"): Promise<BookCategory[]> {
+  console.log("[v0] fetchBookCategories called with lang:", lang)
+  try {
+    const url = `${API_BASE}/${lang}/book-categories/`
+    console.log("[v0] Fetching book categories from URL:", url)
+
+    const response = await fetchWithTimeout(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "Accept-Language": lang,
+      },
+      mode: "cors",
+    })
+
+    if (!response.ok) {
+      console.error("[v0] fetchBookCategories API error:", response.status, response.statusText)
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
+    console.log("[v0] fetchBookCategories success:", data.length, "categories")
+    console.log("[v0] First category:", data[0])
+    return data
+  } catch (error) {
+    console.error("[v0] fetchBookCategories error:", error)
+    throw error
+  }
+}
+
 // Fetch all journals
 export async function fetchJournals(lang = "en"): Promise<Journal[]> {
   try {
@@ -245,6 +277,7 @@ export async function fetchConferences(
     })
 
     if (!response.ok) {
+      console.error("[v0] Profile API response not OK:", response.status, response.statusText)
       throw new Error(`HTTP error! status: ${response.status}`)
     }
 
@@ -407,12 +440,7 @@ export interface RasmiyElon {
 
 export async function fetchRasmiyElon(slug: string, lang = "en"): Promise<RasmiyElon> {
   try {
-    const url = `${API_BASE}/${lang}/rasmiy-elonlar/${slug}/`
-    console.log("[v0] Fetching rasmiy elon from URL:", url)
-    console.log("[v0] Slug:", slug)
-    console.log("[v0] Language:", lang)
-
-    const response = await fetchWithTimeout(url, {
+    const response = await fetchWithTimeout(`${API_BASE}/${lang}/rasmiy-elonlar/${slug}/`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -438,109 +466,8 @@ export async function fetchRasmiyElon(slug: string, lang = "en"): Promise<Rasmiy
   }
 }
 
-export function getSlugForLang(item: { slug_uz?: string; slug_en?: string; slug_ru?: string }, lang: string): string {
-  console.log("[v0] getSlugForLang called with:", { item, lang })
-
-  let slug: string | undefined
-
-  switch (lang) {
-    case "uz":
-      slug = item.slug_uz
-      break
-    case "en":
-      slug = item.slug_en
-      break
-    case "ru":
-      slug = item.slug_ru
-      break
-    default:
-      slug = item.slug_uz
-  }
-
-  // If the requested language slug is missing, try fallbacks
-  if (!slug) {
-    console.warn(`[v0] Slug for language '${lang}' is missing, trying fallbacks...`)
-    slug = item.slug_uz || item.slug_en || item.slug_ru
-  }
-
-  if (!slug) {
-    console.error("[v0] No valid slug found in item:", item)
-    throw new Error(`No valid slug found for language: ${lang}`)
-  }
-
-  console.log(`[v0] Returning slug for ${lang}:`, slug)
-  return slug
-}
-
-export interface SubscriptionType {
-  id: number
-  name: string
-  duration_days: number
-  price: string
-  books_count: number
-  journals_count: number
-  conferences_count: number
-}
-
-export interface Subscription {
-  id: number
-  subscription_type: SubscriptionType
-  start_date: string
-  end_date: string
-  is_active: boolean
-}
-
-export interface UserProfile {
-  email: string
-  username: string
-  subscription: {
-    active: Subscription[]
-    ended: Subscription[]
-  } | null
-}
-
-// Fetch user profile
-export async function fetchUserProfile(token: string): Promise<UserProfile> {
-  try {
-    const url = `${API_BASE}/auth/me/`
-    console.log("[v0] Fetching user profile from URL:", url)
-
-    const response = await fetchWithTimeout(url, {
-      method: "GET",
-      headers: {
-        accept: "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      mode: "cors",
-    })
-
-    if (!response.ok) {
-      console.error("[v0] Profile API response not OK:", response.status, response.statusText)
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
-
-    const data = await response.json()
-    console.log("[v0] User profile API response:", data)
-
-    return data
-  } catch (error) {
-    console.error("[v0] Error fetching user profile:", error)
-    throw error
-  }
-}
-
-// Helper to get API base URL (useful for debugging)
-export function getApiBaseUrl(): string {
-  return API_BASE
-}
-
-interface Conference {
-  name: string
-  image: string
-  // Add other Conference properties here
-}
-
 export interface BookCategory {
+  id?: number
   slug_uz: string
   slug_en: string
   slug_ru: string
@@ -550,6 +477,7 @@ export interface BookCategory {
 }
 
 export interface Book {
+  id?: number
   slug_uz: string
   slug_en: string
   slug_ru: string
@@ -685,4 +613,173 @@ export async function fetchBook(slug: string, lang = "en", token?: string): Prom
     console.error("[v0] ========== FETCH BOOK ERROR END ==========")
     throw error
   }
+}
+
+export function getSlugForLang(item: { slug_uz?: string; slug_en?: string; slug_ru?: string }, lang: string): string {
+  console.log("[v0] getSlugForLang called with:", { item, lang })
+
+  let slug: string | undefined
+
+  switch (lang) {
+    case "uz":
+      slug = item.slug_uz
+      break
+    case "en":
+      slug = item.slug_en
+      break
+    case "ru":
+      slug = item.slug_ru
+      break
+    default:
+      slug = item.slug_uz
+  }
+
+  // If the requested language slug is missing, try fallbacks
+  if (!slug) {
+    console.warn(`[v0] Slug for language '${lang}' is missing, trying fallbacks...`)
+    slug = item.slug_uz || item.slug_en || item.slug_ru
+  }
+
+  if (!slug) {
+    console.error("[v0] No valid slug found in item:", item)
+    throw new Error(`No valid slug found for language: ${lang}`)
+  }
+
+  console.log(`[v0] Returning slug for ${lang}:`, slug)
+  return slug
+}
+
+export interface SubscriptionType {
+  id: number
+  name: string
+  duration_days: number
+  price: string
+  books_count: number
+  journals_count: number
+  conferences_count: number
+}
+
+export interface Subscription {
+  id: number
+  subscription_type: SubscriptionType
+  start_date: string
+  end_date: string
+  is_active: boolean
+}
+
+export interface UserProfile {
+  email: string
+  username: string
+  subscription: {
+    active: Subscription[]
+    ended: Subscription[]
+  } | null
+}
+
+// Fetch user profile
+export async function fetchUserProfile(token: string): Promise<UserProfile> {
+  try {
+    const url = `${API_BASE}/auth/me/`
+    console.log("[v0] Fetching user profile from URL:", url)
+
+    const response = await fetchWithTimeout(url, {
+      method: "GET",
+      headers: {
+        accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      mode: "cors",
+    })
+
+    if (!response.ok) {
+      console.error("[v0] Profile API response not OK:", response.status, response.statusText)
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
+    console.log("[v0] User profile API response:", data)
+
+    return data
+  } catch (error) {
+    console.error("[v0] Error fetching user profile:", error)
+    throw error
+  }
+}
+
+export interface Author {
+  slug_uz: string
+  slug_en: string | null
+  slug_ru: string | null
+  description: string
+  image: string | null
+  name: string
+  books_count: number
+  journals_count: number
+}
+
+export async function fetchAuthors(lang = "en"): Promise<Author[]> {
+  try {
+    const url = `${API_BASE}/${lang}/authors/`
+    console.log("[v0] Fetching authors from URL:", url)
+
+    const response = await fetchWithTimeout(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "Accept-Language": lang,
+      },
+      mode: "cors",
+    })
+
+    if (!response.ok) {
+      console.error("[v0] Authors API response not OK:", response.status, response.statusText)
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
+    console.log("[v0] Authors API response:", data)
+    console.log("[v0] Number of authors:", data.length)
+
+    return data
+  } catch (error) {
+    console.error("[v0] Error fetching authors:", error)
+    throw error
+  }
+}
+
+// Fetch single author by slug
+export async function fetchAuthor(slug: string, lang = "en"): Promise<Author> {
+  try {
+    const url = `${API_BASE}/${lang}/authors/${slug}/`
+    console.log("[v0] Fetching author from URL:", url)
+
+    const response = await fetchWithTimeout(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "Accept-Language": lang,
+      },
+      mode: "cors",
+    })
+
+    if (!response.ok) {
+      console.error("[v0] Author API response not OK:", response.status, response.statusText)
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
+    console.log("[v0] Author API response:", data)
+
+    return data
+  } catch (error) {
+    console.error("[v0] Error fetching author:", error)
+    throw error
+  }
+}
+
+// Helper to get API base URL (useful for debugging)
+export function getApiBaseUrl(): string {
+  return API_BASE
 }

@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useState } from "react"
+import { useParams } from "next/navigation"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
@@ -64,8 +65,9 @@ const translations = {
   },
 }
 
-export default function ForgotPasswordPage({ params }: { params: { lang: string } }) {
-  const currentLang = params.lang || "uz"
+export default function ForgotPasswordPage() {
+  const params = useParams()
+  const currentLang = (params?.lang as string) || "uz"
   const t = translations[currentLang as keyof typeof translations] || translations.uz
 
   const [email, setEmail] = useState("")

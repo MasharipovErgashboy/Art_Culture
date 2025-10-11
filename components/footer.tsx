@@ -13,6 +13,7 @@ const footerTranslations = {
     conferences: "Konferensiya",
     news: "Yangiliklar",
     academicResources: "Ilmiy resurslar",
+    authors: "Mualliflar",
     about: "Biz Haqimizda",
     contact: "Bog'lanish",
     contactInfo: "Aloqa ma'lumotlari",
@@ -27,6 +28,7 @@ const footerTranslations = {
     conferences: "Конференции",
     news: "Новости",
     academicResources: "Научные ресурсы",
+    authors: "Авторы",
     about: "О нас",
     contact: "Контакты",
     contactInfo: "Контактная информация",
@@ -41,6 +43,7 @@ const footerTranslations = {
     conferences: "Conferences",
     news: "News",
     academicResources: "Academic Resources",
+    authors: "Authors",
     about: "About Us",
     contact: "Contact",
     contactInfo: "Contact Information",
@@ -109,6 +112,12 @@ export function Footer() {
           <div className="space-y-3 sm:space-y-4">
             <h3 className="font-semibold text-foreground text-sm sm:text-base">{t.academicResources}</h3>
             <div className="space-y-2">
+              <Link
+                href={`/${lang}/authors`}
+                className="block text-xs sm:text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
+                {t.authors}
+              </Link>
               <Link
                 href={`/${lang}/about`}
                 className="block text-xs sm:text-sm text-muted-foreground hover:text-primary transition-colors"

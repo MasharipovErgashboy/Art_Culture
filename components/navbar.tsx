@@ -14,6 +14,7 @@ import {
   fetchRasmiyElon,
   fetchBookCategory,
   fetchBook,
+  fetchAuthor,
   getSlugForLang,
 } from "@/lib/api"
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet"
@@ -31,6 +32,7 @@ const navTranslations = {
     profile: "Profil",
     logout: "Chiqish",
     menu: "Menyu",
+    authors: "Mualliflar",
   },
   ru: {
     about: "О нас",
@@ -43,6 +45,7 @@ const navTranslations = {
     profile: "Профиль",
     logout: "Выйти",
     menu: "Меню",
+    authors: "Авторы",
   },
   en: {
     about: "About Us",
@@ -55,6 +58,7 @@ const navTranslations = {
     profile: "Profile",
     logout: "Logout",
     menu: "Menu",
+    authors: "Authors",
   },
 }
 
@@ -183,6 +187,51 @@ export function Navbar() {
         console.log("[v0] fetchBookCategory is:", fetchBookCategory)
       } else if (resourceType === "books") {
         console.log("[v0] ========== BOOKS PAGE DETECTED ==========")
+      } else if (resourceType === "authors") {
+        console.log("[v0] ========== ABOUT TO FETCH AUTHOR ==========")
+        console.log("[v0] Current slug:", currentSlug)
+        console.log("[v0] Current lang:", currentLang)
+        console.log("[v0] Function type:", typeof fetchAuthor)
+
+        try {
+          console.log("[v0] Calling fetchAuthor...")
+          const resourceData = await fetchAuthor(currentSlug, currentLang)
+          console.log("[v0] ========== AUTHOR FETCHED SUCCESSFULLY ==========")
+          console.log("[v0] Resource data:", JSON.stringify(resourceData, null, 2))
+          console.log("[v0] Slugs available:", {
+            uz: resourceData?.slug_uz,
+            en: resourceData?.slug_en,
+            ru: resourceData?.slug_ru,
+          })
+
+          const newSlug = getSlugForLang(resourceData, newLang)
+          const newPath = `/${newLang}/${resourceType}/${newSlug}`
+          console.log("[v0] ========== NAVIGATION ==========")
+          console.log("[v0] Old path:", pathname)
+          console.log("[v0] New path:", newPath)
+          console.log("[v0] Old slug:", currentSlug)
+          console.log("[v0] New slug:", newSlug)
+          console.log("[v0] Slug changed:", currentSlug !== newSlug)
+          console.log("[v0] ========== LANGUAGE CHANGE END ==========")
+
+          router.push(newPath)
+
+          window.dispatchEvent(
+            new CustomEvent("languageChange", {
+              detail: { language: langCode },
+            }),
+          )
+          return
+        } catch (fetchError) {
+          console.error("[v0] ========== ERROR FETCHING AUTHOR ==========")
+          console.error(
+            "[v0] Error type:",
+            fetchError instanceof Error ? fetchError.constructor.name : typeof fetchError,
+          )
+          console.error("[v0] Error message:", fetchError instanceof Error ? fetchError.message : String(fetchError))
+          console.error("[v0] Error stack:", fetchError instanceof Error ? fetchError.stack : "No stack")
+          throw fetchError
+        }
       }
 
       try {
@@ -361,6 +410,7 @@ export function Navbar() {
   const leftNavItems = [
     { href: `/${lang}/about`, label: t.about },
     { href: `/${lang}/contact`, label: t.contact },
+    { href: `/${lang}/authors`, label: t.authors },
   ]
 
   const centerNavItems = [
@@ -390,7 +440,7 @@ export function Navbar() {
   const handleMouseLeave = () => {
     closeTimerRef.current = setTimeout(() => {
       setIsDropdownOpen(false)
-    }, 1000) // 5 seconds delay
+    }, 5000) // 5 seconds delay
   }
 
   useEffect(() => {
@@ -489,7 +539,7 @@ export function Navbar() {
                   <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
                     <div className="px-4 py-3 border-b border-gray-100">
                       <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-sm shadow-md">
+                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-semibold text-sm shadow-md">
                           {getUserInitial()}
                         </div>
                         <div className="flex-1 min-w-0">
