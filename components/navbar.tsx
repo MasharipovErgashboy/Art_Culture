@@ -32,7 +32,6 @@ const navTranslations = {
     profile: "Profil",
     logout: "Chiqish",
     menu: "Menyu",
-    authors: "Mualliflar",
   },
   ru: {
     about: "О нас",
