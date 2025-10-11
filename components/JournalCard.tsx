@@ -1,15 +1,12 @@
 "use client"
-
-import type React from "react"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { BookOpen, FileText, Lock } from "lucide-react"
+import { BookOpen, FileText } from "lucide-react"
 import Image from "next/image"
 import type { Journal } from "@/lib/api"
 import { getSlugForLang } from "@/lib/api"
-import { useRouter } from "next/navigation"
-import { isAuthenticated } from "@/lib/auth"
+import Link from "next/link"
 
 const translations = {
   uz: {
@@ -35,45 +32,12 @@ interface JournalCardProps {
 }
 
 export function JournalCard({ journal, lang }: JournalCardProps) {
-  const router = useRouter()
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [imageError, setImageError] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
   const t = translations[lang as keyof typeof translations] || translations.uz
 
   const imageUrl = journal.image ? `https://artculture.pythonanywhere.com${journal.image}` : null
   const journalSlug = getSlugForLang(journal, lang)
-
-  useEffect(() => {
-    const checkAuth = () => {
-      const authStatus = isAuthenticated()
-      setIsLoggedIn(authStatus)
-    }
-
-    checkAuth()
-
-    // Re-check authentication when window gains focus (user returns from login)
-    window.addEventListener("focus", checkAuth)
-    window.addEventListener("storage", checkAuth)
-
-    return () => {
-      window.removeEventListener("focus", checkAuth)
-      window.removeEventListener("storage", checkAuth)
-    }
-  }, [])
-
-  const handleJournalAccess = (e: React.MouseEvent) => {
-    e.preventDefault()
-
-    const authenticated = isAuthenticated()
-
-    if (!authenticated) {
-      router.push(`/${lang}/login?returnUrl=${encodeURIComponent(`/${lang}/journals/${journalSlug}`)}`)
-      return
-    }
-
-    router.push(`/${lang}/journals/${journalSlug}`)
-  }
 
   return (
     <Card className="group hover:shadow-xl transition-all duration-300 border hover:border-primary/30 hover:scale-[1.02] bg-white/80 backdrop-blur-sm overflow-hidden">
@@ -133,13 +97,10 @@ export function JournalCard({ journal, lang }: JournalCardProps) {
       </CardHeader>
       <CardContent>
         <Button
-          onClick={handleJournalAccess}
-          className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-md hover:shadow-lg transition-all duration-300 group"
+          asChild
+          className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-md hover:shadow-lg transition-all duration-300"
         >
-          <span className="flex items-center gap-2">
-            {!isLoggedIn && <Lock className="h-4 w-4" />}
-            {t.viewJournal}
-          </span>
+          <Link href={`/${lang}/journals/${journalSlug}`}>{t.viewJournal}</Link>
         </Button>
       </CardContent>
     </Card>

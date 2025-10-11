@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -153,6 +153,7 @@ interface UserProfile {
 
 export default function ProfilePage() {
   const params = useParams()
+  const router = useRouter()
   const lang = (params?.lang as string) || "uz"
   const currentLang = lang
   const t = translations[currentLang as keyof typeof translations] || translations.uz
@@ -241,6 +242,10 @@ export default function ProfilePage() {
       month: currentLang === "uz" ? "2-digit" : "long",
       day: "numeric",
     })
+  }
+
+  const handleUpgradeToPremium = () => {
+    router.push(`/${lang}/buy/`)
   }
 
   if (loading) {
@@ -470,7 +475,10 @@ export default function ProfilePage() {
                           </div>
 
                           <p className="text-gray-700 font-medium my-6">{t.limitedAccess}</p>
-                          <Button className="w-full h-12 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md">
+                          <Button
+                            onClick={handleUpgradeToPremium}
+                            className="w-full h-12 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md"
+                          >
                             <Crown className="w-5 h-5 mr-2" />
                             {t.renewSubscription}
                           </Button>
@@ -494,7 +502,10 @@ export default function ProfilePage() {
                         </Badge>
                       </div>
                       <p className="text-gray-700 font-medium mb-6">{t.limitedAccess}</p>
-                      <Button className="w-full h-12 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md">
+                      <Button
+                        onClick={handleUpgradeToPremium}
+                        className="w-full h-12 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md"
+                      >
                         <Crown className="w-5 h-5 mr-2" />
                         {t.upgradeToPremium}
                       </Button>

@@ -6,8 +6,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { ArrowLeft, BookOpen, Lock, ChevronLeft, ChevronRight } from "lucide-react"
-import { isAuthenticated } from "@/lib/auth"
+import { ArrowLeft, BookOpen, ChevronLeft, ChevronRight } from "lucide-react"
 import { BookCard } from "@/components/book-card"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
@@ -112,29 +111,13 @@ export default function BookCategoryPage() {
   const [category, setCategory] = useState<BookCategoryDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [currentCategoryId, setCurrentCategoryId] = useState<number | null>(null)
   const prevLang = useRef<string>(lang)
   const booksPerPage = 9
 
   useEffect(() => {
-    const checkAuth = () => {
-      const authStatus = isAuthenticated()
-      setIsLoggedIn(authStatus)
-
-      if (!authStatus) {
-        router.push(`/${lang}/login?returnUrl=${encodeURIComponent(`/${lang}/books/${slug}`)}`)
-      }
-    }
-
-    checkAuth()
-  }, [lang, slug, router])
-
-  useEffect(() => {
     const fetchCategory = async () => {
-      if (!isLoggedIn) return
-
       try {
         setLoading(true)
         const token = localStorage.getItem("access_token")
@@ -158,7 +141,7 @@ export default function BookCategoryPage() {
 
           response = await fetch(apiUrl, {
             headers: {
-              Authorization: token ? `Bearer ${token}` : "",
+              ...(token && { Authorization: `Bearer ${token}` }),
               Accept: "application/json",
               "Content-Type": "application/json",
               "Accept-Language": lang,
@@ -172,7 +155,7 @@ export default function BookCategoryPage() {
 
           response = await fetch(apiUrl, {
             headers: {
-              Authorization: token ? `Bearer ${token}` : "",
+              ...(token && { Authorization: `Bearer ${token}` }),
               Accept: "application/json",
               "Content-Type": "application/json",
               "Accept-Language": lang,
@@ -227,27 +210,7 @@ export default function BookCategoryPage() {
     if (slug) {
       fetchCategory()
     }
-  }, [slug, lang, isLoggedIn, currentCategoryId, router])
-
-  if (!isLoggedIn) {
-    return (
-      <>
-        <Navbar />
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted/20">
-          <Card className="max-w-md w-full mx-4">
-            <CardHeader className="text-center">
-              <div className="mx-auto mb-4 p-4 bg-primary/10 rounded-full w-fit">
-                <Lock className="h-12 w-12 text-primary" />
-              </div>
-              <CardTitle className="text-2xl">{t.loginRequired}</CardTitle>
-              <CardDescription className="text-base">{t.loginToView}</CardDescription>
-            </CardHeader>
-          </Card>
-        </div>
-        <Footer />
-      </>
-    )
-  }
+  }, [slug, lang, currentCategoryId, router])
 
   if (loading) {
     return (

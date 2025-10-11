@@ -15,6 +15,9 @@ import {
   Megaphone,
   Star,
   Bell,
+  Clock,
+  CalendarDays,
+  CalendarRange,
 } from "lucide-react"
 import Link from "next/link"
 import { useState, useEffect } from "react"
@@ -72,6 +75,16 @@ interface ApiData {
   rasmiy_elon: RasmiyElon
   reklama: Reklama[]
   yangiliklar: Yangilik[]
+  // Assuming subscriptions are also fetched from the API
+  subscriptions?: {
+    id: number
+    name: string
+    price: string
+    duration_days: number
+    books_count: number
+    journals_count: number
+    conferences_count: number
+  }[]
 }
 
 const API_BASE = "https://artculture.pythonanywhere.com"
@@ -137,6 +150,14 @@ const translations = {
     obunaBolishDesc: "Eng so'nggi yangiliklar va maxsus takliflardan xabardor bo'ling",
     emailKiriting: "Email manzilingizni kiriting",
     obuna: "Obuna bo'lish",
+    kunlikObuna: "1 kunlik obuna",
+    haftalikObuna: "1 haftalik obuna",
+    oylikObuna: "1 oylik obuna",
+    kunlikDesc: "Barcha resurslarga 1 kunlik kirish",
+    haftalikDesc: "Barcha resurslarga 1 haftalik kirish",
+    oylikDesc: "Barcha resurslarga 1 oylik kirish",
+    som: "so'm",
+    tanlash: "Tanlash",
   },
   ru: {
     rasmiyElon: "ОФИЦИАЛЬНОЕ ОБЪЯВЛЕНИЕ",
@@ -182,6 +203,14 @@ const translations = {
     obunaBolishDesc: "Будьте в курсе последних новостей и специальных предложений",
     emailKiriting: "Введите ваш email",
     obuna: "Подписаться",
+    kunlikObuna: "1-дневная подписка",
+    haftalikObuna: "1-недельная подписка",
+    oylikObuna: "1-месячная подписка",
+    kunlikDesc: "Доступ ко всем ресурсам на 1 день",
+    haftalikDesc: "Доступ ко всем ресурсам на 1 неделю",
+    oylikDesc: "Доступ ко всем ресурсам на 1 месяц",
+    som: "сум",
+    tanlash: "Выбрать",
   },
   en: {
     rasmiyElon: "OFFICIAL ANNOUNCEMENT",
@@ -226,6 +255,14 @@ const translations = {
     obunaBolishDesc: "Stay informed about the latest news and special offers",
     emailKiriting: "Enter your email",
     obuna: "Subscribe",
+    kunlikObuna: "1-day subscription",
+    haftalikObuna: "1-week subscription",
+    oylikObuna: "1-month subscription",
+    kunlikDesc: "Access to all resources for 1 day",
+    haftalikDesc: "Access to all resources for 1 week",
+    oylikDesc: "Access to all resources for 1 month",
+    som: "sum",
+    tanlash: "Choose",
   },
 }
 
@@ -473,8 +510,8 @@ export function HomeContent({ lang }: HomeContentProps) {
     setShowVideoModal(true)
   }
 
-  const handleSubscriptionClick = (planType: string) => {
-    router.push("/login")
+  const handleSubscriptionClick = async (planId: number) => {
+    router.push(`/${lang}/subscription/${planId}`)
   }
 
   // Helper function to get language-specific slug
@@ -490,6 +527,30 @@ export function HomeContent({ lang }: HomeContentProps) {
         return yangilik.id.toString() // Fallback
     }
   }
+
+  // Map API subscriptions to display format with icons based on duration
+  const getSubscriptionIcon = (durationDays: number) => {
+    if (durationDays <= 1) return Clock
+    if (durationDays <= 7) return CalendarDays
+    return CalendarRange
+  }
+
+  const getSubscriptionGradient = (index: number) => {
+    const gradients = ["from-blue-500 to-cyan-500", "from-purple-500 to-pink-500", "from-orange-500 to-red-500"]
+    return gradients[index % gradients.length]
+  }
+
+  const subscriptionPlans = apiData?.subscriptions
+    ? apiData.subscriptions.map((sub) => ({
+        id: sub.id,
+        title: sub.name,
+        description: `${sub.books_count} ${t.kitoblar}, ${sub.journals_count} ${t.jurnallar}, ${sub.conferences_count} ${t.konferensiya}`,
+        price: Number.parseFloat(sub.price).toLocaleString("uz-UZ"),
+        duration: sub.duration_days.toString(),
+        icon: getSubscriptionIcon(sub.duration_days),
+        gradient: getSubscriptionGradient(apiData.subscriptions.findIndex((s) => s.id === sub.id)), // Ensure correct gradient mapping
+      }))
+    : []
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -1204,28 +1265,75 @@ export function HomeContent({ lang }: HomeContentProps) {
         </div>
       </section>
 
-      {/* Subscription section */}
-      <section className="py-8 sm:py-12 lg:py-16 bg-gradient-to-br from-[#003D7F] to-[#0059B2]">
+      <section className="py-8 sm:py-12 lg:py-16 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-8 sm:mb-12">
-            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-3 sm:mb-4 text-white">{t.obunaBolish}</h2>
-            <p className="text-sm sm:text-base text-white/90 max-w-2xl mx-auto px-4">{t.obunaBolishDesc}</p>
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-3 sm:mb-4 text-slate-800">{t.obunaBolish}</h2>
+            <p className="text-sm sm:text-base text-slate-600 max-w-2xl mx-auto px-4">{t.obunaBolishDesc}</p>
           </div>
-          <div className="max-w-md mx-auto">
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-2">
-              <input
-                type="email"
-                placeholder={t.emailKiriting}
-                className="flex-1 px-4 py-3 rounded-lg border-0 focus:ring-2 focus:ring-white/50 outline-none text-sm sm:text-base"
-              />
-              <Button
-                onClick={() => handleSubscriptionClick("basic")} // Added a dummy parameter for planType as it's not used in the redirected route
-                className="bg-white text-[#003D7F] hover:bg-gray-100 px-6 py-3 font-semibold text-sm sm:text-base whitespace-nowrap"
-              >
-                {t.obuna}
-              </Button>
+
+          {isLoading ? (
+            <div className="text-center py-12">
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-xl max-w-md mx-auto">
+                <Bell className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600">{t.iltimosKuting}</p>
+              </div>
             </div>
-          </div>
+          ) : subscriptionPlans.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 max-w-6xl mx-auto">
+              {subscriptionPlans.map((plan) => {
+                const Icon = plan.icon
+                return (
+                  <Card
+                    key={plan.id}
+                    className="group relative overflow-hidden border-0 shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-105 bg-white cursor-pointer"
+                    onClick={() => handleSubscriptionClick(plan.id)}
+                  >
+                    {/* Gradient background overlay */}
+                    <div
+                      className={`absolute inset-0 bg-gradient-to-br ${plan.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-500`}
+                    ></div>
+
+                    <CardHeader className="text-center pb-3 sm:pb-4 p-4 sm:p-6 lg:p-8 relative z-10">
+                      <div className="mx-auto mb-3 sm:mb-4 lg:mb-6 p-4 sm:p-5 lg:p-6 rounded-2xl lg:rounded-3xl bg-gradient-to-br from-blue-50 to-indigo-50 group-hover:scale-110 transition-transform duration-500 shadow-lg">
+                        <Icon className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 text-[#003D7F]" />
+                      </div>
+                      <CardTitle className="text-lg sm:text-xl lg:text-2xl font-bold mb-2 sm:mb-3">
+                        {plan.title}
+                      </CardTitle>
+                      <CardDescription className="text-sm sm:text-base text-gray-600 leading-relaxed mb-4">
+                        {plan.description}
+                      </CardDescription>
+                      <div className="text-3xl sm:text-4xl font-bold text-[#003D7F] mb-2">
+                        {plan.price} <span className="text-lg sm:text-xl font-normal text-gray-600">{t.som}</span>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="text-center p-4 sm:p-6 lg:p-8 pt-0 relative z-10">
+                      <Button
+                        className="w-full bg-gradient-to-r from-[#003D7F] via-[#0059B2] to-[#007ACC] hover:shadow-xl text-white border-0 font-semibold text-sm sm:text-base py-5 sm:py-6 lg:py-7 rounded-xl lg:rounded-2xl transition-all duration-300 hover:scale-105"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleSubscriptionClick(plan.id)
+                        }}
+                      >
+                        <span className="flex items-center justify-center gap-2">
+                          {t.tanlash}
+                          <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform duration-300" />
+                        </span>
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-xl max-w-md mx-auto">
+                <Bell className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600">Obunalar mavjud emas</p>
+              </div>
+            </div>
+          )}
         </div>
       </section>
     </div>

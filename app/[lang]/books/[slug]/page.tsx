@@ -1,342 +1,316 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import type React from "react"
+
+import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { ArrowLeft, PiIcon as PdfIcon, BookOpen, Calendar, Hash, FileText, User } from "lucide-react"
-import Link from "next/link"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
+import { Loader } from "@/components/Loader"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { fetchBook, type Book } from "@/lib/api"
+import { BookOpen, AlertCircle, ArrowLeft, Download, Calendar, User, FileText } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import Link from "next/link"
 
-interface Book {
-  id?: number
-  category_name: string
-  author_name: string
-  image: string | null
-  name: string
-  slug_uz: string
-  slug_en: string
-  slug_ru: string
-  isbn: string | null
-  year: number | null
-  description: string
-  page_count: number
-  tags: string | null
-  pages: string | null
-  pdf_file: string | null
+const translations = {
+  uz: {
+    loading: "Kitob yuklanmoqda...",
+    goBack: "Orqaga qaytish",
+    author: "Muallif",
+    year: "Yil",
+    pages: "Sahifalar",
+    isbn: "ISBN",
+    description: "Tavsif",
+    downloadPDF: "PDF ni ochish",
+    error: "Kitobni yuklashda xatolik yuz berdi",
+    notFound: "Kitob topilmadi",
+    home: "Bosh sahifa",
+    books: "Kitoblar",
+  },
+  ru: {
+    loading: "Загрузка книги...",
+    goBack: "Назад",
+    author: "Автор",
+    year: "Год",
+    pages: "Страницы",
+    isbn: "ISBN",
+    description: "Описание",
+    downloadPDF: "Открыть PDF",
+    error: "Ошибка при загрузке книги",
+    notFound: "Книга не найдена",
+    home: "Главная",
+    books: "Книги",
+  },
+  en: {
+    loading: "Loading book...",
+    goBack: "Go Back",
+    author: "Author",
+    year: "Year",
+    pages: "Pages",
+    isbn: "ISBN",
+    description: "Description",
+    downloadPDF: "Open PDF",
+    error: "Error loading book",
+    notFound: "Book not found",
+    home: "Home",
+    books: "Books",
+  },
 }
 
 // Helper function to convert relative image URLs to absolute URLs
 function convertRelativeImageUrls(html: string): string {
-  const API_BASE = "https://artculture.pythonanywhere.com"
-
-  // Replace all img src attributes that start with /media/ or /static/
-  return html.replace(/(<img[^>]+src=["'])(\/(media|static)\/[^"']+)(["'])/gi, `$1${API_BASE}$2$4`)
+  if (!html) return ""
+  return html.replace(/(src|href)=["'](\/media\/[^"']+|\/static\/[^"']+)["']/gi, (match, attr, url) => {
+    return `${attr}="https://artculture.pythonanywhere.com${url}"`
+  })
 }
 
 export default function BookDetailPage() {
   const params = useParams()
   const router = useRouter()
-  const lang = params?.lang as string
-  const slug = params?.slug as string
+  const lang = (params.lang as string) || "uz"
+  const slug = params.slug as string
+  const t = translations[lang as keyof typeof translations] || translations.uz
 
   const [book, setBook] = useState<Book | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [currentBookId, setCurrentBookId] = useState<number | null>(null)
-  const prevLang = useRef<string>(lang)
+  const [imageError, setImageError] = useState(false)
 
   useEffect(() => {
-    const fetchBook = async () => {
-      const token = localStorage.getItem("access_token")
-
-      if (!token) {
-        router.push(`/${lang}/login?returnUrl=${encodeURIComponent(`/${lang}/books/${slug}`)}`)
-        return
-      }
-
+    const loadBook = async () => {
       try {
         setIsLoading(true)
-
-        console.log("[v0] ===== BOOK FETCH STARTED =====")
-        console.log("[v0] Current language:", lang)
-        console.log("[v0] Previous language:", prevLang.current)
-        console.log("[v0] Current slug from URL:", slug)
-        console.log("[v0] Stored book ID:", currentBookId)
-
-        let apiUrl: string
-        let response: Response
-
-        const languageChanged = prevLang.current !== lang
-        console.log("[v0] Language changed?", languageChanged)
-
-        if (currentBookId && languageChanged) {
-          console.log("[v0] Language changed! Fetching by ID:", currentBookId)
-          apiUrl = `https://artculture.pythonanywhere.com/${lang}/books/id/${currentBookId}/`
-          console.log("[v0] Fetching from:", apiUrl)
-
-          response = await fetch(apiUrl, {
-            method: "GET",
-            headers: {
-              accept: "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            mode: "cors",
-          })
-        } else {
-          console.log("[v0] Fetching by slug:", slug)
-          apiUrl = `https://artculture.pythonanywhere.com/${lang}/books/${slug}/`
-          console.log("[v0] Fetching from:", apiUrl)
-
-          response = await fetch(apiUrl, {
-            method: "GET",
-            headers: {
-              accept: "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            mode: "cors",
-          })
-        }
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
-        }
-
-        const data = await response.json()
-        console.log("[v0] API Response:", data)
-        console.log("[v0] Book slug from API:", data.slug_uz, data.slug_en, data.slug_ru)
-        console.log("[v0] Book ID from API:", data.id)
-
-        if (data.id) {
-          setCurrentBookId(data.id)
-          console.log("[v0] Stored book ID:", data.id)
-        }
-
+        setError(null)
+        const data = await fetchBook(slug, lang)
+        console.log("[v0] Book data:", data)
+        console.log("[v0] Book image:", data.image)
         setBook(data)
-
-        const correctSlug = data[`slug_${lang}`] || data.slug_uz
-        if (correctSlug && correctSlug !== slug) {
-          console.log("[v0] Slugs are different! Updating URL...")
-          console.log("[v0]   URL slug:", slug)
-          console.log("[v0]   API slug:", correctSlug)
-          console.log("[v0] New URL will be:", `/${lang}/books/${correctSlug}`)
-
-          router.replace(`/${lang}/books/${correctSlug}`)
-        }
-
-        prevLang.current = lang
-
-        console.log("[v0] ===== BOOK FETCH COMPLETED =====")
       } catch (err) {
-        console.error("[v0] Failed to fetch book:", err)
-        setError("Kitob ma'lumotlarini yuklashda xatolik yuz berdi")
+        console.error("[v0] Error loading book:", err)
+        setError(err instanceof Error ? err.message : t.error)
       } finally {
         setIsLoading(false)
       }
     }
 
-    if (lang && slug) {
-      fetchBook()
-    }
-  }, [lang, slug, router, currentBookId])
+    loadBook()
+  }, [slug, lang])
 
-  const handleDownloadPDF = () => {
-    if (book?.pdf_file) {
-      const fullUrl = book.pdf_file.startsWith("http")
-        ? book.pdf_file
-        : `https://artculture.pythonanywhere.com${book.pdf_file}`
-      window.open(fullUrl, "_blank")
+  const handlePdfClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault()
+
+    // Check if user is logged in
+    const token = localStorage.getItem("access_token")
+
+    if (!token) {
+      // Not logged in - redirect to login with return URL
+      const returnUrl = encodeURIComponent(window.location.pathname + window.location.search)
+      router.push(`/${lang}/login?returnUrl=${returnUrl}`)
+      return
+    }
+
+    // User is logged in - try to fetch PDF directly
+    // Backend will return 403 if user doesn't have access
+    try {
+      const pdfResponse = await fetch(`https://artculture.pythonanywhere.com/${lang}/book/${slug}/`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (pdfResponse.status === 401) {
+        // Token invalid - redirect to login
+        localStorage.removeItem("access_token")
+        localStorage.removeItem("refresh_token")
+        const returnUrl = encodeURIComponent(window.location.pathname + window.location.search)
+        router.push(`/${lang}/login?returnUrl=${returnUrl}`)
+        return
+      }
+
+      if (pdfResponse.status === 403) {
+        // No subscription - redirect to buy page
+        router.push(`/${lang}/buy/?subscription_type_id=1`)
+        return
+      }
+
+      if (!pdfResponse.ok) {
+        alert("PDF yuklanishida xatolik yuz berdi")
+        return
+      }
+
+      // Get the PDF blob
+      const pdfBlob = await pdfResponse.blob()
+
+      // Create a blob URL and open in new tab
+      const blobUrl = URL.createObjectURL(pdfBlob)
+      window.open(blobUrl, "_blank")
+
+      // Clean up the blob URL after a delay
+      setTimeout(() => {
+        URL.revokeObjectURL(blobUrl)
+      }, 100)
+    } catch (error) {
+      console.error("Error fetching PDF:", error)
+      alert("PDF yuklanishida xatolik yuz berdi")
     }
   }
 
   if (isLoading) {
     return (
-      <>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
         <Navbar />
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12">
-          <div className="container mx-auto px-4">
-            <div className="flex items-center justify-center min-h-[400px]">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                <p className="text-gray-600">Yuklanmoqda...</p>
-              </div>
-            </div>
-          </div>
-        </div>
+        <main className="container mx-auto px-4 py-8">
+          <Loader message={t.loading} />
+        </main>
         <Footer />
-      </>
+      </div>
     )
   }
 
   if (error || !book) {
     return (
-      <>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
         <Navbar />
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12">
-          <div className="container mx-auto px-4">
-            <div className="flex items-center justify-center min-h-[400px]">
-              <div className="text-center">
-                <p className="text-red-600 mb-4">{error || "Kitob topilmadi"}</p>
-                <Button
-                  onClick={() => router.back()}
-                  variant="outline"
-                  className="hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300"
-                >
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Orqaga
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <main className="container mx-auto px-4 py-8">
+          <Alert className="max-w-2xl mx-auto">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="text-center">{error || t.error}</AlertDescription>
+          </Alert>
+        </main>
         <Footer />
-      </>
+      </div>
     )
   }
 
-  return (
-    <>
-      <Navbar />
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12">
-        <div className="container mx-auto px-4 max-w-6xl">
-          <Button onClick={() => router.back()} variant="ghost" className="mb-6 hover:bg-blue-50 hover:text-blue-600">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Orqaga
-          </Button>
+  const imageUrl = book.image ? `https://artculture.pythonanywhere.com${book.image}` : null
+  const pdfUrl = book.pdf_file ? `https://artculture.pythonanywhere.com${book.pdf_file}` : null
 
-          <div className="grid md:grid-cols-3 gap-8">
-            {/* Left Column - Book Image */}
-            <div className="md:col-span-1">
-              <Card className="overflow-hidden shadow-lg sticky top-24">
-                <CardContent className="p-0">
-                  {book.image ? (
-                    <div className="relative w-full aspect-[3/4]">
+  console.log("[v0] Image URL:", imageUrl)
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <Navbar />
+
+      {/* Breadcrumb */}
+      <section className="py-6 px-4 bg-muted/30">
+        <div className="container mx-auto">
+          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+            <Link href="/" className="hover:text-primary">
+              {t.home}
+            </Link>
+            <span>/</span>
+            <Link href={`/${lang}/books-category`} className="hover:text-primary">
+              {t.books}
+            </Link>
+            <span>/</span>
+            <span className="text-foreground">{book.name}</span>
+          </div>
+        </div>
+      </section>
+
+      <main className="container mx-auto px-4 py-12">
+        <div className="max-w-6xl mx-auto">
+          <div className="mb-6">
+            <Button
+              variant="outline"
+              onClick={() => router.back()}
+              className="group hover:bg-primary hover:text-primary-foreground transition-all"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform" />
+              {t.goBack}
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Book Cover */}
+            <div className="lg:col-span-1">
+              <Card className="sticky top-8">
+                <CardContent className="p-6">
+                  {imageUrl && !imageError ? (
+                    <div className="relative aspect-[3/4] w-full overflow-hidden rounded-lg mb-6">
                       <img
-                        src={
-                          book.image.startsWith("http")
-                            ? book.image
-                            : `https://artculture.pythonanywhere.com${book.image}`
-                        }
+                        src={imageUrl || "/placeholder.svg"}
                         alt={book.name}
                         className="w-full h-full object-cover"
-                        onError={(e) => {
-                          console.error("[v0] Image failed to load:", book.image)
-                          e.currentTarget.style.display = "none"
-                          e.currentTarget.parentElement!.innerHTML = `
-                            <div class="w-full h-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
-                              <svg class="h-24 w-24 text-blue-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13M0 16.5h.008v.008H0V16.5zm0 0h23.992v.008H24V16.5zm0 0a2.5 2.5 0 01-2.5 2.5H2.5A2.5 2.5 0 010 16.5zm2.5 0a2.5 2.5 0 002.5 2.5h18.992a2.5 2.5 0 002.5-2.5H2.5z" />
-                              </svg>
-                            </div>
-                          `
+                        onError={() => {
+                          console.log("[v0] Image failed to load:", imageUrl)
+                          setImageError(true)
+                        }}
+                        onLoad={() => {
+                          console.log("[v0] Image loaded successfully:", imageUrl)
                         }}
                       />
                     </div>
                   ) : (
-                    <div className="w-full aspect-[3/4] bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
-                      <BookOpen className="h-24 w-24 text-blue-300" />
+                    <div className="aspect-[3/4] relative mb-6 overflow-hidden rounded-lg bg-gradient-to-br from-primary/10 to-primary/20 flex items-center justify-center">
+                      <BookOpen className="h-16 w-16 text-primary/40" />
                     </div>
                   )}
-                </CardContent>
 
-                {book.pdf_file && (
-                  <div className="p-4">
-                    <Button onClick={handleDownloadPDF} className="w-full bg-blue-600 hover:bg-blue-700" size="lg">
-                      <PdfIcon className="mr-2 h-5 w-5" />
-                      PDF ni ochish
+                  {pdfUrl && (
+                    <Button asChild className="w-full" size="lg">
+                      <a href="#" onClick={handlePdfClick}>
+                        <Download className="h-4 w-4 mr-2" />
+                        {t.downloadPDF}
+                      </a>
                     </Button>
-                  </div>
-                )}
+                  )}
+                </CardContent>
               </Card>
             </div>
 
-            {/* Right Column - Book Details */}
-            <div className="md:col-span-2 space-y-6">
+            {/* Book Details */}
+            <div className="lg:col-span-2 space-y-6">
               <div>
-                <h1 className="text-4xl font-bold text-gray-900 mb-4 text-balance">{book.name}</h1>
-
-                <div className="flex flex-wrap gap-3 mb-6">
-                  <Badge variant="secondary" className="text-sm px-3 py-1">
-                    <User className="mr-1 h-3 w-3" />
-                    {book.author_name}
-                  </Badge>
-
-                  {book.year && (
-                    <Badge variant="secondary" className="text-sm px-3 py-1">
-                      <Calendar className="mr-1 h-3 w-3" />
-                      {book.year}
-                    </Badge>
-                  )}
-
-                  <Badge variant="secondary" className="text-sm px-3 py-1">
-                    <FileText className="mr-1 h-3 w-3" />
-                    {book.page_count} sahifa
-                  </Badge>
-
+                <h1 className="text-4xl font-bold text-foreground mb-4">{book.name}</h1>
+                <div className="flex flex-wrap gap-4 text-muted-foreground">
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    <span>
+                      <strong>{t.author}:</strong> {book.author_name}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    <span>
+                      <strong>{t.year}:</strong> {book.year}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    <span>
+                      <strong>{t.pages}:</strong> {book.page_count}
+                    </span>
+                  </div>
                   {book.isbn && (
-                    <Badge variant="secondary" className="text-sm px-3 py-1">
-                      <Hash className="mr-1 h-3 w-3" />
-                      ISBN: {book.isbn}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <BookOpen className="h-4 w-4" />
+                      <span>
+                        <strong>{t.isbn}:</strong> {book.isbn}
+                      </span>
+                    </div>
                   )}
                 </div>
-
-                <Link
-                  href={`/${lang}/books-category/${book.category_name.toLowerCase().replace(/\s+/g, "-")}`}
-                  className="inline-block"
-                >
-                  <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-200 cursor-pointer">
-                    {book.category_name}
-                  </Badge>
-                </Link>
               </div>
 
-              <Separator />
-
-              <Card className="shadow-md">
+              <Card>
                 <CardContent className="p-6">
-                  <h2 className="text-2xl font-semibold mb-4 text-gray-900">Kitob haqida</h2>
+                  <h2 className="text-2xl font-semibold mb-4">{t.description}</h2>
                   <div
-                    className="prose prose-blue max-w-none text-gray-700 leading-relaxed 
-                    [&_img]:!block [&_img]:!max-w-full [&_img]:!w-auto [&_img]:!h-auto 
-                    [&_img]:!rounded-lg [&_img]:!my-4 [&_img]:!shadow-md [&_img]:!mx-auto
-                    [&_img]:!object-contain"
+                    className="prose prose-blue max-w-none text-gray-700 leading-relaxed [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_img]:my-4 [&_img]:shadow-md [&_img]:block"
                     dangerouslySetInnerHTML={{ __html: convertRelativeImageUrls(book.description) }}
                   />
                 </CardContent>
               </Card>
-
-              {book.tags && (
-                <Card className="shadow-md">
-                  <CardContent className="p-6">
-                    <h3 className="text-xl font-semibold mb-3 text-gray-900">Teglar</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {book.tags.split(",").map((tag, index) => (
-                        <Badge key={index} variant="outline" className="text-sm">
-                          {tag.trim()}
-                        </Badge>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {book.pages && (
-                <Card className="shadow-md">
-                  <CardContent className="p-6">
-                    <h3 className="text-xl font-semibold mb-3 text-gray-900">Sahifalar</h3>
-                    <p className="text-gray-700">{book.pages}</p>
-                  </CardContent>
-                </Card>
-              )}
             </div>
           </div>
         </div>
-      </div>
+      </main>
+
       <Footer />
-    </>
+    </div>
   )
 }

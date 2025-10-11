@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Navbar } from "@/components/navbar"
@@ -95,6 +97,57 @@ export default function JournalIssueDetailPage() {
       loadIssueData()
     }
   }, [slug, lang])
+
+  const handlePdfClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault()
+
+    // Check if user is logged in
+    const token = localStorage.getItem("access_token")
+
+    if (!token) {
+      // Not logged in - redirect to login with return URL
+      const returnUrl = encodeURIComponent(window.location.pathname + window.location.search)
+      router.push(`/${lang}/login?returnUrl=${returnUrl}`)
+      return
+    }
+
+    // Check if user has active subscription
+    try {
+      const response = await fetch("https://artculture.pythonanywhere.com/profile/", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (!response.ok) {
+        // Token invalid - redirect to login
+        localStorage.removeItem("access_token")
+        localStorage.removeItem("refresh_token")
+        const returnUrl = encodeURIComponent(window.location.pathname + window.location.search)
+        router.push(`/${lang}/login?returnUrl=${returnUrl}`)
+        return
+      }
+
+      const userData = await response.json()
+
+      // Check if user has active subscription
+      if (!userData.subscriptions || userData.subscriptions.length === 0) {
+        // No subscription - redirect to buy page with first available subscription type
+        router.push(`/${lang}/buy/?subscription_type_id=1`)
+        return
+      }
+
+      // User has subscription - open PDF
+      if (issue?.pdf_file) {
+        window.open(`${API_BASE}${issue.pdf_file}`, "_blank")
+      }
+    } catch (error) {
+      console.error("[v0] Error checking subscription:", error)
+      // On error, redirect to login
+      const returnUrl = encodeURIComponent(window.location.pathname + window.location.search)
+      router.push(`/${lang}/login?returnUrl=${returnUrl}`)
+    }
+  }
 
   if (isLoading) {
     return (
@@ -198,7 +251,7 @@ export default function JournalIssueDetailPage() {
           <CardContent>
             {issue.pdf_file && (
               <Button asChild className="w-full sm:w-auto">
-                <a href={`${API_BASE}${issue.pdf_file}`} target="_blank" rel="noopener noreferrer">
+                <a href="#" onClick={handlePdfClick}>
                   <Download className="h-4 w-4 mr-2" />
                   {t.downloadPdf}
                 </a>

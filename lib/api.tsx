@@ -169,6 +169,19 @@ export interface Author {
   journals_count: number
 }
 
+export interface SubscriptionPlanDetail {
+  id: number
+  name: string
+  duration_days: number
+  price: string
+  books: Book[]
+  journals: Journal[]
+  conferences: Conference[]
+  books_count: number
+  journals_count: number
+  conferences_count: number
+}
+
 export async function fetchJournals(lang = "en"): Promise<Journal[]> {
   try {
     const response = await fetchWithTimeout(`${API_BASE}/${lang}/journals/`, {
@@ -623,6 +636,36 @@ export async function fetchAuthor(slug: string, lang = "en"): Promise<Author> {
     return data
   } catch (error) {
     console.error("[v0] Error fetching author:", error)
+    throw error
+  }
+}
+
+export async function fetchSubscriptionPlan(id: number, lang = "en"): Promise<SubscriptionPlanDetail> {
+  try {
+    const url = `${API_BASE}/${id}/plans/`
+    console.log("[v0] Fetching subscription plan from URL:", url)
+
+    const response = await fetchWithTimeout(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "Accept-Language": lang,
+      },
+      mode: "cors",
+    })
+
+    if (!response.ok) {
+      console.error("[v0] Subscription plan API response not OK:", response.status, response.statusText)
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
+    console.log("[v0] Subscription plan API response:", data)
+
+    return data
+  } catch (error) {
+    console.error("[v0] Error fetching subscription plan:", error)
     throw error
   }
 }

@@ -65,6 +65,17 @@ export function BookCard({ book, lang }: BookCardProps) {
   }
 
   const handleReadBook = () => {
+    const token = localStorage.getItem("access_token")
+
+    if (!token) {
+      // Not logged in - redirect to login with return URL
+      const slug = getBookSlug()
+      const returnUrl = encodeURIComponent(`/${lang}/books/${slug}`)
+      router.push(`/${lang}/login?returnUrl=${returnUrl}`)
+      return
+    }
+
+    // Logged in - proceed to book page
     const slug = getBookSlug()
     router.push(`/${lang}/books/${slug}`)
   }

@@ -779,6 +779,80 @@ export async function fetchAuthor(slug: string, lang = "en"): Promise<Author> {
   }
 }
 
+export interface SubscriptionPlanDetail {
+  id: number
+  name: string
+  duration_days: number
+  price: string
+  books: Book[]
+  journals: Journal[]
+  conferences: any[] // Using any for now since Conference interface is not fully defined
+  books_count: number
+  journals_count: number
+  conferences_count: number
+}
+
+export async function fetchSubscriptionPlan(id: number, lang = "en"): Promise<SubscriptionPlanDetail> {
+  try {
+    const url = `${API_BASE}/${id}/plans/`
+    console.log("[v0] Fetching subscription plan from URL:", url)
+
+    const response = await fetchWithTimeout(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "Accept-Language": lang,
+      },
+      mode: "cors",
+    })
+
+    if (!response.ok) {
+      console.error("[v0] Subscription plan API response not OK:", response.status, response.statusText)
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
+    console.log("[v0] Subscription plan API response:", data)
+
+    return data
+  } catch (error) {
+    console.error("[v0] Error fetching subscription plan:", error)
+    throw error
+  }
+}
+
+export async function buySubscription(subscriptionTypeId: number, token: string, lang = "en"): Promise<Subscription> {
+  try {
+    const url = `${API_BASE}/${lang}/buy/?subscription_type_id=${subscriptionTypeId}`
+    console.log("[v0] Buying subscription from URL:", url)
+
+    const response = await fetchWithTimeout(url, {
+      method: "POST",
+      headers: {
+        accept: "application/json",
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      mode: "cors",
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error("[v0] Buy subscription API error:", response.status, errorText)
+      throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`)
+    }
+
+    const data = await response.json()
+    console.log("[v0] Buy subscription API response:", data)
+
+    return data
+  } catch (error) {
+    console.error("[v0] Error buying subscription:", error)
+    throw error
+  }
+}
+
 // Helper to get API base URL (useful for debugging)
 export function getApiBaseUrl(): string {
   return API_BASE

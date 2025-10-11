@@ -1,7 +1,11 @@
+"use client"
+
+import type React from "react"
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Calendar, Download, FileText, ArrowRight } from "lucide-react"
-import Link from "next/link"
+import { useRouter } from "next/navigation"
 import type { JournalIssue } from "@/lib/api"
 import { getSlugForLang } from "@/lib/api"
 
@@ -32,6 +36,23 @@ export function JournalIssueCard({ issue, lang }: JournalIssueCardProps) {
   const API_BASE = "https://artculture.pythonanywhere.com"
   const issueSlug = getSlugForLang(issue, lang)
   const t = translations[lang as keyof typeof translations] || translations.uz
+  const router = useRouter()
+
+  const handleViewDetails = (e: React.MouseEvent) => {
+    e.preventDefault()
+
+    const token = localStorage.getItem("access_token")
+
+    if (!token) {
+      // Not logged in - redirect to login with return URL
+      const returnUrl = encodeURIComponent(`/${lang}/journal-soni/${issueSlug}`)
+      router.push(`/${lang}/login?returnUrl=${returnUrl}`)
+      return
+    }
+
+    // Logged in - proceed to journal issue page
+    router.push(`/${lang}/journal-soni/${issueSlug}`)
+  }
 
   return (
     <Card className="group hover:shadow-2xl transition-all duration-500 border-0 bg-white rounded-2xl overflow-hidden hover:-translate-y-2 shadow-lg">
@@ -71,13 +92,13 @@ export function JournalIssueCard({ issue, lang }: JournalIssueCardProps) {
       <CardContent className="space-y-4 relative z-10">
         <div className="flex gap-3">
           <Button
-            asChild
+            onClick={handleViewDetails}
             className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 group/btn"
           >
-            <Link href={`/${lang}/journal-soni/${issueSlug}`} className="flex items-center justify-center gap-2">
+            <span className="flex items-center justify-center gap-2">
               {t.viewDetails}
               <ArrowRight className="h-4 w-4 group-hover/btn:translate-x-1 transition-transform duration-300" />
-            </Link>
+            </span>
           </Button>
 
           {issue.pdf_file && (

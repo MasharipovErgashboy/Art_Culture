@@ -44,7 +44,6 @@ const navTranslations = {
     profile: "Профиль",
     logout: "Выйти",
     menu: "Меню",
-    authors: "Авторы",
   },
   en: {
     about: "About Us",
@@ -57,11 +56,10 @@ const navTranslations = {
     profile: "Profile",
     logout: "Logout",
     menu: "Menu",
-    authors: "Authors",
   },
 }
 
-export function Navbar() {
+function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [user, setUser] = useState<any | null>(null)
@@ -409,7 +407,6 @@ export function Navbar() {
   const leftNavItems = [
     { href: `/${lang}/about`, label: t.about },
     { href: `/${lang}/contact`, label: t.contact },
-    { href: `/${lang}/authors`, label: t.authors },
   ]
 
   const centerNavItems = [
@@ -722,3 +719,6 @@ export function Navbar() {
     </nav>
   )
 }
+
+export { Navbar }
+export default Navbar
