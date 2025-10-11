@@ -1,16 +1,17 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { Loader } from "@/components/Loader"
 import { fetchConference, type Conference } from "@/lib/api"
-import { Calendar, MapPin, Users, FileText, AlertCircle, Download } from "lucide-react"
+import { Calendar, MapPin, Users, FileText, AlertCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import Image from "next/image"
+import { PDFViewer } from "@/components/pdf-viewer"
 
 const API_BASE = "https://artculture.pythonanywhere.com"
 
@@ -24,8 +25,8 @@ const translations = {
     organizer: "Tashkilotchi va hamkorlar",
     description: "Tavsif",
     materials: "Konferensiya materiallari",
-    pdfDownload: "PDF formatida yuklab olish",
-    download: "Yuklab olish",
+    pdfDownload: "PDF formatida ko'rish",
+    openPdf: "PDF ni ochish",
     imageNotLoaded: "Rasm yuklanmadi",
   },
   ru: {
@@ -37,8 +38,8 @@ const translations = {
     organizer: "Организатор и партнеры",
     description: "Описание",
     materials: "Материалы конференции",
-    pdfDownload: "Скачать в формате PDF",
-    download: "Скачать",
+    pdfDownload: "Просмотр в формате PDF",
+    openPdf: "Открыть PDF",
     imageNotLoaded: "Изображение не загружено",
   },
   en: {
@@ -50,14 +51,15 @@ const translations = {
     organizer: "Organizer and Partners",
     description: "Description",
     materials: "Conference Materials",
-    pdfDownload: "Download in PDF format",
-    download: "Download",
+    pdfDownload: "View in PDF format",
+    openPdf: "Open PDF",
     imageNotLoaded: "Image not loaded",
   },
 }
 
 export default function ConferenceDetailPage() {
   const params = useParams()
+  const router = useRouter()
   const lang = (params.lang as string) || "en"
   const slug = params.slug as string
   const t = translations[lang as keyof typeof translations] || translations.en
@@ -67,6 +69,16 @@ export default function ConferenceDetailPage() {
   const [error, setError] = useState<string | null>(null)
   const [imageError, setImageError] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
+  const [showPDFViewer, setShowPDFViewer] = useState(false)
+  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (pdfBlobUrl) {
+        URL.revokeObjectURL(pdfBlobUrl)
+      }
+    }
+  }, [pdfBlobUrl])
 
   useEffect(() => {
     const loadConference = async () => {
@@ -106,13 +118,11 @@ export default function ConferenceDetailPage() {
     const token = localStorage.getItem("access_token")
 
     if (!token) {
-      // Not logged in - redirect to login with return URL
       const returnUrl = encodeURIComponent(window.location.pathname + window.location.search)
-      window.location.href = `/${lang}/login?returnUrl=${returnUrl}`
+      router.push(`/${lang}/login?returnUrl=${returnUrl}`)
       return
     }
 
-    // Try to fetch PDF directly - let backend handle authorization
     try {
       const response = await fetch(`${API_BASE}/${lang}/conference/${slug}/`, {
         headers: {
@@ -121,17 +131,16 @@ export default function ConferenceDetailPage() {
       })
 
       if (response.status === 401) {
-        // Token invalid - redirect to login
         localStorage.removeItem("access_token")
         localStorage.removeItem("refresh_token")
         const returnUrl = encodeURIComponent(window.location.pathname + window.location.search)
-        window.location.href = `/${lang}/login?returnUrl=${returnUrl}`
+        router.push(`/${lang}/login?returnUrl=${returnUrl}`)
         return
       }
 
       if (response.status === 403) {
-        // No subscription - redirect to buy page
-        window.location.href = `/${lang}/buy/?subscription_type_id=1`
+        const returnUrl = encodeURIComponent(window.location.pathname + window.location.search)
+        router.push(`/${lang}/buy/?subscription_type_id=1&returnUrl=${returnUrl}`)
         return
       }
 
@@ -139,13 +148,10 @@ export default function ConferenceDetailPage() {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
 
-      // Get PDF blob and open in new tab
       const blob = await response.blob()
       const blobUrl = URL.createObjectURL(blob)
-      window.open(blobUrl, "_blank")
-
-      // Clean up blob URL after a delay
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 100)
+      setPdfBlobUrl(blobUrl)
+      setShowPDFViewer(true)
     } catch (error) {
       console.error("[v0] Error fetching PDF:", error)
       alert("PDF yuklanishida xatolik yuz berdi. Iltimos, qaytadan urinib ko'ring.")
@@ -323,8 +329,8 @@ export default function ConferenceDetailPage() {
                     </div>
                   </div>
                   <Button onClick={handlePdfDownload} className="flex items-center gap-2">
-                    <Download className="h-4 w-4" />
-                    {t.download}
+                    <FileText className="h-4 w-4" />
+                    {t.openPdf}
                   </Button>
                 </div>
               </CardContent>
@@ -332,6 +338,20 @@ export default function ConferenceDetailPage() {
           )}
         </div>
       </main>
+
+      {showPDFViewer && pdfBlobUrl && (
+        <PDFViewer
+          pdfUrl={pdfBlobUrl}
+          onClose={() => {
+            setShowPDFViewer(false)
+            if (pdfBlobUrl) {
+              URL.revokeObjectURL(pdfBlobUrl)
+              setPdfBlobUrl(null)
+            }
+          }}
+          title={conference?.name}
+        />
+      )}
 
       <Footer />
     </div>

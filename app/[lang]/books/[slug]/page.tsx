@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Navbar } from "@/components/navbar"
@@ -13,6 +12,7 @@ import { fetchBook, type Book } from "@/lib/api"
 import { BookOpen, AlertCircle, ArrowLeft, Download, Calendar, User, FileText } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import Link from "next/link"
+import { PDFViewer } from "@/components/pdf-viewer"
 
 const translations = {
   uz: {
@@ -78,6 +78,8 @@ export default function BookDetailPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [imageError, setImageError] = useState(false)
+  const [showPDFViewer, setShowPDFViewer] = useState(false)
+  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null)
 
   useEffect(() => {
     const loadBook = async () => {
@@ -99,6 +101,14 @@ export default function BookDetailPage() {
     loadBook()
   }, [slug, lang])
 
+  useEffect(() => {
+    return () => {
+      if (pdfBlobUrl) {
+        URL.revokeObjectURL(pdfBlobUrl)
+      }
+    }
+  }, [pdfBlobUrl])
+
   const handlePdfClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault()
 
@@ -106,14 +116,12 @@ export default function BookDetailPage() {
     const token = localStorage.getItem("access_token")
 
     if (!token) {
-      // Not logged in - redirect to login with return URL
       const returnUrl = encodeURIComponent(window.location.pathname + window.location.search)
       router.push(`/${lang}/login?returnUrl=${returnUrl}`)
       return
     }
 
     // User is logged in - try to fetch PDF directly
-    // Backend will return 403 if user doesn't have access
     try {
       const pdfResponse = await fetch(`https://artculture.pythonanywhere.com/${lang}/book/${slug}/`, {
         headers: {
@@ -131,8 +139,8 @@ export default function BookDetailPage() {
       }
 
       if (pdfResponse.status === 403) {
-        // No subscription - redirect to buy page
-        router.push(`/${lang}/buy/?subscription_type_id=1`)
+        const returnUrl = encodeURIComponent(window.location.pathname + window.location.search)
+        router.push(`/${lang}/buy/?subscription_type_id=1&returnUrl=${returnUrl}`)
         return
       }
 
@@ -141,17 +149,10 @@ export default function BookDetailPage() {
         return
       }
 
-      // Get the PDF blob
       const pdfBlob = await pdfResponse.blob()
-
-      // Create a blob URL and open in new tab
       const blobUrl = URL.createObjectURL(pdfBlob)
-      window.open(blobUrl, "_blank")
-
-      // Clean up the blob URL after a delay
-      setTimeout(() => {
-        URL.revokeObjectURL(blobUrl)
-      }, 100)
+      setPdfBlobUrl(blobUrl)
+      setShowPDFViewer(true)
     } catch (error) {
       console.error("Error fetching PDF:", error)
       alert("PDF yuklanishida xatolik yuz berdi")
@@ -309,6 +310,20 @@ export default function BookDetailPage() {
           </div>
         </div>
       </main>
+
+      {showPDFViewer && pdfBlobUrl && (
+        <PDFViewer
+          pdfUrl={pdfBlobUrl}
+          onClose={() => {
+            setShowPDFViewer(false)
+            if (pdfBlobUrl) {
+              URL.revokeObjectURL(pdfBlobUrl)
+              setPdfBlobUrl(null)
+            }
+          }}
+          title={book?.name}
+        />
+      )}
 
       <Footer />
     </div>
