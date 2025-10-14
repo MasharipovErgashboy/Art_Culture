@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { X, Loader2, Download, ExternalLink } from "lucide-react"
+import { X, Loader2, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 interface PDFViewerProps {
@@ -61,15 +61,6 @@ export function PDFViewer({ pdfUrl, onClose, title }: PDFViewerProps) {
     }
   }, [])
 
-  const handleDownload = () => {
-    const link = document.createElement("a")
-    link.href = pdfUrl
-    link.download = title || "document.pdf"
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  }
-
   const handleOpenInNewTab = () => {
     window.open(pdfUrl, "_blank")
   }
@@ -89,15 +80,6 @@ export function PDFViewer({ pdfUrl, onClose, title }: PDFViewerProps) {
                 className="h-8 w-8 sm:h-9 sm:w-9"
               >
                 <ExternalLink className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleDownload}
-                title="Yuklab olish"
-                className="h-8 w-8 sm:h-9 sm:w-9"
-              >
-                <Download className="h-4 w-4" />
               </Button>
             </>
           )}
@@ -122,16 +104,13 @@ export function PDFViewer({ pdfUrl, onClose, title }: PDFViewerProps) {
             <div className="text-center space-y-4 max-w-md">
               <p className="text-lg font-medium">PDF ko'rinishi</p>
               <p className="text-sm text-muted-foreground">
-                Mobil qurilmada PDF to'g'ridan-to'g'ri ko'rsatilmasligi mumkin. Quyidagi tugmalardan birini tanlang:
+                Mobil qurilmada PDF to'g'ridan-to'g'ri ko'rsatilmasligi mumkin. Yangi tabda ochish uchun quyidagi
+                tugmani bosing:
               </p>
               <div className="flex flex-col gap-3">
                 <Button onClick={handleOpenInNewTab} className="w-full">
                   <ExternalLink className="h-4 w-4 mr-2" />
                   Yangi tabda ochish
-                </Button>
-                <Button onClick={handleDownload} variant="outline" className="w-full bg-transparent">
-                  <Download className="h-4 w-4 mr-2" />
-                  Yuklab olish
                 </Button>
               </div>
             </div>
