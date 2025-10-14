@@ -1,5 +1,7 @@
 "use client"
 
+import Link from "next/link"
+
 import type React from "react"
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
@@ -11,7 +13,6 @@ import { Calendar, AlertCircle, ArrowLeft, Download, FileText, Users } from "luc
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import Link from "next/link"
 import { decodeHtmlEntities } from "@/lib/utils"
 import { PDFViewer } from "@/components/pdf-viewer"
 
@@ -55,29 +56,122 @@ const translations = {
 }
 
 function SectionList({ sections, lang }: { sections: JournalSection[]; lang: string }) {
+  const [showPDFViewer, setShowPDFViewer] = useState(false)
+  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null)
+  const [loadingPdfId, setLoadingPdfId] = useState<number | null>(null)
+  const [currentPdfTitle, setCurrentPdfTitle] = useState<string>("")
+  const router = useRouter()
+
+  useEffect(() => {
+    return () => {
+      if (pdfBlobUrl) {
+        URL.revokeObjectURL(pdfBlobUrl)
+      }
+    }
+  }, [pdfBlobUrl])
+
   if (sections.length === 0) {
     return null
   }
 
-  const getSlugForLang = (section: JournalSection, lang: string): string => {
-    if (lang === "uz") return section.slug_uz
-    if (lang === "ru") return section.slug_ru
-    if (lang === "en") return section.slug_en
-    return section.slug_uz
+  const API_BASE = "https://artculture.pythonanywhere.com"
+
+  const handlePdfClick = async (section: JournalSection) => {
+    if (!section.pdf) {
+      alert("PDF mavjud emas")
+      return
+    }
+
+    // Check authentication
+    const token = localStorage.getItem("access_token")
+    if (!token) {
+      const returnUrl = encodeURIComponent(window.location.pathname + window.location.search)
+      router.push(`/${lang}/login?returnUrl=${returnUrl}`)
+      return
+    }
+
+    // Get the appropriate slug based on language
+    const slug = lang === "uz" ? section.slug_uz : lang === "en" ? section.slug_en : section.slug_ru
+
+    if (!slug) {
+      alert("PDF slug mavjud emas")
+      return
+    }
+
+    setLoadingPdfId(section.id)
+    setCurrentPdfTitle(section.author_name || "PDF")
+
+    try {
+      console.log("[v0] Fetching PDF from section API:", `${API_BASE}/${lang}/section/${slug}/`)
+
+      const response = await fetch(`${API_BASE}/${lang}/section/${slug}/`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "*/*",
+        },
+      })
+
+      console.log("[v0] API Response status:", response.status)
+
+      // Handle authentication errors
+      if (response.status === 401) {
+        localStorage.removeItem("access_token")
+        localStorage.removeItem("refresh_token")
+        const returnUrl = encodeURIComponent(window.location.pathname + window.location.search)
+        router.push(`/${lang}/login?returnUrl=${returnUrl}`)
+        return
+      }
+
+      // Handle subscription errors
+      if (response.status === 403) {
+        const returnUrl = encodeURIComponent(window.location.pathname + window.location.search)
+        router.push(`/${lang}/buy?subscription_type_id=3&returnUrl=${returnUrl}`)
+        return
+      }
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const pdfBlob = await response.blob()
+      console.log("[v0] PDF blob received, size:", pdfBlob.size, "type:", pdfBlob.type)
+
+      // Clean up previous blob URL if exists
+      if (pdfBlobUrl) {
+        URL.revokeObjectURL(pdfBlobUrl)
+      }
+
+      const blobUrl = URL.createObjectURL(pdfBlob)
+      setPdfBlobUrl(blobUrl)
+      setShowPDFViewer(true)
+    } catch (error) {
+      console.error("[v0] Error opening PDF:", error)
+      alert(`PDF ochishda xatolik: ${error instanceof Error ? error.message : "Noma'lum xatolik"}`)
+    } finally {
+      setLoadingPdfId(null)
+    }
+  }
+
+  const handleClosePDF = () => {
+    setShowPDFViewer(false)
+    if (pdfBlobUrl) {
+      URL.revokeObjectURL(pdfBlobUrl)
+      setPdfBlobUrl(null)
+    }
   }
 
   return (
-    <div className="space-y-4">
-      {sections.map((section, index) => {
-        const sectionSlug = getSlugForLang(section, lang)
-        const queryParams = new URLSearchParams({
-          author: section.author_name,
-          issue: section.journal_issue_name || "",
-        }).toString()
+    <>
+      <div className="space-y-4">
+        {sections.map((section, index) => {
+          const isLoading = loadingPdfId === section.id
 
-        return (
-          <Link key={section.id || index} href={`/${lang}/section/${sectionSlug}?${queryParams}`}>
-            <Card className="hover:shadow-md transition-shadow cursor-pointer hover:border-primary">
+          return (
+            <Card
+              key={section.id || index}
+              className={`transition-shadow ${section.pdf ? "hover:shadow-md cursor-pointer hover:border-primary" : ""}`}
+              onClick={() => !isLoading && section.pdf && handlePdfClick(section)}
+            >
               <CardContent className="p-4">
                 <div className="flex items-start gap-4">
                   <div className="flex-shrink-0 w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
@@ -88,17 +182,21 @@ function SectionList({ sections, lang }: { sections: JournalSection[]; lang: str
                     {section.pdf && (
                       <p className="text-sm text-muted-foreground">
                         <FileText className="inline h-4 w-4 mr-1" />
-                        PDF mavjud
+                        {isLoading ? "PDF yuklanmoqda..." : "PDF mavjud"}
                       </p>
                     )}
                   </div>
                 </div>
               </CardContent>
             </Card>
-          </Link>
-        )
-      })}
-    </div>
+          )
+        })}
+      </div>
+
+      {showPDFViewer && pdfBlobUrl && (
+        <PDFViewer pdfUrl={pdfBlobUrl} onClose={handleClosePDF} title={currentPdfTitle} />
+      )}
+    </>
   )
 }
 
