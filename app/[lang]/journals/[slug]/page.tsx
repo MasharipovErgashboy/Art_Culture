@@ -371,7 +371,7 @@ export default function JournalDetailPage() {
                     {(!issues || issues.length === 0) && journal.latest_issues && journal.latest_issues.length > 0 ? (
                       <div className="space-y-4">
                         {journal.latest_issues.map((issue) => (
-                          <JournalIssueCard key={issue.id} issue={issue} lang={lang} />
+                          <JournalIssueCard key={`latest-${issue.id}`} issue={issue} lang={lang} />
                         ))}
                       </div>
                     ) : issues.length === 0 ? (
@@ -383,7 +383,7 @@ export default function JournalDetailPage() {
                     ) : (
                       <div className="space-y-4">
                         {issues.map((issue) => (
-                          <JournalIssueCard key={issue.id} issue={issue} lang={lang} />
+                          <JournalIssueCard key={`issue-${issue.id}`} issue={issue} lang={lang} />
                         ))}
                       </div>
                     )}

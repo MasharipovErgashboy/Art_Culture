@@ -42,7 +42,7 @@ export async function getUser() {
   return null
 }
 
-export function logout() {
+export function logout(redirectUrl?: string) {
   if (typeof window === "undefined") return
 
   localStorage.removeItem("user")
@@ -50,7 +50,7 @@ export function logout() {
   localStorage.removeItem("refresh_token")
   localStorage.removeItem("user_email")
 
-  window.location.href = "/"
+  window.location.href = redirectUrl || "/"
 }
 
 export async function refreshAccessToken(): Promise<string | null> {

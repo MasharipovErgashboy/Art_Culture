@@ -260,7 +260,11 @@ export async function fetchJournalIssues(journalName: string, lang = "en"): Prom
 
 export async function fetchJournalIssue(slug: string, lang = "en"): Promise<JournalIssue> {
   try {
-    const response = await fetchWithTimeout(`${API_BASE}/${lang}/journal-soni/${slug}/`, {
+    console.log("[v0] fetchJournalIssue called with:", { slug, lang })
+    const url = `${API_BASE}/${lang}/journal-soni/${slug}/`
+    console.log("[v0] Fetching journal issue from URL:", url)
+
+    const response = await fetchWithTimeout(url, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -271,12 +275,21 @@ export async function fetchJournalIssue(slug: string, lang = "en"): Promise<Jour
     })
 
     if (!response.ok) {
+      const errorText = await response.text()
+      console.error("[v0] fetchJournalIssue API error:", {
+        status: response.status,
+        statusText: response.statusText,
+        errorText,
+        url,
+      })
       throw new Error(`HTTP error! status: ${response.status}`)
     }
 
-    return await response.json()
+    const data = await response.json()
+    console.log("[v0] fetchJournalIssue success:", data)
+    return data
   } catch (error) {
-    console.error("Error fetching journal issue:", error)
+    console.error("[v0] fetchJournalIssue error:", error)
     throw error
   }
 }
@@ -305,6 +318,35 @@ export async function fetchJournalSections(journalIssueName: string, lang = "en"
     return filteredSections
   } catch (error) {
     console.error("Error fetching journal sections:", error)
+    throw error
+  }
+}
+
+export async function fetchAllJournalSections(lang = "en"): Promise<JournalSection[]> {
+  try {
+    const url = `${API_BASE}/${lang}/journal-sections/`
+    console.log("[v0] Fetching all journal sections from URL:", url)
+
+    const response = await fetchWithTimeout(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "Accept-Language": lang,
+      },
+      mode: "cors",
+    })
+
+    if (!response.ok) {
+      console.error("[v0] fetchAllJournalSections API error:", response.status, response.statusText)
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
+    console.log("[v0] fetchAllJournalSections success:", data.length, "sections")
+    return data
+  } catch (error) {
+    console.error("[v0] fetchAllJournalSections error:", error)
     throw error
   }
 }

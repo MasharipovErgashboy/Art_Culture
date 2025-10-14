@@ -59,7 +59,7 @@ const navTranslations = {
   },
 }
 
-function Navbar() {
+export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [user, setUser] = useState<any | null>(null)
@@ -398,10 +398,9 @@ function Navbar() {
   }
 
   const handleLogout = () => {
-    logout()
+    logout(`/${lang}`)
     setIsLoggedIn(false)
     setUser(null)
-    router.push(`/${lang}`)
   }
 
   const leftNavItems = [
@@ -436,7 +435,7 @@ function Navbar() {
   const handleMouseLeave = () => {
     closeTimerRef.current = setTimeout(() => {
       setIsDropdownOpen(false)
-    }, 5000) // 5 seconds delay
+    }, 1000) // 5 seconds delay
   }
 
   useEffect(() => {
@@ -720,5 +719,4 @@ function Navbar() {
   )
 }
 
-export { Navbar }
 export default Navbar

@@ -4,24 +4,21 @@ import type React from "react"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Calendar, Download, FileText, ArrowRight } from "lucide-react"
+import { Calendar, Download, ArrowRight } from "lucide-react"
 import { useRouter } from "next/navigation"
 import type { JournalIssue } from "@/lib/api"
 import { getSlugForLang } from "@/lib/api"
 
 const translations = {
   uz: {
-    sections: "bo'lim",
     noDescription: "Tavsif mavjud emas",
     viewDetails: "Batafsil ko'rish",
   },
   ru: {
-    sections: "раздел",
     noDescription: "Описание недоступно",
     viewDetails: "Подробнее",
   },
   en: {
-    sections: "sections",
     noDescription: "No description available",
     viewDetails: "View Details",
   },
@@ -64,13 +61,12 @@ export function JournalIssueCard({ issue, lang }: JournalIssueCardProps) {
             <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg group-hover:shadow-xl transition-shadow duration-300">
               <Calendar className="h-6 w-6 text-white" />
             </div>
-            <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 px-3 py-1 rounded-full">
-              <FileText className="h-4 w-4" />
-              <span className="font-medium">
-                {issue.sections_count} {t.sections}
-              </span>
-            </div>
           </div>
+          {issue.sections_count !== undefined && issue.sections_count > 0 && (
+            <div className="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold">
+              {issue.sections_count} bo'lim
+            </div>
+          )}
         </div>
 
         <CardTitle className="text-xl font-bold text-gray-900 group-hover:text-blue-700 transition-colors duration-300 leading-tight mb-3">

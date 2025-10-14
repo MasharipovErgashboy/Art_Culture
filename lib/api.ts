@@ -45,18 +45,22 @@ export interface JournalIssue {
   name: string
   description: string
   pdf_file: string
-  sections_count: number
   journal_name: string
+  sections_count?: number
+  latest_sections?: JournalSection[]
 }
 
 export interface JournalSection {
-  id: number
+  id?: number
+  journal_issue_name: string
+  author_name: string
+  name: string
   slug_uz: string
   slug_en: string
   slug_ru: string
-  author_name: string
+  pages: number
+  created_at: string
   pdf: string
-  journal_issue_name: string
 }
 
 // Fetch list of book categories
@@ -204,49 +208,6 @@ export async function fetchJournalIssue(slug: string, lang = "en"): Promise<Jour
     return await response.json()
   } catch (error) {
     console.error("Error fetching journal issue:", error)
-    throw error
-  }
-}
-
-// Fetch journal sections by journal issue name
-export async function fetchJournalSections(journalIssueName: string, lang = "en"): Promise<JournalSection[]> {
-  try {
-    const encodedIssueName = encodeURIComponent(journalIssueName)
-    const url = `${API_BASE}/${lang}/journal-sections/?journal_issue_name=${encodedIssueName}`
-    console.log("[v0] Fetching sections from URL:", url)
-    console.log("[v0] Original issue name:", journalIssueName)
-    console.log("[v0] Encoded issue name:", encodedIssueName)
-
-    const response = await fetchWithTimeout(url, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        "Accept-Language": lang,
-      },
-      mode: "cors",
-    })
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
-
-    const data = await response.json()
-    console.log("[v0] Raw sections response:", data)
-    console.log("[v0] Number of sections returned:", data.length)
-
-    const filteredSections = data.filter((section: JournalSection) => {
-      const matches = section.journal_issue_name === journalIssueName
-      console.log(
-        `[v0] Section by "${section.author_name}" - journal_issue_name: "${section.journal_issue_name}" - matches "${journalIssueName}": ${matches}`,
-      )
-      return matches
-    })
-
-    console.log("[v0] Filtered sections count:", filteredSections.length)
-    return filteredSections
-  } catch (error) {
-    console.error("Error fetching journal sections:", error)
     throw error
   }
 }
@@ -856,4 +817,146 @@ export async function buySubscription(subscriptionTypeId: number, token: string,
 // Helper to get API base URL (useful for debugging)
 export function getApiBaseUrl(): string {
   return API_BASE
+}
+
+export async function fetchJournalSections(issueName: string, lang = "en"): Promise<JournalSection[]> {
+  try {
+    const url = `${API_BASE}/${lang}/journal-sections/?journal_issue_name=${encodeURIComponent(issueName)}`
+    console.log("[v0] Fetching journal sections from URL:", url)
+
+    const response = await fetchWithTimeout(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "Accept-Language": lang,
+      },
+      mode: "cors",
+    })
+
+    if (!response.ok) {
+      console.error("[v0] Journal sections API response not OK:", response.status, response.statusText)
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
+    console.log("[v0] Journal sections API response:", data)
+    console.log("[v0] Number of sections:", data.length)
+
+    return data
+  } catch (error) {
+    console.error("[v0] Error fetching journal sections:", error)
+    throw error
+  }
+}
+
+export async function fetchAllJournalSections(lang = "en"): Promise<JournalSection[]> {
+  try {
+    const url = `${API_BASE}/${lang}/journal-sections/`
+    console.log("[v0] Fetching all journal sections from URL:", url)
+
+    const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null
+    console.log("[v0] Token exists:", !!token)
+
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      "Accept-Language": lang,
+    }
+
+    if (token) {
+      headers.Authorization = `Bearer ${token}`
+      console.log("[v0] Added Authorization header")
+    }
+
+    const response = await fetchWithTimeout(url, {
+      method: "GET",
+      headers,
+      mode: "cors",
+    })
+
+    if (!response.ok) {
+      console.error("[v0] fetchAllJournalSections API error:", response.status, response.statusText)
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
+    console.log("[v0] fetchAllJournalSections success:", data.length, "sections")
+    return data
+  } catch (error) {
+    console.error("[v0] fetchAllJournalSections error:", error)
+    throw error
+  }
+}
+
+export async function fetchSectionPdf(slug: string, lang = "en"): Promise<Blob> {
+  try {
+    const url = `${API_BASE}/${lang}/section/${slug}/`
+    console.log("[v0] ========== FETCH SECTION PDF DEBUG ==========")
+    console.log("[v0] Fetching section PDF from URL:", url)
+    console.log("[v0] Language:", lang)
+    console.log("[v0] Slug:", slug)
+
+    const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null
+    console.log("[v0] Token exists:", !!token)
+    console.log("[v0] Token preview:", token ? `${token.substring(0, 20)}...` : "No token")
+
+    if (!token) {
+      console.error("[v0] No authentication token found")
+      throw new Error("Tizimga kirish talab qilinadi. Iltimos, avval tizimga kiring.")
+    }
+
+    const headers: HeadersInit = {
+      Accept: "application/pdf",
+      Authorization: `Bearer ${token}`,
+    }
+
+    console.log("[v0] Request headers:", headers)
+
+    const response = await fetchWithTimeout(url, {
+      method: "GET",
+      headers,
+      mode: "cors",
+    })
+
+    console.log("[v0] Response status:", response.status)
+    console.log("[v0] Response ok:", response.ok)
+    console.log("[v0] Response content-type:", response.headers.get("content-type"))
+
+    if (!response.ok) {
+      const contentType = response.headers.get("content-type")
+      let errorMessage = `HTTP error! status: ${response.status}`
+
+      if (contentType?.includes("application/json")) {
+        try {
+          const errorData = await response.json()
+          console.error("[v0] API error response (JSON):", errorData)
+          errorMessage = errorData.detail || errorData.message || errorMessage
+        } catch (e) {
+          console.error("[v0] Could not parse error response as JSON")
+        }
+      } else {
+        const errorText = await response.text()
+        console.error("[v0] API error response (text):", errorText)
+        if (errorText) {
+          errorMessage = errorText
+        }
+      }
+
+      throw new Error(errorMessage)
+    }
+
+    const blob = await response.blob()
+    console.log("[v0] fetchSectionPdf success, blob size:", blob.size)
+    console.log("[v0] Blob type:", blob.type)
+    console.log("[v0] ========== FETCH SECTION PDF SUCCESS ==========")
+    return blob
+  } catch (error) {
+    console.error("[v0] ========== FETCH SECTION PDF ERROR ==========")
+    console.error("[v0] Error type:", error instanceof Error ? error.constructor.name : typeof error)
+    console.error("[v0] Error message:", error instanceof Error ? error.message : String(error))
+    console.error("[v0] Error stack:", error instanceof Error ? error.stack : "No stack")
+    console.error("[v0] ========== FETCH SECTION PDF ERROR END ==========")
+    throw error
+  }
 }

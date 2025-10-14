@@ -70,8 +70,13 @@ function SectionList({ sections, lang }: { sections: JournalSection[]; lang: str
     <div className="space-y-4">
       {sections.map((section, index) => {
         const sectionSlug = getSlugForLang(section, lang)
+        const queryParams = new URLSearchParams({
+          author: section.author_name,
+          issue: section.journal_issue_name || "",
+        }).toString()
+
         return (
-          <Link key={section.id || index} href={`/${lang}/section/${sectionSlug}`}>
+          <Link key={section.id || index} href={`/${lang}/section/${sectionSlug}?${queryParams}`}>
             <Card className="hover:shadow-md transition-shadow cursor-pointer hover:border-primary">
               <CardContent className="p-4">
                 <div className="flex items-start gap-4">
@@ -309,7 +314,15 @@ export default function JournalIssueDetailPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <SectionList sections={sections} lang={lang} />
+              <SectionList sections={sections.slice(0, 5)} lang={lang} />
+              {/* Always show "View All" button */}
+              <div className="mt-6 text-center">
+                <Button asChild variant="outline" size="lg">
+                  <Link href={`/${lang}/journal-sections`}>
+                    Barchasini ko'rish ({sections.length} {t.sections})
+                  </Link>
+                </Button>
+              </div>
             </CardContent>
           </Card>
         )}
