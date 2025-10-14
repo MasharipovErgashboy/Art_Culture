@@ -80,7 +80,7 @@ export default function RasmiyElonDetailPage() {
   const prevLang = useRef<string>("en")
 
   const lang = (params.lang as "uz" | "ru" | "en") || "en"
-  const ITEMS_PER_PAGE = 9
+  const ITEMS_PER_PAGE = 6
 
   useEffect(() => {
     const fetchRasmiyElonDetail = async () => {
@@ -280,12 +280,12 @@ export default function RasmiyElonDetailPage() {
 
         <Card className="overflow-hidden border-0 shadow-lg mb-8 sm:mb-12">
           {rasmiyElon.media && (
-            <div className="relative w-full h-[250px] sm:h-[350px] lg:h-[400px] xl:h-[500px]">
+            <div className="relative w-full h-[250px] sm:h-[350px] lg:h-[400px] xl:h-[500px] bg-muted">
               {isVideoFile(rasmiyElon.media) ? (
                 <video
                   src={rasmiyElon.media.startsWith("http") ? rasmiyElon.media : `${API_BASE}${rasmiyElon.media}`}
                   controls
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                   preload="metadata"
                 >
                   Brauzeringiz video formatini qo'llab-quvvatlamaydi.
@@ -295,7 +295,7 @@ export default function RasmiyElonDetailPage() {
                   src={rasmiyElon.media.startsWith("http") ? rasmiyElon.media : `${API_BASE}${rasmiyElon.media}`}
                   alt={rasmiyElon.title}
                   fill
-                  className="object-cover"
+                  className="object-contain"
                   priority
                 />
               )}
@@ -352,7 +352,7 @@ export default function RasmiyElonDetailPage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {otherElonlar.slice(0, ITEMS_PER_PAGE).map((item, idx) => (
+              {otherElonlar.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE).map((item, idx) => (
                 <Card
                   key={idx}
                   className="group overflow-hidden border-0 shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer"

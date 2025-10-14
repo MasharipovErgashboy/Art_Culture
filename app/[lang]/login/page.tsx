@@ -31,6 +31,14 @@ const translations = {
     register: "Ro'yxatdan o'ting",
     needHelp: "Tizimga kirishda muammo bo'lsa,",
     contactSupport: "yordam xizmatiga murojaat qiling",
+    errors: {
+      invalidCredentials: "Email yoki parol noto'g'ri. Iltimos, qaytadan urinib ko'ring.",
+      emailRequired: "Email manzil kiritilishi shart",
+      passwordRequired: "Parol kiritilishi shart",
+      networkError: "Serverga ulanib bo'lmadi. Internetni tekshiring.",
+      accountInactive: "Hisobingiz faol emas. Iltimos, emailingizni tasdiqlang.",
+      tooManyAttempts: "Juda ko'p urinish. Iltimos, keyinroq qaytadan urinib ko'ring.",
+    },
   },
   ru: {
     title: "Вход в систему",
@@ -47,6 +55,14 @@ const translations = {
     register: "Зарегистрироваться",
     needHelp: "Если у вас проблемы со входом,",
     contactSupport: "обратитесь в службу поддержки",
+    errors: {
+      invalidCredentials: "Неверный email или пароль. Пожалуйста, попробуйте снова.",
+      emailRequired: "Email обязателен",
+      passwordRequired: "Пароль обязателен",
+      networkError: "Не удалось подключиться к серверу. Проверьте интернет.",
+      accountInactive: "Ваш аккаунт неактивен. Пожалуйста, подтвердите email.",
+      tooManyAttempts: "Слишком много попыток. Пожалуйста, попробуйте позже.",
+    },
   },
   en: {
     title: "Login",
@@ -63,7 +79,46 @@ const translations = {
     register: "Register",
     needHelp: "If you have trouble logging in,",
     contactSupport: "contact support",
+    errors: {
+      invalidCredentials: "Invalid email or password. Please try again.",
+      emailRequired: "Email is required",
+      passwordRequired: "Password is required",
+      networkError: "Could not connect to server. Check your internet.",
+      accountInactive: "Your account is inactive. Please verify your email.",
+      tooManyAttempts: "Too many attempts. Please try again later.",
+    },
   },
+}
+
+function getErrorMessage(error: any, t: any): string {
+  if (typeof error === "string") {
+    return error
+  }
+
+  // Check for specific API error messages
+  if (error.detail) {
+    const detail = error.detail.toLowerCase()
+    if (detail.includes("no active account") || detail.includes("credentials")) {
+      return t.errors.invalidCredentials
+    }
+    if (detail.includes("inactive")) {
+      return t.errors.accountInactive
+    }
+    if (detail.includes("too many")) {
+      return t.errors.tooManyAttempts
+    }
+  }
+
+  // Check for field-specific errors
+  if (error.email) {
+    return Array.isArray(error.email) ? error.email[0] : error.email
+  }
+  if (error.password) {
+    return Array.isArray(error.password) ? error.password[0] : error.password
+  }
+
+  // Default error message
+  return t.errors.invalidCredentials
 }
 
 export default function LoginPage() {
@@ -104,10 +159,8 @@ export default function LoginPage() {
         localStorage.setItem("refresh_token", data.refresh)
         localStorage.setItem("user_email", formData.email)
 
-        // Dispatch custom event to notify navbar that user logged in
         window.dispatchEvent(new Event("userLoggedIn"))
 
-        // Small delay to ensure navbar updates before redirect
         setTimeout(() => {
           if (returnUrl) {
             router.push(returnUrl)
@@ -116,10 +169,10 @@ export default function LoginPage() {
           }
         }, 100)
       } else {
-        setError(JSON.stringify(data))
+        setError(getErrorMessage(data, t))
       }
     } catch (err: any) {
-      setError(err.message || "Serverga ulanib bo'lmadi")
+      setError(t.errors.networkError)
     } finally {
       setIsLoading(false)
     }

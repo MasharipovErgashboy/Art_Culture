@@ -85,7 +85,7 @@ export default function ReklamaDetailPage() {
   const prevLang = useRef<string>("en")
 
   const lang = (params.lang as "uz" | "ru" | "en") || "en"
-  const ITEMS_PER_PAGE = 9
+  const ITEMS_PER_PAGE = 6
 
   useEffect(() => {
     const fetchReklamaDetail = async () => {
@@ -295,13 +295,8 @@ export default function ReklamaDetailPage() {
                   src={reklama.media.startsWith("http") ? reklama.media : `${API_BASE}${reklama.media}`}
                   alt={reklama.title}
                   fill
-                  className="object-cover"
+                  className="object-contain"
                   priority
-                  unoptimized
-                  onError={(e) => {
-                    console.error("[v0] Image load error:", reklama.media)
-                    e.currentTarget.style.display = "none"
-                  }}
                 />
               )}
             </div>
@@ -351,7 +346,7 @@ export default function ReklamaDetailPage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {otherReklamalar.slice(0, ITEMS_PER_PAGE).map((item, idx) => (
+              {otherReklamalar.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE).map((item, idx) => (
                 <Card
                   key={idx}
                   className="group overflow-hidden border-0 shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer"

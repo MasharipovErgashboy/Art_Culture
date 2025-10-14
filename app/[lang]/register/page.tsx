@@ -39,6 +39,9 @@ const translations = {
       passwordRequired: "Parol majburiy",
       passwordTooShort: "Parol kamida 6 ta belgidan iborat bo'lishi kerak",
       passwordMismatch: "Parollar mos emas",
+      emailExists: "Bu email allaqachon ro'yxatdan o'tgan",
+      usernameExists: "Bu foydalanuvchi nomi band",
+      networkError: "Serverga ulanib bo'lmadi. Internetni tekshiring.",
     },
   },
   ru: {
@@ -64,6 +67,9 @@ const translations = {
       passwordRequired: "Пароль обязателен",
       passwordTooShort: "Пароль должен содержать минимум 6 символов",
       passwordMismatch: "Пароли не совпадают",
+      emailExists: "Этот email уже зарегистрирован",
+      usernameExists: "Это имя пользователя занято",
+      networkError: "Не удалось подключиться к серверу. Проверьте интернет.",
     },
   },
   en: {
@@ -89,8 +95,25 @@ const translations = {
       passwordRequired: "Password is required",
       passwordTooShort: "Password must be at least 6 characters",
       passwordMismatch: "Passwords do not match",
+      emailExists: "This email is already registered",
+      usernameExists: "This username is taken",
+      networkError: "Could not connect to server. Check your internet.",
     },
   },
+}
+
+function getRegisterErrorMessage(error: any, field: string, t: any): string {
+  if (Array.isArray(error)) {
+    const errorMsg = error[0].toLowerCase()
+    if (field === "email" && errorMsg.includes("already")) {
+      return t.errors.emailExists
+    }
+    if (field === "username" && errorMsg.includes("already")) {
+      return t.errors.usernameExists
+    }
+    return error[0]
+  }
+  return typeof error === "string" ? error : JSON.stringify(error)
 }
 
 export default function RegisterPage() {
@@ -160,14 +183,16 @@ export default function RegisterPage() {
       if (res.ok) {
         router.push(`/${lang}/login`)
       } else {
-        if (data.email) setErrors({ email: data.email[0] })
-        else if (data.username) setErrors({ username: data.username[0] })
-        else if (data.password) setErrors({ password: data.password[0] })
-        else if (data.password2) setErrors({ password2: data.password2[0] })
-        else setErrors({ general: JSON.stringify(data) })
+        const newErrors: Record<string, string> = {}
+        if (data.email) newErrors.email = getRegisterErrorMessage(data.email, "email", t)
+        else if (data.username) newErrors.username = getRegisterErrorMessage(data.username, "username", t)
+        else if (data.password) newErrors.password = getRegisterErrorMessage(data.password, "password", t)
+        else if (data.password2) newErrors.password2 = getRegisterErrorMessage(data.password2, "password2", t)
+        else newErrors.general = t.errors.networkError
+        setErrors(newErrors)
       }
     } catch (err: any) {
-      setErrors({ general: err.message || "Serverga ulanib bo'lmadi" })
+      setErrors({ general: t.errors.networkError })
     } finally {
       setIsLoading(false)
     }

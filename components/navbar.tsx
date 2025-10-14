@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
-import { usePathname, useParams, useRouter } from "next/navigation"
+import { usePathname, useParams, useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Menu, Calendar, FileText, User, LogOut, BookOpen } from "lucide-react"
 import {
@@ -59,7 +59,7 @@ const navTranslations = {
   },
 }
 
-export function Navbar() {
+export function Navbar({ currentLang: propLang }: { currentLang?: string } = {}) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [user, setUser] = useState<any | null>(null)
@@ -71,8 +71,9 @@ export function Navbar() {
   const pathname = usePathname()
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
 
-  const lang = (params?.lang as string) || "uz"
+  const lang = propLang || (params?.lang as string) || "uz"
   const t = navTranslations[lang as keyof typeof navTranslations] || navTranslations.uz
 
   useEffect(() => {
@@ -149,58 +150,37 @@ export function Navbar() {
     const newLang = langMap[langCode] || "uz"
     const currentLang = lang
 
+    const queryString = searchParams.toString()
+
     console.log("[v0] ========== LANGUAGE CHANGE START ==========")
     console.log("[v0] From:", currentLang, "To:", newLang)
     console.log("[v0] Current pathname:", pathname)
+    console.log("[v0] Query params:", queryString)
 
     if (pathname === "/") {
-      router.push(`/${newLang}`)
+      const newPath = queryString ? `/${newLang}?${queryString}` : `/${newLang}`
+      router.push(newPath)
       return
     }
 
     const pathParts = pathname.split("/").filter(Boolean)
     console.log("[v0] Path parts:", pathParts)
-    console.log("[v0] Path parts length:", pathParts.length)
-
-    if (pathParts.length >= 3) {
-      console.log("[v0] pathParts[0] (lang):", pathParts[0])
-      console.log("[v0] pathParts[1] (resource type):", pathParts[1])
-      console.log("[v0] pathParts[2] (slug):", pathParts[2])
-    }
 
     if (pathParts.length >= 3 && (pathParts[0] === "uz" || pathParts[0] === "ru" || pathParts[0] === "en")) {
       const resourceType = pathParts[1]
       const currentSlug = pathParts[2]
 
-      console.log("[v0] ========== DETAIL PAGE DETECTED ==========")
-      console.log("[v0] Resource type:", resourceType)
-      console.log("[v0] Current slug:", currentSlug)
-      console.log("[v0] Current lang:", currentLang)
-      console.log("[v0] Target lang:", newLang)
+      const authPages = ["password-reset-confirm", "forgot-password", "login", "register"]
+      if (authPages.includes(resourceType)) {
+        const newPath = queryString ? `/${newLang}/${resourceType}?${queryString}` : `/${newLang}/${resourceType}`
+        console.log("[v0] Auth page - preserving query params:", newPath)
+        router.push(newPath)
+        return
+      }
 
-      if (resourceType === "books-category") {
-        console.log("[v0] ========== BOOKS-CATEGORY PAGE DETECTED ==========")
-        console.log("[v0] fetchBookCategory function exists:", typeof fetchBookCategory)
-        console.log("[v0] fetchBookCategory is:", fetchBookCategory)
-      } else if (resourceType === "books") {
-        console.log("[v0] ========== BOOKS PAGE DETECTED ==========")
-      } else if (resourceType === "authors") {
-        console.log("[v0] ========== ABOUT TO FETCH AUTHOR ==========")
-        console.log("[v0] Current slug:", currentSlug)
-        console.log("[v0] Current lang:", currentLang)
-        console.log("[v0] Function type:", typeof fetchAuthor)
-
+      if (resourceType === "authors") {
         try {
-          console.log("[v0] Calling fetchAuthor...")
           const resourceData = await fetchAuthor(currentSlug, currentLang)
-          console.log("[v0] ========== AUTHOR FETCHED SUCCESSFULLY ==========")
-          console.log("[v0] Resource data:", JSON.stringify(resourceData, null, 2))
-          console.log("[v0] Slugs available:", {
-            uz: resourceData?.slug_uz,
-            en: resourceData?.slug_en,
-            ru: resourceData?.slug_ru,
-          })
-
           const newSlug = getSlugForLang(resourceData, newLang)
           const newPath = `/${newLang}/${resourceType}/${newSlug}`
           console.log("[v0] ========== NAVIGATION ==========")
@@ -236,120 +216,31 @@ export function Navbar() {
         let resourceData: any = null
 
         if (resourceType === "journals") {
-          console.log("[v0] Fetching journal...")
           resourceData = await fetchJournal(currentSlug, currentLang)
-          console.log("[v0] Journal data received:", resourceData)
         } else if (resourceType === "conferences") {
-          console.log("[v0] Fetching conference...")
           resourceData = await fetchConference(currentSlug, currentLang)
-          console.log("[v0] Conference data received:", resourceData)
         } else if (resourceType === "journal-soni") {
-          console.log("[v0] Fetching journal issue...")
           resourceData = await fetchJournalIssue(currentSlug, currentLang)
-          console.log("[v0] Journal issue data received:", resourceData)
         } else if (resourceType === "yangiliklar") {
-          console.log("[v0] Fetching yangilik...")
           resourceData = await fetchYangilik(currentSlug, currentLang)
-          console.log("[v0] Yangilik data received:", resourceData)
         } else if (resourceType === "reklama") {
-          console.log("[v0] Fetching reklama...")
           resourceData = await fetchReklama(currentSlug, currentLang)
-          console.log("[v0] Reklama data received:", resourceData)
         } else if (resourceType === "rasmiy-elon") {
-          console.log("[v0] Fetching rasmiy-elon...")
           resourceData = await fetchRasmiyElon(currentSlug, currentLang)
-          console.log("[v0] Rasmiy-elon data received:", resourceData)
         } else if (resourceType === "books-category") {
-          console.log("[v0] ========== ABOUT TO FETCH BOOK CATEGORY ==========")
-          console.log("[v0] Current slug:", currentSlug)
-          console.log("[v0] Current lang:", currentLang)
-          console.log("[v0] Function type:", typeof fetchBookCategory)
-
-          try {
-            console.log("[v0] Calling fetchBookCategory...")
-            resourceData = await fetchBookCategory(currentSlug, currentLang)
-            console.log("[v0] ========== BOOK CATEGORY FETCHED SUCCESSFULLY ==========")
-            console.log("[v0] Resource data:", JSON.stringify(resourceData, null, 2))
-            console.log("[v0] Slugs available:", {
-              uz: resourceData?.slug_uz,
-              en: resourceData?.slug_en,
-              ru: resourceData?.slug_ru,
-            })
-          } catch (fetchError) {
-            console.error("[v0] ========== ERROR FETCHING BOOK CATEGORY ==========")
-            console.error(
-              "[v0] Error type:",
-              fetchError instanceof Error ? fetchError.constructor.name : typeof fetchError,
-            )
-            console.error("[v0] Error message:", fetchError instanceof Error ? fetchError.message : String(fetchError))
-            console.error("[v0] Error stack:", fetchError instanceof Error ? fetchError.stack : "No stack")
-            throw fetchError
-          }
+          resourceData = await fetchBookCategory(currentSlug, currentLang)
         } else if (resourceType === "books") {
-          console.log("[v0] ========== ABOUT TO FETCH BOOK ==========")
-          console.log("[v0] Current slug:", currentSlug)
-          console.log("[v0] Current lang:", currentLang)
-          console.log("[v0] Function type:", typeof fetchBook)
-
-          try {
-            console.log("[v0] Calling fetchBook...")
-            resourceData = await fetchBook(currentSlug, currentLang)
-            console.log("[v0] ========== BOOK FETCHED SUCCESSFULLY ==========")
-            console.log("[v0] Resource data:", JSON.stringify(resourceData, null, 2))
-            console.log("[v0] Slugs available:", {
-              uz: resourceData?.slug_uz,
-              en: resourceData?.slug_en,
-              ru: resourceData?.slug_ru,
-            })
-          } catch (fetchError) {
-            console.error("[v0] ========== ERROR FETCHING BOOK ==========")
-            console.error(
-              "[v0] Error type:",
-              fetchError instanceof Error ? fetchError.constructor.name : typeof fetchError,
-            )
-            console.error("[v0] Error message:", fetchError instanceof Error ? fetchError.message : String(fetchError))
-            console.error("[v0] Error stack:", fetchError instanceof Error ? fetchError.stack : "No stack")
-            throw fetchError
-          }
+          resourceData = await fetchBook(currentSlug, currentLang)
         }
 
         if (resourceData) {
-          console.log("[v0] ========== EXTRACTING SLUG ==========")
-          console.log("[v0] Resource data received:", JSON.stringify(resourceData, null, 2))
-          console.log("[v0] Available slugs:", {
-            uz: resourceData.slug_uz,
-            en: resourceData.slug_en,
-            ru: resourceData.slug_ru,
-          })
-          console.log("[v0] Target language:", newLang)
-          console.log("[v0] getSlugForLang function type:", typeof getSlugForLang)
-
-          try {
-            console.log("[v0] Calling getSlugForLang...")
-            newSlug = getSlugForLang(resourceData, newLang)
-            console.log("[v0] ========== SLUG EXTRACTED SUCCESSFULLY ==========")
-            console.log("[v0] New slug:", newSlug)
-            console.log("[v0] Old slug:", currentSlug)
-            console.log("[v0] Slug changed:", currentSlug !== newSlug)
-          } catch (slugError) {
-            console.error("[v0] ========== ERROR EXTRACTING SLUG ==========")
-            console.error("[v0] Error:", slugError)
-            throw slugError
-          }
-        } else {
-          console.warn("[v0] ========== NO RESOURCE DATA RECEIVED ==========")
-          console.warn("[v0] Using current slug as fallback")
+          newSlug = getSlugForLang(resourceData, newLang)
         }
 
-        const newPath = `/${newLang}/${resourceType}/${newSlug}`
-        console.log("[v0] ========== NAVIGATION ==========")
-        console.log("[v0] Old path:", pathname)
-        console.log("[v0] New path:", newPath)
-        console.log("[v0] Old slug:", currentSlug)
-        console.log("[v0] New slug:", newSlug)
-        console.log("[v0] Slug changed:", currentSlug !== newSlug)
-        console.log("[v0] ========== LANGUAGE CHANGE END ==========")
-
+        const newPath = queryString
+          ? `/${newLang}/${resourceType}/${newSlug}?${queryString}`
+          : `/${newLang}/${resourceType}/${newSlug}`
+        console.log("[v0] New path with query params:", newPath)
         router.push(newPath)
 
         window.dispatchEvent(
@@ -359,26 +250,15 @@ export function Navbar() {
         )
         return
       } catch (error) {
-        console.error("[v0] ========== ERROR IN LANGUAGE CHANGE ==========")
-        console.error("[v0] Error type:", error instanceof Error ? error.constructor.name : typeof error)
-        console.error("[v0] Error message:", error instanceof Error ? error.message : String(error))
-        console.error("[v0] Error stack:", error instanceof Error ? error.stack : "No stack trace")
-        console.error("[v0] Resource type:", resourceType)
-        console.error("[v0] Current slug:", currentSlug)
-        console.error("[v0] Current lang:", currentLang)
-        console.error("[v0] Target lang:", newLang)
-        console.error("[v0] ========== ERROR END ==========")
-
-        const fallbackPath = `/${newLang}/${resourceType}/${currentSlug}`
-        console.warn("[v0] ========== USING FALLBACK ==========")
-        console.warn("[v0] Fallback path:", fallbackPath)
-        console.warn("[v0] This means the slug will NOT change, only the language")
+        console.error("[v0] Error in language change:", error)
+        const fallbackPath = queryString
+          ? `/${newLang}/${resourceType}/${currentSlug}?${queryString}`
+          : `/${newLang}/${resourceType}/${currentSlug}`
         router.push(fallbackPath)
         return
       }
     }
 
-    // For other pages, just change the language prefix
     let newPath = pathname
 
     if (pathname.startsWith("/uz") || pathname.startsWith("/ru") || pathname.startsWith("/en")) {
@@ -387,7 +267,12 @@ export function Navbar() {
       newPath = `/${newLang}${pathname}`
     }
 
+    if (queryString) {
+      newPath = `${newPath}?${queryString}`
+    }
+
     console.log("[v0] Simple language change to:", newPath)
+    console.log("[v0] ========== LANGUAGE CHANGE END ==========")
     router.push(newPath)
 
     window.dispatchEvent(
@@ -435,7 +320,7 @@ export function Navbar() {
   const handleMouseLeave = () => {
     closeTimerRef.current = setTimeout(() => {
       setIsDropdownOpen(false)
-    }, 1000) // 5 seconds delay
+    }, 5000) // 5 seconds delay
   }
 
   useEffect(() => {

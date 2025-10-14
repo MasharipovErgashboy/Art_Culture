@@ -1,3 +1,5 @@
+import { fetchWithAuth } from "./auth"
+
 const API_BASE = "https://artculture.pythonanywhere.com"
 const API_TIMEOUT = 10000 // 10 seconds timeout
 
@@ -457,31 +459,18 @@ export async function fetchBookCategory(slug: string, lang = "en", token?: strin
   try {
     const url = `${API_BASE}/${lang}/book-categories/${slug}/`
 
-    // Get token from localStorage if not provided
-    const authToken = token || (typeof window !== "undefined" ? localStorage.getItem("access_token") : null)
-
     console.log("[v0] ========== FETCH BOOK CATEGORY DEBUG ==========")
     console.log("[v0] URL:", url)
     console.log("[v0] Language:", lang)
     console.log("[v0] Slug:", slug)
-    console.log("[v0] Token exists:", !!authToken)
-    console.log("[v0] Token preview:", authToken ? `${authToken.substring(0, 10)}...` : "No token")
 
-    const headers: HeadersInit = {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      "Accept-Language": lang,
-    }
-
-    if (authToken) {
-      headers.Authorization = `Bearer ${authToken}`
-    }
-
-    console.log("[v0] Request headers:", headers)
-
-    const response = await fetchWithTimeout(url, {
+    const response = await fetchWithAuth(url, {
       method: "GET",
-      headers,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "Accept-Language": lang,
+      },
       mode: "cors",
     })
 
@@ -496,19 +485,12 @@ export async function fetchBookCategory(slug: string, lang = "en", token?: strin
 
     const data = await response.json()
     console.log("[v0] Book category data received:", data)
-    console.log("[v0] Slugs in data:", {
-      slug_uz: data.slug_uz,
-      slug_en: data.slug_en,
-      slug_ru: data.slug_ru,
-    })
     console.log("[v0] ========== FETCH BOOK CATEGORY SUCCESS ==========")
 
     return data
   } catch (error) {
     console.error("[v0] ========== FETCH BOOK CATEGORY ERROR ==========")
-    console.error("[v0] Error type:", error instanceof Error ? error.constructor.name : typeof error)
-    console.error("[v0] Error message:", error instanceof Error ? error.message : String(error))
-    console.error("[v0] Error stack:", error instanceof Error ? error.stack : "No stack")
+    console.error("[v0] Error:", error)
     console.error("[v0] ========== FETCH BOOK CATEGORY ERROR END ==========")
     throw error
   }
@@ -519,31 +501,18 @@ export async function fetchBook(slug: string, lang = "en", token?: string): Prom
   try {
     const url = `${API_BASE}/${lang}/books/${slug}/`
 
-    // Get token from localStorage if not provided
-    const authToken = token || (typeof window !== "undefined" ? localStorage.getItem("access_token") : null)
-
     console.log("[v0] ========== FETCH BOOK DEBUG ==========")
     console.log("[v0] URL:", url)
     console.log("[v0] Language:", lang)
     console.log("[v0] Slug:", slug)
-    console.log("[v0] Token exists:", !!authToken)
-    console.log("[v0] Token preview:", authToken ? `${authToken.substring(0, 10)}...` : "No token")
 
-    const headers: HeadersInit = {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      "Accept-Language": lang,
-    }
-
-    if (authToken) {
-      headers.Authorization = `Bearer ${authToken}`
-    }
-
-    console.log("[v0] Request headers:", headers)
-
-    const response = await fetchWithTimeout(url, {
+    const response = await fetchWithAuth(url, {
       method: "GET",
-      headers,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "Accept-Language": lang,
+      },
       mode: "cors",
     })
 
@@ -558,19 +527,12 @@ export async function fetchBook(slug: string, lang = "en", token?: string): Prom
 
     const data = await response.json()
     console.log("[v0] Book data received:", data)
-    console.log("[v0] Slugs in data:", {
-      slug_uz: data.slug_uz,
-      slug_en: data.slug_en,
-      slug_ru: data.slug_ru,
-    })
     console.log("[v0] ========== FETCH BOOK SUCCESS ==========")
 
     return data
   } catch (error) {
     console.error("[v0] ========== FETCH BOOK ERROR ==========")
-    console.error("[v0] Error type:", error instanceof Error ? error.constructor.name : typeof error)
-    console.error("[v0] Error message:", error instanceof Error ? error.message : String(error))
-    console.error("[v0] Error stack:", error instanceof Error ? error.stack : "No stack")
+    console.error("[v0] Error:", error)
     console.error("[v0] ========== FETCH BOOK ERROR END ==========")
     throw error
   }
@@ -643,11 +605,10 @@ export async function fetchUserProfile(token: string): Promise<UserProfile> {
     const url = `${API_BASE}/auth/me/`
     console.log("[v0] Fetching user profile from URL:", url)
 
-    const response = await fetchWithTimeout(url, {
+    const response = await fetchWithAuth(url, {
       method: "GET",
       headers: {
         accept: "application/json",
-        Authorization: `Bearer ${token}`,
       },
       mode: "cors",
     })
@@ -788,11 +749,10 @@ export async function buySubscription(subscriptionTypeId: number, token: string,
     const url = `${API_BASE}/${lang}/buy/?subscription_type_id=${subscriptionTypeId}`
     console.log("[v0] Buying subscription from URL:", url)
 
-    const response = await fetchWithTimeout(url, {
+    const response = await fetchWithAuth(url, {
       method: "POST",
       headers: {
         accept: "application/json",
-        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
       mode: "cors",
@@ -855,23 +815,13 @@ export async function fetchAllJournalSections(lang = "en"): Promise<JournalSecti
     const url = `${API_BASE}/${lang}/journal-sections/`
     console.log("[v0] Fetching all journal sections from URL:", url)
 
-    const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null
-    console.log("[v0] Token exists:", !!token)
-
-    const headers: HeadersInit = {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      "Accept-Language": lang,
-    }
-
-    if (token) {
-      headers.Authorization = `Bearer ${token}`
-      console.log("[v0] Added Authorization header")
-    }
-
-    const response = await fetchWithTimeout(url, {
+    const response = await fetchWithAuth(url, {
       method: "GET",
-      headers,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "Accept-Language": lang,
+      },
       mode: "cors",
     })
 
@@ -897,25 +847,11 @@ export async function fetchSectionPdf(slug: string, lang = "en"): Promise<Blob> 
     console.log("[v0] Language:", lang)
     console.log("[v0] Slug:", slug)
 
-    const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null
-    console.log("[v0] Token exists:", !!token)
-    console.log("[v0] Token preview:", token ? `${token.substring(0, 20)}...` : "No token")
-
-    if (!token) {
-      console.error("[v0] No authentication token found")
-      throw new Error("Tizimga kirish talab qilinadi. Iltimos, avval tizimga kiring.")
-    }
-
-    const headers: HeadersInit = {
-      Accept: "application/pdf",
-      Authorization: `Bearer ${token}`,
-    }
-
-    console.log("[v0] Request headers:", headers)
-
-    const response = await fetchWithTimeout(url, {
+    const response = await fetchWithAuth(url, {
       method: "GET",
-      headers,
+      headers: {
+        Accept: "*/*",
+      },
       mode: "cors",
     })
 
@@ -953,9 +889,7 @@ export async function fetchSectionPdf(slug: string, lang = "en"): Promise<Blob> 
     return blob
   } catch (error) {
     console.error("[v0] ========== FETCH SECTION PDF ERROR ==========")
-    console.error("[v0] Error type:", error instanceof Error ? error.constructor.name : typeof error)
-    console.error("[v0] Error message:", error instanceof Error ? error.message : String(error))
-    console.error("[v0] Error stack:", error instanceof Error ? error.stack : "No stack")
+    console.error("[v0] Error:", error)
     console.error("[v0] ========== FETCH SECTION PDF ERROR END ==========")
     throw error
   }

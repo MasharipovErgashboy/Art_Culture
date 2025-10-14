@@ -88,7 +88,7 @@ export function Footer() {
                 {t.journals}
               </Link>
               <Link
-                href={`/${lang}/books`}
+                href={`/${lang}/books-category`}
                 className="block text-xs sm:text-sm text-muted-foreground hover:text-primary transition-colors"
               >
                 {t.books}
@@ -98,12 +98,6 @@ export function Footer() {
                 className="block text-xs sm:text-sm text-muted-foreground hover:text-primary transition-colors"
               >
                 {t.conferences}
-              </Link>
-              <Link
-                href={`/${lang}/news`}
-                className="block text-xs sm:text-sm text-muted-foreground hover:text-primary transition-colors"
-              >
-                {t.news}
               </Link>
             </div>
           </div>
