@@ -109,6 +109,7 @@ const translations = {
     location: "Manzil",
     organizer: "Tashkilotchi",
     alreadySubscribed: "Sizda allaqachon obuna mavjud!",
+    viewAll: "Barchasini ko'rish",
   },
   ru: {
     backToHome: "Вернуться на главную",
@@ -141,6 +142,7 @@ const translations = {
     location: "Место",
     organizer: "Организатор",
     alreadySubscribed: "У вас уже есть подписка!",
+    viewAll: "Посмотреть все",
   },
   en: {
     backToHome: "Back to Home",
@@ -173,6 +175,7 @@ const translations = {
     location: "Location",
     organizer: "Organizer",
     alreadySubscribed: "You already have a subscription!",
+    viewAll: "View All",
   },
 }
 
@@ -319,21 +322,37 @@ export default function SubscriptionDetailPage() {
           {subscription?.books.length > 0 && (
             <Card className="mb-8">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BookOpen className="h-5 w-5" />
-                  {t.books} ({subscription?.books_count})
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <BookOpen className="h-5 w-5" />
+                    {t.books} ({subscription?.books_count})
+                  </CardTitle>
+                  <Button
+                    variant="outline"
+                    onClick={() => router.push(`/${lang}/subscription/${id}/content?type=book`)}
+                  >
+                    {t.viewAll}
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {subscription?.books.map((book, index) => (
+                  {subscription?.books.slice(0, 3).map((book, index) => (
                     <Link key={index} href={`/${lang}/books/${getSlugForLang(book)}`} className="block">
                       <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
                         <CardContent className="p-4">
                           <img
-                            src={book.image || "/placeholder.svg"}
+                            src={
+                              book.image?.startsWith("http")
+                                ? book.image
+                                : `${API_BASE}${book.image}` || "/placeholder.svg"
+                            }
                             alt={book.name}
                             className="w-full h-48 object-cover rounded-md mb-3"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement
+                              target.src = "/placeholder.svg"
+                            }}
                           />
                           <h3 className="font-semibold mb-2 line-clamp-2">{book.name}</h3>
                           <div className="space-y-1 text-sm text-muted-foreground">
@@ -359,21 +378,37 @@ export default function SubscriptionDetailPage() {
           {subscription?.journals.length > 0 && (
             <Card className="mb-8">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  {t.journals} ({subscription?.journals_count})
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    {t.journals} ({subscription?.journals_count})
+                  </CardTitle>
+                  <Button
+                    variant="outline"
+                    onClick={() => router.push(`/${lang}/subscription/${id}/content?type=journal`)}
+                  >
+                    {t.viewAll}
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {subscription?.journals.map((journal, index) => (
+                  {subscription?.journals.slice(0, 3).map((journal, index) => (
                     <Link key={index} href={`/${lang}/journals/${getSlugForLang(journal)}`} className="block">
                       <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
                         <CardContent className="p-4">
                           <img
-                            src={journal.image || "/placeholder.svg"}
+                            src={
+                              journal.image?.startsWith("http")
+                                ? journal.image
+                                : `${API_BASE}${journal.image}` || "/placeholder.svg"
+                            }
                             alt={journal.name}
                             className="w-full h-48 object-cover rounded-md mb-3"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement
+                              target.src = "/placeholder.svg"
+                            }}
                           />
                           <h3 className="font-semibold mb-2 line-clamp-2">{journal.name}</h3>
                           <div className="space-y-1 text-sm text-muted-foreground">
@@ -396,21 +431,37 @@ export default function SubscriptionDetailPage() {
           {subscription?.conferences.length > 0 && (
             <Card className="mb-8">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  {t.conferences} ({subscription?.conferences_count})
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Calendar className="h-5 w-5" />
+                    {t.conferences} ({subscription?.conferences_count})
+                  </CardTitle>
+                  <Button
+                    variant="outline"
+                    onClick={() => router.push(`/${lang}/subscription/${id}/content?type=conference`)}
+                  >
+                    {t.viewAll}
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {subscription?.conferences.map((conference, index) => (
+                  {subscription?.conferences.slice(0, 3).map((conference, index) => (
                     <Link key={index} href={`/${lang}/conferences/${getSlugForLang(conference)}`} className="block">
                       <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
                         <CardContent className="p-4">
                           <img
-                            src={conference.image || "/placeholder.svg"}
+                            src={
+                              conference.image?.startsWith("http")
+                                ? conference.image
+                                : `${API_BASE}${conference.image}` || "/placeholder.svg"
+                            }
                             alt={conference.name}
                             className="w-full h-48 object-cover rounded-md mb-3"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement
+                              target.src = "/placeholder.svg"
+                            }}
                           />
                           <h3 className="font-semibold mb-2 line-clamp-2">{conference.name}</h3>
                           <div className="space-y-1 text-sm text-muted-foreground">
@@ -448,9 +499,17 @@ export default function SubscriptionDetailPage() {
                       <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
                         <CardContent className="p-4">
                           <img
-                            src={reklama.image || "/placeholder.svg"}
+                            src={
+                              reklama.image?.startsWith("http")
+                                ? reklama.image
+                                : `${API_BASE}${reklama.image}` || "/placeholder.svg"
+                            }
                             alt={reklama.name}
                             className="w-full h-48 object-cover rounded-md mb-3"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement
+                              target.src = "/placeholder.svg"
+                            }}
                           />
                           <h3 className="font-semibold mb-2 line-clamp-2">{reklama.name}</h3>
                           <div className="space-y-1 text-sm text-muted-foreground">

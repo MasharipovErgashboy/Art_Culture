@@ -9,6 +9,7 @@ import { Loader } from "@/components/Loader"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { fetchBook, type Book } from "@/lib/api"
+import { fetchWithAuth } from "@/lib/auth"
 import { BookOpen, AlertCircle, ArrowLeft, Download, Calendar, User, FileText } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import Link from "next/link"
@@ -112,50 +113,100 @@ export default function BookDetailPage() {
   const handlePdfClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault()
 
+    console.log("[v0] ========== BOOK PDF OPEN DEBUG ==========")
+    console.log("[v0] Book data:", book)
+    console.log("[v0] URL slug parameter:", slug)
+    console.log("[v0] Book slug from API:", book?.slug)
+    console.log("[v0] Book ID from API:", book?.id)
+    console.log("[v0] Book pdf_file from API:", book?.pdf_file)
+
     // Check if user is logged in
     const token = localStorage.getItem("access_token")
+    console.log("[v0] Access token exists:", !!token)
 
     if (!token) {
+      console.log("[v0] No token found, redirecting to login")
       const returnUrl = encodeURIComponent(window.location.pathname + window.location.search)
       router.push(`/${lang}/login?returnUrl=${returnUrl}`)
       return
     }
 
-    // User is logged in - try to fetch PDF directly
     try {
-      const pdfResponse = await fetch(`https://artculture.pythonanywhere.com/${lang}/book/${slug}/`, {
+      const bookSlug = book?.slug || slug
+      console.log("[v0] Using slug for PDF fetch:", bookSlug)
+      console.log("[v0] Fetching PDF for book:", bookSlug)
+      const pdfUrl = `https://artculture.pythonanywhere.com/${lang}/book/${bookSlug}/`
+      console.log("[v0] PDF URL:", pdfUrl)
+
+      const pdfResponse = await fetchWithAuth(pdfUrl, {
+        method: "GET",
         headers: {
-          Authorization: `Bearer ${token}`,
+          Accept: "*/*",
         },
       })
 
-      if (pdfResponse.status === 401) {
-        // Token invalid - redirect to login
-        localStorage.removeItem("access_token")
-        localStorage.removeItem("refresh_token")
-        const returnUrl = encodeURIComponent(window.location.pathname + window.location.search)
-        router.push(`/${lang}/login?returnUrl=${returnUrl}`)
-        return
-      }
+      console.log("[v0] PDF response status:", pdfResponse.status)
+      console.log("[v0] PDF response ok:", pdfResponse.ok)
+      console.log("[v0] PDF response content-type:", pdfResponse.headers.get("content-type"))
 
       if (pdfResponse.status === 403) {
+        console.log("[v0] 403 Forbidden - User needs subscription")
         const returnUrl = encodeURIComponent(window.location.pathname + window.location.search)
         router.push(`/${lang}/buy/?subscription_type_id=1&returnUrl=${returnUrl}`)
         return
       }
 
       if (!pdfResponse.ok) {
-        alert("PDF yuklanishida xatolik yuz berdi")
+        const contentType = pdfResponse.headers.get("content-type")
+        let errorMessage = `HTTP error! status: ${pdfResponse.status}`
+
+        if (contentType?.includes("application/json")) {
+          try {
+            const errorData = await pdfResponse.json()
+            console.error("[v0] API error response (JSON):", errorData)
+            errorMessage = errorData.detail || errorData.message || errorMessage
+          } catch (e) {
+            console.error("[v0] Could not parse error response as JSON")
+          }
+        } else {
+          const errorText = await pdfResponse.text()
+          console.error("[v0] API error response (text):", errorText)
+          if (errorText) {
+            errorMessage = errorText
+          }
+        }
+
+        console.error("[v0] PDF fetch failed:", errorMessage)
+        alert(`PDF yuklanishida xatolik yuz berdi: ${errorMessage}`)
         return
       }
 
       const pdfBlob = await pdfResponse.blob()
+      console.log("[v0] PDF blob size:", pdfBlob.size)
+      console.log("[v0] PDF blob type:", pdfBlob.type)
+
+      if (pdfBlob.size === 0) {
+        console.error("[v0] PDF blob is empty")
+        alert("PDF yuklanishida xatolik yuz berdi: Fayl bo'sh")
+        return
+      }
+
       const blobUrl = URL.createObjectURL(pdfBlob)
+      console.log("[v0] PDF blob URL created:", blobUrl)
       setPdfBlobUrl(blobUrl)
       setShowPDFViewer(true)
+      console.log("[v0] ========== BOOK PDF OPEN SUCCESS ==========")
     } catch (error) {
-      console.error("Error fetching PDF:", error)
-      alert("PDF yuklanishida xatolik yuz berdi")
+      console.error("[v0] ========== BOOK PDF OPEN ERROR ==========")
+      console.error("[v0] Error:", error)
+      if (error instanceof Error) {
+        console.error("[v0] Error message:", error.message)
+        console.error("[v0] Error stack:", error.stack)
+        alert(`PDF yuklanishida xatolik yuz berdi: ${error.message}`)
+      } else {
+        alert("PDF yuklanishida xatolik yuz berdi")
+      }
+      console.error("[v0] ========== BOOK PDF OPEN ERROR END ==========")
     }
   }
 

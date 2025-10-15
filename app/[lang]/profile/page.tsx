@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
-import { AlertCircle, CheckCircle, Shield, Crown, Star, Calendar, DollarSign } from "lucide-react"
+import { AlertCircle, CheckCircle, Shield, Crown, Star, Calendar, DollarSign, KeyRound } from "lucide-react"
 import { ProtectedRoute } from "@/components/protected-route"
 
 interface Translations {
@@ -38,6 +38,7 @@ interface Translations {
   conferences: string
   active: string
   upgradeToPremium: string
+  changePassword: string
 }
 
 const translations: { [key: string]: Translations } = {
@@ -67,6 +68,7 @@ const translations: { [key: string]: Translations } = {
     conferences: "Konferensiyalar",
     active: "Faol",
     upgradeToPremium: "Premium ga o'tish",
+    changePassword: "Parolni o'zgartirish",
   },
   ru: {
     myProfile: "Мой профиль",
@@ -94,6 +96,7 @@ const translations: { [key: string]: Translations } = {
     conferences: "Конференции",
     active: "Активный",
     upgradeToPremium: "Перейти на Premium",
+    changePassword: "Изменить пароль",
   },
   en: {
     myProfile: "My Profile",
@@ -121,6 +124,7 @@ const translations: { [key: string]: Translations } = {
     conferences: "Conferences",
     active: "Active",
     upgradeToPremium: "Upgrade to Premium",
+    changePassword: "Change Password",
   },
 }
 
@@ -248,6 +252,10 @@ export default function ProfilePage() {
     router.push(`/${lang}/buy/`)
   }
 
+  const handleChangePassword = () => {
+    router.push(`/${lang}/change-password/`)
+  }
+
   if (loading) {
     return (
       <ProtectedRoute>
@@ -350,6 +358,17 @@ export default function ProfilePage() {
                       </p>
                       <div className="flex justify-center">{getSubscriptionBadge(profile?.subscription)}</div>
                     </div>
+
+                    <Separator />
+
+                    <Button
+                      onClick={handleChangePassword}
+                      variant="outline"
+                      className="w-full h-11 border-blue-200 hover:bg-blue-50 hover:border-blue-300 text-blue-700 bg-transparent"
+                    >
+                      <KeyRound className="w-4 h-4 mr-2" />
+                      {t.changePassword}
+                    </Button>
                   </div>
                 </CardContent>
               </Card>

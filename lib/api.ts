@@ -533,6 +533,11 @@ export async function fetchBook(slug: string, lang = "en", token?: string): Prom
   } catch (error) {
     console.error("[v0] ========== FETCH BOOK ERROR ==========")
     console.error("[v0] Error:", error)
+    console.error("[v0] Error type:", error instanceof Error ? error.constructor.name : typeof error)
+    if (error instanceof Error) {
+      console.error("[v0] Error message:", error.message)
+      console.error("[v0] Error stack:", error.stack)
+    }
     console.error("[v0] ========== FETCH BOOK ERROR END ==========")
     throw error
   }
@@ -891,6 +896,75 @@ export async function fetchSectionPdf(slug: string, lang = "en"): Promise<Blob> 
     console.error("[v0] ========== FETCH SECTION PDF ERROR ==========")
     console.error("[v0] Error:", error)
     console.error("[v0] ========== FETCH SECTION PDF ERROR END ==========")
+    throw error
+  }
+}
+
+export async function changePassword(newPassword: string): Promise<{ message: string }> {
+  try {
+    const url = `${API_BASE}/auth/change-password/`
+    console.log("[v0] ========== CHANGE PASSWORD DEBUG ==========")
+    console.log("[v0] URL:", url)
+    console.log("[v0] New password length:", newPassword.length)
+
+    const token = localStorage.getItem("access_token")
+    console.log("[v0] Access token exists:", !!token)
+
+    if (!token) {
+      throw new Error("No access token found. Please login again.")
+    }
+
+    const response = await fetchWithAuth(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        accept: "application/json",
+      },
+      body: JSON.stringify({
+        password: newPassword,
+      }),
+      mode: "cors",
+    })
+
+    console.log("[v0] Response status:", response.status)
+    console.log("[v0] Response ok:", response.ok)
+
+    if (!response.ok) {
+      const contentType = response.headers.get("content-type")
+      let errorMessage = `HTTP error! status: ${response.status}`
+
+      if (contentType?.includes("application/json")) {
+        try {
+          const errorData = await response.json()
+          console.error("[v0] API error response (JSON):", errorData)
+          errorMessage = errorData.detail || errorData.message || errorData.password?.[0] || errorMessage
+        } catch (e) {
+          console.error("[v0] Could not parse error response as JSON")
+        }
+      } else {
+        const errorText = await response.text()
+        console.error("[v0] API error response (text):", errorText)
+        if (errorText) {
+          errorMessage = errorText
+        }
+      }
+
+      console.error("[v0] ========== CHANGE PASSWORD ERROR ==========")
+      throw new Error(errorMessage)
+    }
+
+    const data = await response.json()
+    console.log("[v0] Change password API response:", data)
+    console.log("[v0] ========== CHANGE PASSWORD SUCCESS ==========")
+
+    return data
+  } catch (error) {
+    console.error("[v0] ========== CHANGE PASSWORD ERROR ==========")
+    console.error("[v0] Error:", error)
+    if (error instanceof Error) {
+      console.error("[v0] Error message:", error.message)
+    }
+    console.error("[v0] ========== CHANGE PASSWORD ERROR END ==========")
     throw error
   }
 }

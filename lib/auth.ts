@@ -53,18 +53,75 @@ export function logout(redirectUrl?: string) {
   window.location.href = redirectUrl || "/"
 }
 
+function isTokenExpired(token: string): boolean {
+  try {
+    // JWT tokens have 3 parts separated by dots
+    const parts = token.split(".")
+    if (parts.length !== 3) return true
+
+    // Decode the payload (second part)
+    const payload = JSON.parse(atob(parts[1]))
+
+    // Check if token has expiry time
+    if (!payload.exp) return false
+
+    // Check if token is expired (with 30 second buffer)
+    const now = Math.floor(Date.now() / 1000)
+    const isExpired = payload.exp < now + 30
+
+    console.log("[v0] Token expiry check:", {
+      expiresAt: new Date(payload.exp * 1000).toISOString(),
+      now: new Date(now * 1000).toISOString(),
+      isExpired,
+    })
+
+    return isExpired
+  } catch (error) {
+    console.error("[v0] Error checking token expiry:", error)
+    return true
+  }
+}
+
+export async function ensureValidToken(): Promise<boolean> {
+  if (typeof window === "undefined") return false
+
+  const accessToken = localStorage.getItem("access_token")
+  if (!accessToken) {
+    console.log("[v0] No access token found")
+    return false
+  }
+
+  // Check if token is expired
+  if (isTokenExpired(accessToken)) {
+    console.log("[v0] Access token is expired, attempting refresh...")
+    const newToken = await refreshAccessToken()
+
+    if (newToken) {
+      console.log("[v0] Token refreshed successfully")
+      return true
+    } else {
+      console.error("[v0] Token refresh failed")
+      return false
+    }
+  }
+
+  console.log("[v0] Access token is still valid")
+  return true
+}
+
 export async function refreshAccessToken(): Promise<string | null> {
   if (typeof window === "undefined") return null
 
   const refreshToken = localStorage.getItem("refresh_token")
   if (!refreshToken) {
-    console.log("[v0] No refresh token available")
+    console.log("[v0] ❌ REFRESH FAILED: No refresh token available")
     return null
   }
 
   try {
     console.log("[v0] ========== REFRESHING ACCESS TOKEN ==========")
     console.log("[v0] Refresh token exists:", !!refreshToken)
+    console.log("[v0] API endpoint: https://artculture.pythonanywhere.com/auth/token/refresh/")
 
     const response = await fetch("https://artculture.pythonanywhere.com/auth/token/refresh/", {
       method: "POST",
@@ -79,32 +136,41 @@ export async function refreshAccessToken(): Promise<string | null> {
     console.log("[v0] Refresh token API response status:", response.status)
 
     if (!response.ok) {
-      console.error("[v0] Refresh token invalid or expired, logging out")
-      // If refresh token is invalid, clear all auth data
-      logout()
+      const errorText = await response.text()
+      console.error("[v0] ❌ REFRESH FAILED: API returned error")
+      console.error("[v0] Status:", response.status)
+      console.error("[v0] Response:", errorText)
+
+      if (response.status === 401 || response.status === 403) {
+        console.error("[v0] Refresh token invalid or expired (401/403)")
+        console.error("[v0] Reason: Token might be expired or revoked")
+        logout()
+      } else {
+        console.error("[v0] Refresh token API error:", response.status)
+        console.error("[v0] Reason: Server error or network issue - Not logging out, will retry later")
+      }
       return null
     }
 
     const data = await response.json()
-    console.log("[v0] New access token received")
+    console.log("[v0] ✅ REFRESH SUCCESS: New access token received")
 
-    // Update tokens in localStorage
+    // Update access token in localStorage
     if (data.access) {
       localStorage.setItem("access_token", data.access)
       console.log("[v0] Access token updated in localStorage")
+      console.log("[v0] ========== TOKEN REFRESH SUCCESS ==========")
+      return data.access
+    } else {
+      console.error("[v0] ❌ REFRESH FAILED: No access token in response")
+      return null
     }
-    if (data.refresh) {
-      localStorage.setItem("refresh_token", data.refresh)
-      console.log("[v0] Refresh token updated in localStorage")
-    }
-
-    console.log("[v0] ========== TOKEN REFRESH SUCCESS ==========")
-    return data.access
   } catch (error) {
     console.error("[v0] ========== TOKEN REFRESH ERROR ==========")
-    console.error("[v0] Error refreshing token:", error)
+    console.error("[v0] ❌ REFRESH FAILED: Network or parsing error")
+    console.error("[v0] Error:", error)
+    console.error("[v0] Reason: This is likely a network error, not logging out")
     console.error("[v0] ========== TOKEN REFRESH ERROR END ==========")
-    logout()
     return null
   }
 }
@@ -145,8 +211,13 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}): Pro
       }
       response = await fetch(url, { ...options, headers: newHeaders })
       console.log("[v0] Retry request status:", response.status)
+
+      if (response.status === 401) {
+        console.error("[v0] Still 401 after token refresh, logging out")
+        logout()
+      }
     } else {
-      console.error("[v0] Token refresh failed, user will be logged out")
+      console.error("[v0] Token refresh failed, but not logging out yet")
     }
   }
 

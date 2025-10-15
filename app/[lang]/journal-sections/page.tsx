@@ -7,6 +7,7 @@ import { Loader } from "@/components/Loader"
 import { PDFViewer } from "@/components/pdf-viewer"
 import { fetchAllJournalSections, type JournalSection } from "@/lib/api"
 import { getUser } from "@/lib/auth"
+import { fetchWithAuth } from "@/lib/auth"
 import { FileText, AlertCircle, Search, ExternalLink } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Input } from "@/components/ui/input"
@@ -171,13 +172,11 @@ export default function JournalSectionsPage() {
       console.log("[v0] Fetching PDF from URL:", url)
 
       console.log("[v0] Starting fetch request...")
-      const response = await fetch(url, {
+      const response = await fetchWithAuth(url, {
         method: "GET",
         headers: {
           Accept: "*/*",
-          Authorization: `Bearer ${token}`,
         },
-        mode: "cors",
       })
 
       console.log("[v0] Response received:")
@@ -195,9 +194,26 @@ export default function JournalSectionsPage() {
       }
 
       if (!response.ok) {
-        const errorText = await response.text()
-        console.error("[v0] API error response:", errorText)
-        throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`)
+        const contentType = response.headers.get("content-type")
+        let errorMessage = `HTTP error! status: ${response.status} - ${response.statusText}`
+
+        if (contentType?.includes("application/json")) {
+          try {
+            const errorData = await response.json()
+            console.error("[v0] API error response (JSON):", errorData)
+            errorMessage = errorData.detail || errorData.message || errorMessage
+          } catch (e) {
+            console.error("[v0] Could not parse error response as JSON")
+          }
+        } else {
+          const errorText = await response.text()
+          console.error("[v0] API error response (text):", errorText)
+          if (errorText) {
+            errorMessage = errorText
+          }
+        }
+
+        throw new Error(errorMessage)
       }
 
       console.log("[v0] Converting response to blob...")

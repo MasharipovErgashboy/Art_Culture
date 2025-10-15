@@ -18,7 +18,7 @@ import {
   getSlugForLang,
 } from "@/lib/api"
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet"
-import { logout } from "@/lib/auth"
+import { logout, ensureValidToken } from "@/lib/auth"
 
 const navTranslations = {
   uz: {
@@ -81,6 +81,31 @@ export function Navbar({ currentLang: propLang }: { currentLang?: string } = {})
   }, [])
 
   useEffect(() => {
+    const checkAndRefreshToken = async () => {
+      const token = localStorage.getItem("access_token")
+      if (!token) {
+        console.log("[v0] No access token found on page load")
+        setIsLoadingUser(false)
+        return
+      }
+
+      console.log("[v0] ========== PAGE LOAD TOKEN CHECK ==========")
+      console.log("[v0] Checking if token needs refresh...")
+
+      const isValid = await ensureValidToken()
+
+      if (isValid) {
+        console.log("[v0] ✅ Token is valid or successfully refreshed")
+        loadUserProfile()
+      } else {
+        console.log("[v0] ❌ Token refresh failed - logging out")
+        setIsLoggedIn(false)
+        setUser(null)
+        setIsLoadingUser(false)
+      }
+      console.log("[v0] ========== PAGE LOAD TOKEN CHECK END ==========")
+    }
+
     const loadUserProfile = async () => {
       const token = localStorage.getItem("access_token")
 
@@ -92,6 +117,7 @@ export function Navbar({ currentLang: propLang }: { currentLang?: string } = {})
       }
 
       try {
+        console.log("[v0] Loading user profile...")
         const response = await fetch("https://artculture.pythonanywhere.com/auth/me/", {
           method: "GET",
           headers: {
@@ -102,43 +128,25 @@ export function Navbar({ currentLang: propLang }: { currentLang?: string } = {})
         })
 
         if (!response.ok) {
+          console.error("[v0] Failed to load user profile, status:", response.status)
           throw new Error(`HTTP error! status: ${response.status}`)
         }
 
         const userData = await response.json()
+        console.log("[v0] User profile loaded successfully")
         setUser(userData)
         setIsLoggedIn(true)
         setIsLoadingUser(false)
       } catch (error) {
         console.error("[v0] Failed to fetch profile:", error)
-        localStorage.removeItem("access_token")
-        localStorage.removeItem("refresh_token")
-        localStorage.removeItem("user")
         setIsLoggedIn(false)
         setUser(null)
         setIsLoadingUser(false)
       }
     }
 
-    loadUserProfile()
-
-    const handleStorageChange = () => {
-      loadUserProfile()
-    }
-
-    window.addEventListener("storage", handleStorageChange)
-
-    const handleLoginEvent = () => {
-      loadUserProfile()
-    }
-
-    window.addEventListener("userLoggedIn", handleLoginEvent)
-
-    return () => {
-      window.removeEventListener("storage", handleStorageChange)
-      window.removeEventListener("userLoggedIn", handleLoginEvent)
-    }
-  }, [pathname])
+    checkAndRefreshToken()
+  }, [])
 
   const handleLanguageChange = async (langCode: string) => {
     const langMap: { [key: string]: string } = {

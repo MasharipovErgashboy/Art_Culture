@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import Image from "next/image"
 import { PDFViewer } from "@/components/pdf-viewer"
+import { fetchWithAuth } from "@/lib/auth"
 
 const API_BASE = "https://artculture.pythonanywhere.com"
 
@@ -118,43 +119,89 @@ export default function ConferenceDetailPage() {
     const token = localStorage.getItem("access_token")
 
     if (!token) {
+      console.log("[v0] User not logged in, redirecting to login")
       const returnUrl = encodeURIComponent(window.location.pathname + window.location.search)
       router.push(`/${lang}/login?returnUrl=${returnUrl}`)
       return
     }
 
+    console.log("[v0] ========== CONFERENCE PDF OPEN DEBUG ==========")
+    console.log("[v0] Conference data:", conference)
+    console.log("[v0] URL slug parameter:", slug)
+    console.log("[v0] Conference slug from API:", conference?.slug)
+    console.log("[v0] Conference ID from API:", conference?.id)
+    console.log("[v0] Conference pdf from API:", conference?.pdf)
+    console.log("[v0] Language:", lang)
+
     try {
-      const response = await fetch(`${API_BASE}/${lang}/conference/${slug}/`, {
+      const conferenceSlug = conference?.slug || slug
+      console.log("[v0] Using slug for PDF fetch:", conferenceSlug)
+      const pdfUrl = `${API_BASE}/${lang}/conference/${conferenceSlug}/`
+      console.log("[v0] Fetching PDF from:", pdfUrl)
+
+      const response = await fetchWithAuth(pdfUrl, {
+        method: "GET",
         headers: {
-          Authorization: `Bearer ${token}`,
+          Accept: "*/*",
         },
       })
 
-      if (response.status === 401) {
-        localStorage.removeItem("access_token")
-        localStorage.removeItem("refresh_token")
-        const returnUrl = encodeURIComponent(window.location.pathname + window.location.search)
-        router.push(`/${lang}/login?returnUrl=${returnUrl}`)
-        return
-      }
+      console.log("[v0] Response status:", response.status)
+      console.log("[v0] Response ok:", response.ok)
 
       if (response.status === 403) {
+        console.log("[v0] 403 Forbidden - User needs subscription")
         const returnUrl = encodeURIComponent(window.location.pathname + window.location.search)
         router.push(`/${lang}/buy/?subscription_type_id=1&returnUrl=${returnUrl}`)
         return
       }
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        const contentType = response.headers.get("content-type")
+        let errorMessage = `HTTP error! status: ${response.status}`
+
+        if (contentType?.includes("application/json")) {
+          try {
+            const errorData = await response.json()
+            console.error("[v0] API error response (JSON):", errorData)
+            errorMessage = errorData.detail || errorData.message || errorMessage
+          } catch (e) {
+            console.error("[v0] Could not parse error response as JSON")
+          }
+        } else {
+          const errorText = await response.text()
+          console.error("[v0] API error response (text):", errorText)
+          if (errorText) {
+            errorMessage = errorText
+          }
+        }
+
+        throw new Error(errorMessage)
       }
 
       const blob = await response.blob()
+      console.log("[v0] PDF blob size:", blob.size)
+      console.log("[v0] PDF blob type:", blob.type)
+
+      if (blob.size === 0) {
+        throw new Error("PDF fayli bo'sh")
+      }
+
       const blobUrl = URL.createObjectURL(blob)
+      console.log("[v0] PDF blob URL created:", blobUrl)
       setPdfBlobUrl(blobUrl)
       setShowPDFViewer(true)
+      console.log("[v0] ========== CONFERENCE PDF OPEN SUCCESS ==========")
     } catch (error) {
-      console.error("[v0] Error fetching PDF:", error)
-      alert("PDF yuklanishida xatolik yuz berdi. Iltimos, qaytadan urinib ko'ring.")
+      console.error("[v0] ========== CONFERENCE PDF OPEN ERROR ==========")
+      console.error("[v0] Error:", error)
+      if (error instanceof Error) {
+        console.error("[v0] Error message:", error.message)
+        alert(`PDF yuklanishida xatolik yuz berdi: ${error.message}`)
+      } else {
+        alert("PDF yuklanishida xatolik yuz berdi")
+      }
+      console.error("[v0] ========== CONFERENCE PDF OPEN ERROR END ==========")
     }
   }
 
