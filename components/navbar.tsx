@@ -328,7 +328,7 @@ export function Navbar({ currentLang: propLang }: { currentLang?: string } = {})
   const handleMouseLeave = () => {
     closeTimerRef.current = setTimeout(() => {
       setIsDropdownOpen(false)
-    }, 5000) // 5 seconds delay
+    }, 1000) // 5 seconds delay
   }
 
   useEffect(() => {
