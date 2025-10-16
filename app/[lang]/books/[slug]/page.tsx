@@ -116,7 +116,9 @@ export default function BookDetailPage() {
     console.log("[v0] ========== BOOK PDF OPEN DEBUG ==========")
     console.log("[v0] Book data:", book)
     console.log("[v0] URL slug parameter:", slug)
-    console.log("[v0] Book slug from API:", book?.slug)
+    console.log("[v0] Book slug_uz from API:", book?.slug_uz)
+    console.log("[v0] Book slug_en from API:", book?.slug_en)
+    console.log("[v0] Book slug_ru from API:", book?.slug_ru)
     console.log("[v0] Book ID from API:", book?.id)
     console.log("[v0] Book pdf_file from API:", book?.pdf_file)
 
@@ -132,8 +134,9 @@ export default function BookDetailPage() {
     }
 
     try {
-      const bookSlug = book?.slug || slug
-      console.log("[v0] Using slug for PDF fetch:", bookSlug)
+      // The URL slug is what works for fetching book details, so it should work for PDF too
+      const bookSlug = slug
+      console.log("[v0] Using URL slug for PDF fetch:", bookSlug)
       console.log("[v0] Fetching PDF for book:", bookSlug)
       const pdfUrl = `https://artculture.pythonanywhere.com/${lang}/book/${bookSlug}/`
       console.log("[v0] PDF URL:", pdfUrl)
@@ -152,7 +155,7 @@ export default function BookDetailPage() {
       if (pdfResponse.status === 403) {
         console.log("[v0] 403 Forbidden - User needs subscription")
         const returnUrl = encodeURIComponent(window.location.pathname + window.location.search)
-        router.push(`/${lang}/buy/?subscription_type_id=1&returnUrl=${returnUrl}`)
+        router.push(`/${lang}/buy/?subscription_type_id=3&returnUrl=${returnUrl}`)
         return
       }
 
