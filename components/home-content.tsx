@@ -22,7 +22,7 @@ import {
 import Link from "next/link"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { fetchConferences, type Conference, getSlugForLang } from "@/lib/api"
+import { fetchConferences, fetchBooks, fetchJournals, type Conference, getSlugForLang } from "@/lib/api"
 import Navbar from "@/components/navbar" // Changed to default import
 import Footer from "@/components/footer"
 
@@ -291,6 +291,18 @@ export function HomeContent({ lang }: HomeContentProps) {
   const [conferences, setConferences] = useState<Conference[]>([])
   const [conferencesLoading, setConferencesLoading] = useState(true)
 
+  const [latestContent, setLatestContent] = useState<
+    Array<{
+      type: "book" | "journal" | "conference"
+      title: string
+      description: string
+      image: string
+      href: string
+      date?: string
+    }>
+  >([])
+  const [latestContentLoading, setLatestContentLoading] = useState(true)
+
   const handleReklamaDetail = (reklama: Reklama) => {
     const slugToUse = getSlugForLang(reklama, lang) || reklama.id.toString()
     router.push(`/${lang}/reklama/${slugToUse}`)
@@ -306,13 +318,29 @@ export function HomeContent({ lang }: HomeContentProps) {
       try {
         setConferencesLoading(true)
 
-        const response = await fetchConferences(lang, 1)
+        let allConferences: Conference[] = []
+        let currentPage = 1
+        let hasMore = true
 
-        if (response && response.results && Array.isArray(response.results)) {
+        while (hasMore) {
+          const response = await fetchConferences(lang, currentPage)
+          console.log(`[v0] Fetched conferences page ${currentPage}:`, response)
+
+          if (response && response.results && Array.isArray(response.results)) {
+            allConferences = [...allConferences, ...response.results]
+          }
+
+          hasMore = response.next !== null
+          currentPage++
+        }
+
+        console.log("[v0] Total conferences for swiper:", allConferences.length)
+
+        if (allConferences.length > 0) {
           const today = new Date()
           today.setHours(0, 0, 0, 0)
 
-          const upcomingConferences = response.results.filter((conference) => {
+          const upcomingConferences = allConferences.filter((conference) => {
             const conferenceDate = new Date(conference.date)
             conferenceDate.setHours(0, 0, 0, 0)
             return conferenceDate >= today
@@ -325,12 +353,13 @@ export function HomeContent({ lang }: HomeContentProps) {
           })
 
           const latestConferences = sortedConferences.slice(0, 3)
+          console.log("[v0] Latest upcoming conferences for swiper:", latestConferences.length)
           setConferences(latestConferences)
         } else {
           setConferences([])
         }
       } catch (error) {
-        console.error("Error fetching conferences:", error)
+        console.error("[v0] Error fetching conferences:", error)
         setConferences([])
       } finally {
         setConferencesLoading(false)
@@ -383,6 +412,134 @@ export function HomeContent({ lang }: HomeContentProps) {
     fetchApiData()
   }, [lang])
 
+  useEffect(() => {
+    const fetchLatestContent = async () => {
+      try {
+        setLatestContentLoading(true)
+        console.log("[v0] ========== FETCHING LATEST CONTENT FOR SWIPER ==========")
+
+        const content: Array<{
+          type: "book" | "journal" | "conference"
+          title: string
+          description: string
+          image: string
+          href: string
+          date?: string
+        }> = []
+
+        try {
+          console.log("[v0] Fetching latest book from books-category...")
+          const booksResponse = await fetchBooks(lang, 1)
+          console.log("[v0] Books API response:", booksResponse)
+          console.log("[v0] Books results:", booksResponse?.results)
+
+          if (booksResponse?.results && Array.isArray(booksResponse.results) && booksResponse.results.length > 0) {
+            const book = booksResponse.results[0]
+            console.log("[v0] Latest book selected:", book)
+            console.log("[v0] Book name:", book.name)
+            console.log("[v0] Book image:", book.image)
+            console.log("[v0] Book slug:", getSlugForLang(book, lang))
+
+            content.push({
+              type: "book",
+              title: book.name || "Kitob",
+              description: book.description || "Kitob haqida ma'lumot",
+              image: book.image ? `${API_BASE}${book.image}` : "/placeholder.svg",
+              href: `/${lang}/books/${getSlugForLang(book, lang)}`,
+            })
+            console.log("[v0] ✓ Book added to content successfully")
+          } else {
+            console.log("[v0] ✗ No books found in API response")
+          }
+        } catch (err) {
+          console.error("[v0] ✗ Error fetching books for swiper:", err)
+        }
+
+        try {
+          console.log("[v0] Fetching latest journal...")
+          const journalsResponse = await fetchJournals(lang)
+          console.log("[v0] Journals response:", journalsResponse)
+
+          // Handle both array and paginated response formats
+          const journals = Array.isArray(journalsResponse) ? journalsResponse : journalsResponse?.results || []
+
+          if (journals.length > 0) {
+            const journal = journals[0] // Get the first (latest) journal
+            console.log("[v0] Latest journal selected:", journal)
+            content.push({
+              type: "journal",
+              title: journal.name || "Jurnal",
+              description:
+                journal.description?.replace(/<[^>]*>/g, "").substring(0, 150) + "..." || "Jurnal haqida ma'lumot",
+              image: journal.image ? `${API_BASE}${journal.image}` : "/placeholder.svg",
+              href: `/${lang}/journals/${getSlugForLang(journal, lang)}`,
+            })
+            console.log("[v0] Journal added to content")
+          } else {
+            console.log("[v0] No journals found")
+          }
+        } catch (err) {
+          console.error("[v0] Error fetching journals for swiper:", err)
+        }
+
+        try {
+          console.log("[v0] Fetching latest upcoming conference...")
+          const conferencesResponse = await fetchConferences(lang, 1) // Get first page
+          console.log("[v0] Conferences response:", conferencesResponse)
+
+          if (conferencesResponse?.results && conferencesResponse.results.length > 0) {
+            const today = new Date()
+            today.setHours(0, 0, 0, 0)
+
+            const upcomingConferences = conferencesResponse.results.filter((conf) => {
+              const confDate = new Date(conf.date)
+              confDate.setHours(0, 0, 0, 0)
+              return confDate >= today
+            })
+
+            console.log("[v0] Upcoming conferences:", upcomingConferences.length)
+
+            if (upcomingConferences.length > 0) {
+              const conference = upcomingConferences[0] // Get the first (latest) upcoming conference
+              console.log("[v0] Latest upcoming conference selected:", conference)
+              content.push({
+                type: "conference",
+                title: conference.name || "Konferensiya",
+                description:
+                  conference.description?.replace(/<[^>]*>/g, "").substring(0, 150) + "..." ||
+                  "Konferensiya haqida ma'lumot",
+                image: conference.image ? `${API_BASE}${conference.image}` : "/placeholder.svg",
+                href: `/${lang}/conferences/${getSlugForLang(conference, lang)}`,
+                date: conference.date,
+              })
+              console.log("[v0] Conference added to content")
+            } else {
+              console.log("[v0] No upcoming conferences found")
+            }
+          }
+        } catch (err) {
+          console.error("[v0] Error fetching conferences for swiper:", err)
+        }
+
+        console.log("[v0] Final content array:", content.length, "items")
+        console.log(
+          "[v0] Content items:",
+          content.map((c) => ({ type: c.type, title: c.title })),
+        )
+        setLatestContent(content)
+        console.log("[v0] ========== LATEST CONTENT FETCH COMPLETE ==========")
+      } catch (error) {
+        console.error("[v0] ========== ERROR FETCHING LATEST CONTENT ==========")
+        console.error("[v0] Error:", error)
+        setLatestContent([])
+      } finally {
+        setLatestContentLoading(false)
+      }
+    }
+
+    fetchLatestContent()
+  }, [lang])
+
   const slides =
     conferences && conferences.length > 0
       ? conferences.map((conference) => ({
@@ -397,29 +554,7 @@ export function HomeContent({ lang }: HomeContentProps) {
           date: conference.date,
           location: conference.manzil,
         }))
-      : [
-          {
-            title: "Yangi ilmiy jurnallar",
-            description: "2024-yilning eng so'nggi tadqiqot natijalari va ilmiy maqolalar",
-            image: "/scientific-research-books-and-journals.jpg",
-            buttonText: t.batafsil,
-            href: `/${lang}/journals`,
-          },
-          {
-            title: "Xalqaro konferensiya",
-            description: "Zamonaviy texnologiyalar va innovatsiyalar bo'yicha xalqaro anjuman",
-            image: "/swiper_konferensiya.jpg",
-            buttonText: t.konferensiyaKorish,
-            href: `/${lang}/conferences`,
-          },
-          {
-            title: "Akademik kitoblar",
-            description: "Oliy ta'lim muassasalari uchun maxsus tayyorlangan darsliklar",
-            image: "/swiper_konferensiya2.jpg",
-            buttonText: t.korish,
-            href: `/${lang}/books-category`,
-          },
-        ]
+      : [] // Return empty array instead of demo slides when no conferences
 
   const adSlides = [
     {
@@ -433,12 +568,10 @@ export function HomeContent({ lang }: HomeContentProps) {
   ]
 
   useEffect(() => {
-    if (slides && slides.length > 0) {
-      const timer = setInterval(() => {
-        setCurrentSlide((prev) => (prev + 1) % slides.length)
-      }, 4000) // Changed from 5000ms to 4000ms (4 seconds)
-      return () => clearInterval(timer)
-    }
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slides.length)
+    }, 4000) // Changed from 5000ms to 4000ms (4 seconds)
+    return () => clearInterval(timer)
   }, [slides])
 
   useEffect(() => {
@@ -449,12 +582,13 @@ export function HomeContent({ lang }: HomeContentProps) {
   }, [adSlides])
 
   useEffect(() => {
-    const yangiliklarLength = apiData?.yangiliklar?.length || adSlides.length
-    const bookTimer = setInterval(() => {
-      setCurrentBookSlide((prev) => (prev + 1) % yangiliklarLength)
-    }, 4000)
-    return () => clearInterval(bookTimer)
-  }, [adSlides, apiData?.yangiliklar])
+    if (latestContent.length > 1) {
+      const bookTimer = setInterval(() => {
+        setCurrentBookSlide((prev) => (prev + 1) % latestContent.length)
+      }, 4000) // 4 seconds per slide
+      return () => clearInterval(bookTimer)
+    }
+  }, [latestContent])
 
   const nextSlide = () => {
     if (slides && slides.length > 0) {
@@ -471,12 +605,14 @@ export function HomeContent({ lang }: HomeContentProps) {
   const prevVideoSlide = () => setCurrentVideoSlide((prev) => (prev - 1 + adSlides.length) % adSlides.length)
 
   const nextBookSlide = () => {
-    const length = apiData?.yangiliklar?.length || 1
-    setCurrentBookSlide((prev) => (prev + 1) % length)
+    if (latestContent.length > 0) {
+      setCurrentBookSlide((prev) => (prev + 1) % latestContent.length)
+    }
   }
   const prevBookSlide = () => {
-    const length = apiData?.yangiliklar?.length || 1
-    setCurrentBookSlide((prev) => (prev - 1 + length) % length)
+    if (latestContent.length > 0) {
+      setCurrentBookSlide((prev) => (prev - 1 + latestContent.length) % latestContent.length)
+    }
   }
 
   const sections = [
@@ -558,6 +694,7 @@ export function HomeContent({ lang }: HomeContentProps) {
 
   return (
     <>
+
       <div className="flex-1 min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
         <section className="relative bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 py-4 sm:py-6 lg:py-8 px-0">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 lg:h-[500px] w-full">
@@ -1009,217 +1146,191 @@ export function HomeContent({ lang }: HomeContentProps) {
             </div>
 
             <div className="relative max-w-7xl mx-auto">
-              {isLoading ? (
+              {latestContentLoading ? (
                 <div className="text-center py-12 sm:py-16">
                   <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 sm:p-12 shadow-xl max-w-md mx-auto">
-                    <Bell className="w-16 h-16 sm:w-20 sm:h-20 text-gray-400 mx-auto mb-4 sm:mb-6" />
+                    <Bell className="w-16 h-16 sm:w-20 sm:h-20 text-gray-400 mx-auto mb-4 sm:mb-6 animate-pulse" />
                     <h3 className="text-xl sm:text-2xl font-semibold text-gray-700 mb-3 sm:mb-4">
                       {t.yangiliklarYuklanmoqda}
                     </h3>
                     <p className="text-sm sm:text-base text-gray-500 leading-relaxed">{t.iltimosKuting}</p>
                   </div>
                 </div>
-              ) : apiData?.yangiliklar && apiData.yangiliklar.length > 0 ? (
+              ) : latestContent && latestContent.length > 0 ? (
                 <>
-                  <div className="relative overflow-hidden h-[500px] sm:h-[600px] lg:h-[650px]">
+                  <div className="relative overflow-hidden min-h-[550px] sm:min-h-[650px] lg:min-h-[700px]">
                     <div className="flex items-center justify-center h-full">
-                      {/* Mobile: Single card layout, Desktop: Three card layout */}
-                      <div className="block lg:hidden w-full max-w-sm mx-auto">
-                        <Card className="h-[450px] overflow-hidden shadow-2xl bg-white border-0 rounded-3xl group hover:shadow-3xl transition-all duration-500">
-                          <CardContent className="p-0 h-full flex flex-col">
-                            {apiData.yangiliklar[currentBookSlide]?.media && (
-                              <div className="relative h-1/2 overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-                                <img
-                                  src={`${API_BASE}${apiData.yangiliklar[currentBookSlide].media}`}
-                                  alt={apiData.yangiliklar[currentBookSlide]?.title || "Yangilik"}
-                                  className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700"
-                                  onError={(e) => {
-                                    const target = e.currentTarget as HTMLImageElement
-                                    target.style.display = "none"
-                                    const parent = target.parentElement
-                                    if (parent) {
-                                      parent.classList.add("bg-gradient-to-br", "from-[#003D7F]", "to-[#0059B2]")
-                                      parent.innerHTML = `
-                                      <div class="flex items-center justify-center h-full">
-                                        <div class="text-center text-white p-6">
-                                          <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                                            <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-                                              <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
-                                            </svg>
-                                          </div>
-                                          <p class="text-base font-semibold">Yangilik rasmi</p>
-                                        </div>
-                                      </div>
-                                    `
-                                    }
-                                  }}
-                                />
-                              </div>
-                            )}
+                      {/* Mobile: Single elegant card with full content */}
+                      <div className="block lg:hidden w-full max-w-md mx-auto px-4">
+                        <Card className="overflow-hidden shadow-2xl bg-white border-0 rounded-3xl group hover:shadow-3xl transition-all duration-500 hover:scale-[1.02]">
+                          <CardContent className="p-0 flex flex-col">
+                            {/* Image section with elegant gradient */}
+                            <div className="relative h-64 overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
+                              <img
+                                src={latestContent[currentBookSlide]?.image || "/placeholder.svg"}
+                                alt={latestContent[currentBookSlide]?.title || "Content"}
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                                onError={(e) => {
+                                  e.currentTarget.src = "/placeholder.svg"
+                                }}
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
 
-                            <div className="h-1/2 p-6 flex flex-col justify-between bg-gradient-to-br from-white via-gray-50/30 to-blue-50/20">
-                              <div>
-                                <h3 className="text-lg font-bold mb-3 text-gray-800 leading-tight line-clamp-2">
-                                  {apiData.yangiliklar[currentBookSlide]?.title || "Yangilik"}
-                                </h3>
-                                <div className="text-gray-600 mb-4 leading-relaxed line-clamp-3 text-sm">
-                                  <div
-                                    dangerouslySetInnerHTML={{
-                                      __html: apiData.yangiliklar[currentBookSlide]?.description || "",
-                                    }}
-                                  />
-                                </div>
+                              {/* Type badge with refined styling */}
+                              <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm px-5 py-2.5 rounded-full shadow-xl border border-white/50">
+                                <span className="text-xs font-bold text-[#003D7F] uppercase tracking-wider">
+                                  {latestContent[currentBookSlide]?.type === "book" && "📚 Kitob"}
+                                  {latestContent[currentBookSlide]?.type === "journal" && "📰 Jurnal"}
+                                  {latestContent[currentBookSlide]?.type === "conference" && "🎯 Konferensiya"}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Content section with full visibility */}
+                            <div className="p-6 bg-gradient-to-br from-white via-blue-50/30 to-indigo-50/40">
+                              <h3 className="text-xl font-bold mb-4 text-gray-900 leading-tight group-hover:text-[#003D7F] transition-colors duration-300">
+                                {latestContent[currentBookSlide]?.title || "Content"}
+                              </h3>
+                              <div className="text-gray-600 mb-6 leading-relaxed text-sm max-h-32 overflow-y-auto pr-2 custom-scrollbar">
+                                {latestContent[currentBookSlide]?.description || ""}
                               </div>
 
-                              <div className="flex justify-center">
-                                <Button
-                                  size="sm"
-                                  className="bg-gradient-to-r from-[#003D7F] via-[#0059B2] to-[#007ACC] hover:from-[#002B5A] hover:via-[#004494] hover:to-[#005A99] text-white border-0 shadow-lg hover:shadow-2xl transition-all duration-300 font-semibold px-6 py-3 rounded-full hover:scale-105 transform group text-sm"
-                                  onClick={() => {
-                                    const yangilik = apiData.yangiliklar[currentBookSlide]
-                                    const slugToUse =
-                                      getLangSpecificSlug(yangilik, lang) || yangilik?.id?.toString() || "1"
-                                    router.push(`/${lang}/yangiliklar/${slugToUse}`)
-                                  }}
-                                >
-                                  <span className="flex items-center gap-2">
-                                    {t.batafsilOqish}
-                                    <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
-                                  </span>
-                                </Button>
-                              </div>
+                              <Button
+                                size="sm"
+                                className="w-full bg-gradient-to-r from-[#003D7F] via-[#0059B2] to-[#007ACC] hover:from-[#002B5A] hover:via-[#004494] hover:to-[#005A99] text-white border-0 shadow-lg hover:shadow-2xl transition-all duration-300 font-semibold px-6 py-3.5 rounded-full hover:scale-105 transform group text-sm"
+                                onClick={() => {
+                                  router.push(latestContent[currentBookSlide]?.href || `/${lang}`)
+                                }}
+                              >
+                                <span className="flex items-center justify-center gap-2">
+                                  {t.batafsilOqish}
+                                  <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
+                                </span>
+                              </Button>
                             </div>
                           </CardContent>
                         </Card>
                       </div>
 
-                      {/* Desktop: Three card layout */}
-                      <div className="hidden lg:flex items-center justify-center h-full w-full">
-                        {/* Left slide (previous) */}
-                        <div className="absolute left-0 w-1/4 h-[520px] z-10 opacity-70 transform scale-95 transition-all duration-500">
-                          {apiData.yangiliklar.length > 1 && (
-                            <Card className="h-full overflow-hidden shadow-xl bg-white/95 backdrop-blur-sm border-0 rounded-3xl">
+                      {/* Desktop: Three elegant cards with full content */}
+                      <div className="hidden lg:flex items-center justify-center h-full w-full gap-6">
+                        {/* Left preview card */}
+                        <div className="w-1/4 opacity-70 transform scale-95 transition-all duration-500 hover:opacity-90 hover:scale-100">
+                          {latestContent.length > 1 && (
+                            <Card className="overflow-hidden shadow-xl bg-white/95 backdrop-blur-sm border-0 rounded-3xl h-[580px]">
                               <CardContent className="p-0 h-full flex flex-col">
-                                {apiData.yangiliklar[
-                                  (currentBookSlide - 1 + apiData.yangiliklar.length) % apiData.yangiliklar.length
-                                ]?.media && (
-                                  <div className="relative h-2/3 overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-                                    <img
-                                      src={`${API_BASE}${apiData.yangiliklar[(currentBookSlide - 1 + apiData.yangiliklar.length) % apiData.yangiliklar.length].media}`}
-                                      alt={
-                                        apiData.yangiliklar[
-                                          (currentBookSlide - 1 + apiData.yangiliklar.length) %
-                                            apiData.yangiliklar.length
-                                        ]?.title || "Yangilik"
-                                      }
-                                      className="w-full h-full object-contain"
-                                    />
-                                  </div>
-                                )}
-                                <div className="p-4 flex-1 flex flex-col justify-center">
-                                  <h3 className="text-base font-bold text-gray-800 line-clamp-2 text-center leading-tight">
-                                    {apiData.yangiliklar[
-                                      (currentBookSlide - 1 + apiData.yangiliklar.length) % apiData.yangiliklar.length
-                                    ]?.title || "Yangilik"}
+                                <div className="relative h-48 overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
+                                  <img
+                                    src={
+                                      latestContent[
+                                        (currentBookSlide - 1 + latestContent.length) % latestContent.length
+                                      ]?.image || "/placeholder.svg"
+                                    }
+                                    alt="Preview"
+                                    className="w-full h-full object-cover"
+                                  />
+                                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+                                </div>
+                                <div className="p-5 flex-1 flex flex-col justify-center bg-gradient-to-br from-white to-blue-50/20">
+                                  <h3 className="text-base font-bold text-gray-800 text-center leading-tight mb-2">
+                                    {latestContent[(currentBookSlide - 1 + latestContent.length) % latestContent.length]
+                                      ?.title || "Content"}
                                   </h3>
+                                  <p className="text-xs text-gray-600 text-center">
+                                    {latestContent[(currentBookSlide - 1 + latestContent.length) % latestContent.length]
+                                      ?.type === "book" && "📚 Kitob"}
+                                    {latestContent[(currentBookSlide - 1 + latestContent.length) % latestContent.length]
+                                      ?.type === "journal" && "📰 Jurnal"}
+                                    {latestContent[(currentBookSlide - 1 + latestContent.length) % latestContent.length]
+                                      ?.type === "conference" && "🎯 Konferensiya"}
+                                  </p>
                                 </div>
                               </CardContent>
                             </Card>
                           )}
                         </div>
 
-                        {/* Main slide (current) */}
-                        <div className="w-1/2 h-[600px] z-20 transform scale-100 transition-all duration-500">
-                          <Card className="h-full overflow-hidden shadow-2xl bg-white border-0 rounded-3xl group hover:shadow-3xl transition-all duration-500">
+                        {/* Main featured card with full content */}
+                        <div className="w-1/2 transform scale-100 transition-all duration-500">
+                          <Card className="overflow-hidden shadow-2xl bg-white border-0 rounded-3xl group hover:shadow-3xl transition-all duration-500 hover:scale-[1.02] h-[650px]">
                             <CardContent className="p-0 h-full flex flex-col">
-                              {apiData.yangiliklar[currentBookSlide]?.media && (
-                                <div className="relative h-2/3 overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-                                  <img
-                                    src={`${API_BASE}${apiData.yangiliklar[currentBookSlide].media}`}
-                                    alt={apiData.yangiliklar[currentBookSlide]?.title || "Yangilik"}
-                                    className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700"
-                                    onError={(e) => {
-                                      const target = e.currentTarget as HTMLImageElement
-                                      target.style.display = "none"
-                                      const parent = target.parentElement
-                                      if (parent) {
-                                        parent.classList.add("bg-gradient-to-br", "from-[#003D7F]", "to-[#0059B2]")
-                                        parent.innerHTML = `
-                                        <div class="flex items-center justify-center h-full">
-                                          <div class="text-center text-white p-8">
-                                            <div class="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                                              <svg class="w-10 h-10" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
-                                              </svg>
-                                            </div>
-                                            <p class="text-lg font-semibold">Yangilik rasmi</p>
-                                          </div>
-                                        </div>
-                                      `
-                                      }
-                                    }}
-                                  />
-                                </div>
-                              )}
+                              {/* Image section */}
+                              <div className="relative h-80 overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
+                                <img
+                                  src={latestContent[currentBookSlide]?.image || "/placeholder.svg"}
+                                  alt={latestContent[currentBookSlide]?.title || "Content"}
+                                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                                  onError={(e) => {
+                                    e.currentTarget.src = "/placeholder.svg"
+                                  }}
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
 
-                              <div className="h-1/3 p-8 flex flex-col justify-between bg-gradient-to-br from-white via-gray-50/30 to-blue-50/20">
-                                <div>
-                                  <h3 className="text-2xl font-bold mb-4 text-gray-800 leading-tight line-clamp-2">
-                                    {apiData.yangiliklar[currentBookSlide]?.title || "Yangilik"}
-                                  </h3>
-                                  <div className="text-gray-600 leading-relaxed line-clamp-2 text-base">
-                                    <div
-                                      dangerouslySetInnerHTML={{
-                                        __html: apiData.yangiliklar[currentBookSlide]?.description || "",
-                                      }}
-                                    />
-                                  </div>
+                                {/* Type badge */}
+                                <div className="absolute top-6 right-6 bg-white/95 backdrop-blur-sm px-6 py-3 rounded-full shadow-xl border border-white/50">
+                                  <span className="text-sm font-bold text-[#003D7F] uppercase tracking-wider">
+                                    {latestContent[currentBookSlide]?.type === "book" && "📚 Kitob"}
+                                    {latestContent[currentBookSlide]?.type === "journal" && "📰 Jurnal"}
+                                    {latestContent[currentBookSlide]?.type === "conference" && "🎯 Konferensiya"}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Content section with full visibility and scrolling */}
+                              <div className="flex-1 p-8 flex flex-col bg-gradient-to-br from-white via-blue-50/30 to-indigo-50/40 overflow-hidden">
+                                <h3 className="text-2xl font-bold mb-4 text-gray-900 leading-tight group-hover:text-[#003D7F] transition-colors duration-300">
+                                  {latestContent[currentBookSlide]?.title || "Content"}
+                                </h3>
+                                <div className="text-gray-600 leading-relaxed text-base mb-6 flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                                  {latestContent[currentBookSlide]?.description || ""}
                                 </div>
 
-                                <div className="flex justify-center mt-4">
-                                  <Button
-                                    size="lg"
-                                    className="bg-gradient-to-r from-[#003D7F] via-[#0059B2] to-[#007ACC] hover:from-[#002B5A] hover:via-[#004494] hover:to-[#005A99] text-white border-0 shadow-lg hover:shadow-2xl transition-all duration-300 font-semibold px-10 py-4 rounded-full hover:scale-105 transform group"
-                                    onClick={() => {
-                                      const yangilik = apiData.yangiliklar[currentBookSlide]
-                                      const slugToUse =
-                                        getLangSpecificSlug(yangilik, lang) || yangilik?.id?.toString() || "1"
-                                      router.push(`/${lang}/yangiliklar/${slugToUse}`)
-                                    }}
-                                  >
-                                    <span className="flex items-center gap-3 text-lg">
-                                      {t.batafsilOqish}
-                                      <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
-                                    </span>
-                                  </Button>
-                                </div>
+                                <Button
+                                  size="lg"
+                                  className="w-full bg-gradient-to-r from-[#003D7F] via-[#0059B2] to-[#007ACC] hover:from-[#002B5A] hover:via-[#004494] hover:to-[#005A99] text-white border-0 shadow-lg hover:shadow-2xl transition-all duration-300 font-semibold px-10 py-4 rounded-full hover:scale-105 transform group"
+                                  onClick={() => {
+                                    router.push(latestContent[currentBookSlide]?.href || `/${lang}`)
+                                  }}
+                                >
+                                  <span className="flex items-center justify-center gap-3 text-lg">
+                                    {t.batafsilOqish}
+                                    <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
+                                  </span>
+                                </Button>
                               </div>
                             </CardContent>
                           </Card>
                         </div>
 
-                        {/* Right slide (next) */}
-                        <div className="absolute right-0 w-1/4 h-[520px] z-10 opacity-70 transform scale-95 transition-all duration-500">
-                          {apiData.yangiliklar.length > 1 && (
-                            <Card className="h-full overflow-hidden shadow-xl bg-white/95 backdrop-blur-sm border-0 rounded-3xl">
+                        {/* Right preview card */}
+                        <div className="w-1/4 opacity-70 transform scale-95 transition-all duration-500 hover:opacity-90 hover:scale-100">
+                          {latestContent.length > 1 && (
+                            <Card className="overflow-hidden shadow-xl bg-white/95 backdrop-blur-sm border-0 rounded-3xl h-[580px]">
                               <CardContent className="p-0 h-full flex flex-col">
-                                {apiData.yangiliklar[(currentBookSlide + 1) % apiData.yangiliklar.length]?.media && (
-                                  <div className="relative h-2/3 overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-                                    <img
-                                      src={`${API_BASE}${apiData.yangiliklar[(currentBookSlide + 1) % apiData.yangiliklar.length].media}`}
-                                      alt={
-                                        apiData.yangiliklar[(currentBookSlide + 1) % apiData.yangiliklar.length]
-                                          ?.title || "Yangilik"
-                                      }
-                                      className="w-full h-full object-contain"
-                                    />
-                                  </div>
-                                )}
-                                <div className="p-4 flex-1 flex flex-col justify-center">
-                                  <h3 className="text-base font-bold text-gray-800 line-clamp-2 text-center leading-tight">
-                                    {apiData.yangiliklar[(currentBookSlide + 1) % apiData.yangiliklar.length]?.title ||
-                                      "Yangilik"}
+                                <div className="relative h-48 overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
+                                  <img
+                                    src={
+                                      latestContent[(currentBookSlide + 1) % latestContent.length]?.image ||
+                                      "/placeholder.svg" ||
+                                      "/placeholder.svg"
+                                    }
+                                    alt="Preview"
+                                    className="w-full h-full object-cover"
+                                  />
+                                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+                                </div>
+                                <div className="p-5 flex-1 flex flex-col justify-center bg-gradient-to-br from-white to-blue-50/20">
+                                  <h3 className="text-base font-bold text-gray-800 text-center leading-tight mb-2">
+                                    {latestContent[(currentBookSlide + 1) % latestContent.length]?.title || "Content"}
                                   </h3>
+                                  <p className="text-xs text-gray-600 text-center">
+                                    {latestContent[(currentBookSlide + 1) % latestContent.length]?.type === "book" &&
+                                      "📚 Kitob"}
+                                    {latestContent[(currentBookSlide + 1) % latestContent.length]?.type === "journal" &&
+                                      "📰 Jurnal"}
+                                    {latestContent[(currentBookSlide + 1) % latestContent.length]?.type ===
+                                      "conference" && "🎯 Konferensiya"}
+                                  </p>
                                 </div>
                               </CardContent>
                             </Card>
@@ -1229,7 +1340,8 @@ export function HomeContent({ lang }: HomeContentProps) {
                     </div>
                   </div>
 
-                  {apiData.yangiliklar.length > 1 && (
+                  {/* Navigation controls with elegant styling */}
+                  {latestContent.length > 1 && (
                     <>
                       <button
                         onClick={prevBookSlide}
@@ -1244,8 +1356,9 @@ export function HomeContent({ lang }: HomeContentProps) {
                         <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7" />
                       </button>
 
+                      {/* Elegant pagination dots */}
                       <div className="absolute -bottom-4 sm:-bottom-6 left-1/2 -translate-x-1/2 flex space-x-2 sm:space-x-3 lg:space-x-4 z-30">
-                        {apiData.yangiliklar.map((_, index) => (
+                        {latestContent.map((_, index) => (
                           <button
                             key={index}
                             onClick={() => setCurrentBookSlide(index)}

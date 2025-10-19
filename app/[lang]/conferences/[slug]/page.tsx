@@ -6,13 +6,13 @@ import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { Loader } from "@/components/Loader"
 import { fetchConference, type Conference } from "@/lib/api"
+import { fetchWithAuth } from "@/lib/auth"
 import { Calendar, MapPin, Users, FileText, AlertCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import Image from "next/image"
 import { PDFViewer } from "@/components/pdf-viewer"
-import { fetchWithAuth } from "@/lib/auth"
 
 const API_BASE = "https://artculture.pythonanywhere.com"
 
@@ -29,6 +29,7 @@ const translations = {
     pdfDownload: "PDF formatida ko'rish",
     openPdf: "PDF ni ochish",
     imageNotLoaded: "Rasm yuklanmadi",
+    pdfError: "PDF yuklanishida xatolik yuz berdi",
   },
   ru: {
     loading: "Загрузка информации о конференции...",
@@ -42,6 +43,7 @@ const translations = {
     pdfDownload: "Просмотр в формате PDF",
     openPdf: "Открыть PDF",
     imageNotLoaded: "Изображение не загружено",
+    pdfError: "Ошибка при загрузке PDF",
   },
   en: {
     loading: "Loading conference information...",
@@ -55,6 +57,7 @@ const translations = {
     pdfDownload: "View in PDF format",
     openPdf: "Open PDF",
     imageNotLoaded: "Image not loaded",
+    pdfError: "Error loading PDF",
   },
 }
 
@@ -116,78 +119,117 @@ export default function ConferenceDetailPage() {
   }
 
   const handlePdfDownload = async () => {
-    const token = localStorage.getItem("access_token")
-
-    if (!token) {
-      console.log("[v0] User not logged in, redirecting to login")
-      const returnUrl = encodeURIComponent(window.location.pathname + window.location.search)
-      router.push(`/${lang}/login?returnUrl=${returnUrl}`)
-      return
-    }
-
     console.log("[v0] ========== CONFERENCE PDF OPEN DEBUG ==========")
     console.log("[v0] Conference data:", conference)
     console.log("[v0] URL slug parameter:", slug)
     console.log("[v0] Conference slug from API:", conference?.slug)
     console.log("[v0] Conference ID from API:", conference?.id)
     console.log("[v0] Conference pdf from API:", conference?.pdf)
-    console.log("[v0] Language:", lang)
+    console.log("[v0] Current language:", lang)
+
+    // Check if user is logged in
+    const token = localStorage.getItem("access_token")
+    console.log("[v0] Access token exists:", !!token)
+
+    if (!token) {
+      console.log("[v0] No token found, redirecting to login")
+      const returnUrl = encodeURIComponent(window.location.pathname + window.location.search)
+      router.push(`/${lang}/login?returnUrl=${returnUrl}`)
+      return
+    }
+
+    if (!conference) {
+      console.error("[v0] No conference data available")
+      return
+    }
 
     try {
-      const conferenceSlug = conference?.slug || slug
-      console.log("[v0] Using slug for PDF fetch:", conferenceSlug)
-      const pdfUrl = `${API_BASE}/${lang}/conference/${conferenceSlug}/`
-      console.log("[v0] Fetching PDF from:", pdfUrl)
+      // Try direct PDF path first if available
+      if (conference.pdf) {
+        console.log("[v0] Attempting to fetch PDF directly from pdf path")
+        const directPdfUrl = `${API_BASE}${conference.pdf}`
+        console.log("[v0] Direct PDF URL:", directPdfUrl)
 
-      const response = await fetchWithAuth(pdfUrl, {
+        try {
+          const pdfResponse = await fetchWithAuth(directPdfUrl, {
+            method: "GET",
+            headers: {
+              Accept: "*/*",
+            },
+          })
+
+          console.log("[v0] Direct PDF response status:", pdfResponse.status)
+          console.log("[v0] Direct PDF response ok:", pdfResponse.ok)
+
+          if (pdfResponse.ok) {
+            const pdfBlob = await pdfResponse.blob()
+            console.log("[v0] PDF blob size:", pdfBlob.size)
+            console.log("[v0] PDF blob type:", pdfBlob.type)
+
+            if (pdfBlob.size > 0) {
+              const blobUrl = URL.createObjectURL(pdfBlob)
+              console.log("[v0] PDF blob URL created:", blobUrl)
+              setPdfBlobUrl(blobUrl)
+              setShowPDFViewer(true)
+              console.log("[v0] ========== CONFERENCE PDF OPEN SUCCESS (DIRECT) ==========")
+              return
+            }
+          }
+        } catch (directError) {
+          console.log("[v0] Direct PDF fetch failed, trying slug-based API:", directError)
+        }
+      }
+
+      // Try slug-based API
+      console.log("[v0] Attempting slug-based PDF API")
+      const conferenceSlug = slug // Use URL slug directly
+      console.log("[v0] Using URL slug for PDF:", conferenceSlug)
+
+      const pdfUrl = `${API_BASE}/${lang}/conference/${conferenceSlug}/`
+      console.log("[v0] PDF URL:", pdfUrl)
+
+      const pdfResponse = await fetchWithAuth(pdfUrl, {
         method: "GET",
         headers: {
           Accept: "*/*",
         },
       })
 
-      console.log("[v0] Response status:", response.status)
-      console.log("[v0] Response ok:", response.ok)
+      console.log("[v0] PDF response status:", pdfResponse.status)
+      console.log("[v0] PDF response ok:", pdfResponse.ok)
 
-      if (response.status === 403) {
+      if (pdfResponse.status === 403) {
         console.log("[v0] 403 Forbidden - User needs subscription")
         const returnUrl = encodeURIComponent(window.location.pathname + window.location.search)
-        router.push(`/${lang}/buy/?subscription_type_id=1&returnUrl=${returnUrl}`)
+        router.push(`/${lang}/buy/?subscription_type_id=3&returnUrl=${returnUrl}`)
         return
       }
 
-      if (!response.ok) {
-        const contentType = response.headers.get("content-type")
-        let errorMessage = `HTTP error! status: ${response.status}`
+      if (!pdfResponse.ok) {
+        const contentType = pdfResponse.headers.get("content-type")
+        let errorMessage = `HTTP error! status: ${pdfResponse.status}`
 
         if (contentType?.includes("application/json")) {
           try {
-            const errorData = await response.json()
+            const errorData = await pdfResponse.json()
             console.error("[v0] API error response (JSON):", errorData)
             errorMessage = errorData.detail || errorData.message || errorMessage
           } catch (e) {
             console.error("[v0] Could not parse error response as JSON")
-          }
-        } else {
-          const errorText = await response.text()
-          console.error("[v0] API error response (text):", errorText)
-          if (errorText) {
-            errorMessage = errorText
           }
         }
 
         throw new Error(errorMessage)
       }
 
-      const blob = await response.blob()
-      console.log("[v0] PDF blob size:", blob.size)
-      console.log("[v0] PDF blob type:", blob.type)
+      const pdfBlob = await pdfResponse.blob()
+      console.log("[v0] PDF blob size:", pdfBlob.size)
 
-      if (blob.size === 0) {
+      if (pdfBlob.size === 0) {
         throw new Error("PDF fayli bo'sh")
       }
 
-      const blobUrl = URL.createObjectURL(blob)
+      const blobUrl = URL.createObjectURL(pdfBlob)
       console.log("[v0] PDF blob URL created:", blobUrl)
       setPdfBlobUrl(blobUrl)
       setShowPDFViewer(true)
@@ -197,9 +239,9 @@ export default function ConferenceDetailPage() {
       console.error("[v0] Error:", error)
       if (error instanceof Error) {
         console.error("[v0] Error message:", error.message)
-        alert(`PDF yuklanishida xatolik yuz berdi: ${error.message}`)
+        setError(`${t.pdfError}: ${error.message}`)
       } else {
-        alert("PDF yuklanishida xatolik yuz berdi")
+        setError(t.pdfError)
       }
       console.error("[v0] ========== CONFERENCE PDF OPEN ERROR END ==========")
     }

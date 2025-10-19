@@ -112,35 +112,67 @@ export default function ConferencesPage() {
   const [error, setError] = useState<string | null>(null)
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({})
   const [imageLoaded, setImageLoaded] = useState<Record<string, boolean>>({})
+  const [upcomingPage, setUpcomingPage] = useState(1)
+  const [pastPage, setPastPage] = useState(1)
+  const [upcomingTotal, setUpcomingTotal] = useState(0)
+  const [pastTotal, setPastTotal] = useState(0)
+  const [upcomingConferences, setUpcomingConferences] = useState<Conference[]>([])
+  const [pastConferences, setPastConferences] = useState<Conference[]>([])
+  const ITEMS_PER_PAGE = 8
 
   const loadConferences = async () => {
     try {
       setIsLoading(true)
       setError(null)
-      const data = await fetchConferences(lang, 1)
-      console.log("[v0] Conferences API response:", data)
-      console.log("[v0] Number of conferences:", data.results?.length || 0)
 
-      if (data.results && data.results.length > 0) {
-        data.results.forEach((conf: Conference, index: number) => {
-          const imageUrl = conf.image ? `${API_BASE}${conf.image}` : null
-          console.log(`[v0] Conference ${index + 1}: ${conf.name}`)
-          console.log(`[v0]   - Image path from API: ${conf.image}`)
-          console.log(`[v0]   - Full image URL: ${imageUrl}`)
-          console.log(`[v0]   - Slug: ${getSlugForLang(conf, lang)}`)
-        })
+      let allConferences: Conference[] = []
+      let currentPage = 1
+      let hasMore = true
+
+      while (hasMore) {
+        const data = await fetchConferences(lang, currentPage)
+        console.log(`[v0] Fetched page ${currentPage}:`, data)
+
+        if (data.results && data.results.length > 0) {
+          allConferences = [...allConferences, ...data.results]
+        }
+
+        // Check if there are more pages
+        hasMore = data.next !== null
+        currentPage++
       }
 
-      setConferences(data.results || [])
+      console.log("[v0] Total conferences fetched:", allConferences.length)
+
+      if (allConferences.length > 0) {
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+
+        const upcoming = allConferences.filter((conf) => {
+          const confDate = new Date(conf.date)
+          confDate.setHours(0, 0, 0, 0)
+          return confDate >= today
+        })
+
+        const past = allConferences
+          .filter((conf) => {
+            const confDate = new Date(conf.date)
+            confDate.setHours(0, 0, 0, 0)
+            return confDate < today
+          })
+          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+
+        console.log("[v0] Upcoming conferences:", upcoming.length)
+        console.log("[v0] Past conferences:", past.length)
+
+        setUpcomingConferences(upcoming)
+        setPastConferences(past)
+        setUpcomingTotal(upcoming.length)
+        setPastTotal(past.length)
+      }
     } catch (err) {
       console.error("[v0] Error loading conferences:", err)
-      if (err instanceof TypeError && err.message.includes("fetch")) {
-        setError(
-          "Django server bilan bog'lanish xatoligi. Iltimos, Django server ishlab turganligini tekshiring (https://artculture.pythonanywhere.com) va CORS sozlamalari to'g'ri ekanligini tasdiqlang.",
-        )
-      } else {
-        setError(err instanceof Error ? err.message : "Konferensiyalarni yuklashda xatolik yuz berdi")
-      }
+      setError(err instanceof Error ? err.message : "Konferensiyalarni yuklashda xatolik yuz berdi")
     } finally {
       setIsLoading(false)
     }
@@ -165,10 +197,6 @@ export default function ConferencesPage() {
     console.log(`[v0] Image URL: ${conference.image ? `${API_BASE}${conference.image}` : "none"}`)
     setImageLoaded((prev) => ({ ...prev, [slug]: true }))
   }
-
-  const currentDate = new Date()
-  const upcomingConferences = conferences.filter((conf) => new Date(conf.date) >= currentDate)
-  const pastConferences = conferences.filter((conf) => new Date(conf.date) < currentDate)
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -201,7 +229,6 @@ export default function ConferencesPage() {
       <section className="py-12 sm:py-16 px-4">
         <div className="container mx-auto">
           <div className="grid grid-cols-12 gap-8">
-            {/* Left Content - Conference Tabs */}
             <div className="col-span-12 lg:col-span-8">
               <Tabs defaultValue="upcoming" className="w-full">
                 <TabsList className="grid w-full grid-cols-2 max-w-md mb-8">
@@ -217,92 +244,123 @@ export default function ConferencesPage() {
                       <p className="text-muted-foreground">{t.noUpcomingDesc}</p>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      {upcomingConferences.map((conference, index) => {
-                        const conferenceSlug = getSlugForLang(conference, lang)
-                        const imageUrl = conference.image
-                          ? `${API_BASE}${conference.image}`
-                          : "/business-conference.png"
-                        const hasImageError = imageErrors[conferenceSlug]
-                        const isImageLoaded = imageLoaded[conferenceSlug]
+                    <>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {upcomingConferences
+                          .slice((upcomingPage - 1) * ITEMS_PER_PAGE, upcomingPage * ITEMS_PER_PAGE)
+                          .map((conference, index) => {
+                            const conferenceSlug = getSlugForLang(conference, lang)
+                            const imageUrl = conference.image
+                              ? `${API_BASE}${conference.image}`
+                              : "/business-conference.png"
+                            const hasImageError = imageErrors[conferenceSlug]
+                            const isImageLoaded = imageLoaded[conferenceSlug]
 
-                        return (
-                          <Card
-                            key={conferenceSlug}
-                            className="group hover:shadow-xl transition-all duration-500 overflow-hidden border-0 shadow-md hover:scale-[1.02] bg-gradient-to-b from-background to-primary/2"
-                          >
-                            <div className="aspect-[16/9] relative overflow-hidden bg-muted">
-                              {!hasImageError && conference.image ? (
-                                <>
-                                  {!isImageLoaded && (
-                                    <div className="absolute inset-0 flex items-center justify-center bg-muted animate-pulse">
-                                      <Calendar className="h-12 w-12 text-muted-foreground/50" />
+                            return (
+                              <Card
+                                key={conferenceSlug}
+                                className="group hover:shadow-xl transition-all duration-500 overflow-hidden border-0 shadow-md hover:scale-[1.02] bg-gradient-to-b from-background to-primary/2"
+                              >
+                                <div className="aspect-[16/9] relative overflow-hidden bg-muted">
+                                  {!hasImageError && conference.image ? (
+                                    <>
+                                      {!isImageLoaded && (
+                                        <div className="absolute inset-0 flex items-center justify-center bg-muted animate-pulse">
+                                          <Calendar className="h-12 w-12 text-muted-foreground/50" />
+                                        </div>
+                                      )}
+                                      <Image
+                                        src={imageUrl || "/placeholder.svg"}
+                                        alt={conference.name}
+                                        fill
+                                        unoptimized
+                                        className="object-cover group-hover:scale-110 transition-transform duration-700"
+                                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                        onError={() => handleImageError(conference)}
+                                        onLoad={() => handleImageLoad(conference)}
+                                        priority={index < 4}
+                                      />
+                                    </>
+                                  ) : (
+                                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
+                                      <Calendar className="h-16 w-16 text-primary/40" />
                                     </div>
                                   )}
-                                  <Image
-                                    src={imageUrl || "/placeholder.svg"}
-                                    alt={conference.name}
-                                    fill
-                                    unoptimized
-                                    className="object-cover group-hover:scale-110 transition-transform duration-700"
-                                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                    onError={() => handleImageError(conference)}
-                                    onLoad={() => handleImageLoad(conference)}
-                                    priority={index < 4}
-                                  />
-                                </>
-                              ) : (
-                                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
-                                  <Calendar className="h-16 w-16 text-primary/40" />
-                                </div>
-                              )}
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-                              <div className="absolute top-4 left-4 right-4 flex justify-between">
-                                <Badge className="bg-primary/90 text-primary-foreground border-0 shadow-lg">
-                                  {t.international}
-                                </Badge>
-                                <Badge variant="outline" className="border-0 shadow-lg bg-green-500/90 text-white">
-                                  {t.registrationOpen}
-                                </Badge>
-                              </div>
-                            </div>
-
-                            <CardHeader className="pb-3 space-y-2">
-                              <CardTitle className="text-lg sm:text-xl font-bold text-foreground group-hover:text-primary transition-colors line-clamp-2 leading-tight">
-                                {conference.name}
-                              </CardTitle>
-                              <CardDescription className="text-muted-foreground line-clamp-2 text-sm leading-relaxed">
-                                <div dangerouslySetInnerHTML={{ __html: conference.description }} />
-                              </CardDescription>
-                            </CardHeader>
-
-                            <CardContent className="space-y-4">
-                              <div className="space-y-2 text-sm">
-                                <div className="flex items-center space-x-2 text-muted-foreground">
-                                  <Calendar className="h-4 w-4 text-primary" />
-                                  <span className="font-medium">{formatDate(conference.date)}</span>
-                                </div>
-                                <div className="flex items-center space-x-2 text-muted-foreground">
-                                  <MapPin className="h-4 w-4 text-primary" />
-                                  <span className="line-clamp-1">{conference.manzil}</span>
-                                </div>
-                                {conference.tashkilotchi_hamkorlar && (
-                                  <div className="flex items-center space-x-2 text-muted-foreground">
-                                    <Users className="h-4 w-4 text-primary" />
-                                    <span className="line-clamp-1">{conference.tashkilotchi_hamkorlar}</span>
+                                  <div className="absolute top-4 left-4 right-4 flex justify-between">
+                                    <Badge className="bg-primary/90 text-primary-foreground border-0 shadow-lg">
+                                      {t.international}
+                                    </Badge>
+                                    <Badge variant="outline" className="border-0 shadow-lg bg-green-500/90 text-white">
+                                      {t.registrationOpen}
+                                    </Badge>
                                   </div>
-                                )}
-                              </div>
+                                </div>
 
-                              <Button asChild className="w-full hover:shadow-lg transition-all duration-300">
-                                <Link href={`/${lang}/conferences/${conferenceSlug}`}>{t.detailsButton}</Link>
-                              </Button>
-                            </CardContent>
-                          </Card>
-                        )
-                      })}
-                    </div>
+                                <CardHeader className="pb-3 space-y-2">
+                                  <CardTitle className="text-lg sm:text-xl font-bold text-foreground group-hover:text-primary transition-colors line-clamp-2 leading-tight">
+                                    {conference.name}
+                                  </CardTitle>
+                                  <CardDescription className="text-muted-foreground line-clamp-2 text-sm leading-relaxed">
+                                    <div dangerouslySetInnerHTML={{ __html: conference.description }} />
+                                  </CardDescription>
+                                </CardHeader>
+
+                                <CardContent className="space-y-4">
+                                  <div className="space-y-2 text-sm">
+                                    <div className="flex items-center space-x-2 text-muted-foreground">
+                                      <Calendar className="h-4 w-4 text-primary" />
+                                      <span className="font-medium">{formatDate(conference.date)}</span>
+                                    </div>
+                                    <div className="flex items-center space-x-2 text-muted-foreground">
+                                      <MapPin className="h-4 w-4 text-primary" />
+                                      <span className="line-clamp-1">{conference.manzil}</span>
+                                    </div>
+                                    {conference.tashkilotchi_hamkorlar && (
+                                      <div className="flex items-center space-x-2 text-muted-foreground">
+                                        <Users className="h-4 w-4 text-primary" />
+                                        <span className="line-clamp-1">{conference.tashkilotchi_hamkorlar}</span>
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  <Button asChild className="w-full hover:shadow-lg transition-all duration-300">
+                                    <Link href={`/${lang}/conferences/${conferenceSlug}`}>{t.detailsButton}</Link>
+                                  </Button>
+                                </CardContent>
+                              </Card>
+                            )
+                          })}
+                      </div>
+
+                      {upcomingConferences.length > ITEMS_PER_PAGE && (
+                        <div className="flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-4 pt-8 sm:pt-10 border-t border-border mt-8">
+                          <Button
+                            variant="outline"
+                            disabled={upcomingPage === 1}
+                            onClick={() => setUpcomingPage((prev) => Math.max(1, prev - 1))}
+                            className="hover:bg-primary hover:text-primary-foreground w-full sm:w-auto text-sm sm:text-base px-6 py-2 transition-all"
+                          >
+                            ← {lang === "uz" ? "Oldingi" : lang === "ru" ? "Предыдущая" : "Previous"}
+                          </Button>
+                          <div className="flex items-center gap-2 px-4 sm:px-6 py-2 bg-primary/10 rounded-lg border border-primary/20">
+                            <span className="text-sm sm:text-base font-semibold text-primary">
+                              {lang === "uz" ? "Sahifa" : lang === "ru" ? "Страница" : "Page"} {upcomingPage} /{" "}
+                              {Math.ceil(upcomingConferences.length / ITEMS_PER_PAGE)}
+                            </span>
+                          </div>
+                          <Button
+                            variant="outline"
+                            disabled={upcomingPage * ITEMS_PER_PAGE >= upcomingConferences.length}
+                            onClick={() => setUpcomingPage((prev) => prev + 1)}
+                            className="hover:bg-primary hover:text-primary-foreground w-full sm:w-auto text-sm sm:text-base px-6 py-2 transition-all"
+                          >
+                            {lang === "uz" ? "Keyingi" : lang === "ru" ? "Следующая" : "Next"} →
+                          </Button>
+                        </div>
+                      )}
+                    </>
                   )}
                 </TabsContent>
 
@@ -314,97 +372,130 @@ export default function ConferencesPage() {
                       <p className="text-muted-foreground">{t.noPastDesc}</p>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      {pastConferences.map((conference, index) => {
-                        const conferenceSlug = getSlugForLang(conference, lang)
-                        const imageUrl = conference.image ? `${API_BASE}${conference.image}` : "/past-conference.jpg"
-                        const hasImageError = imageErrors[conferenceSlug]
-                        const isImageLoaded = imageLoaded[conferenceSlug]
+                    <>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {pastConferences
+                          .slice((pastPage - 1) * ITEMS_PER_PAGE, pastPage * ITEMS_PER_PAGE)
+                          .map((conference, index) => {
+                            const conferenceSlug = getSlugForLang(conference, lang)
+                            const imageUrl = conference.image
+                              ? `${API_BASE}${conference.image}`
+                              : "/past-conference.jpg"
+                            const hasImageError = imageErrors[conferenceSlug]
+                            const isImageLoaded = imageLoaded[conferenceSlug]
 
-                        return (
-                          <Card
-                            key={conferenceSlug}
-                            className="group hover:shadow-xl transition-all duration-500 overflow-hidden border-0 shadow-md hover:scale-[1.02] bg-gradient-to-b from-background to-muted/20"
-                          >
-                            <div className="aspect-[16/9] relative overflow-hidden bg-muted">
-                              {!hasImageError && conference.image ? (
-                                <>
-                                  {!isImageLoaded && (
-                                    <div className="absolute inset-0 flex items-center justify-center bg-muted animate-pulse">
-                                      <Calendar className="h-12 w-12 text-muted-foreground/50" />
+                            return (
+                              <Card
+                                key={conferenceSlug}
+                                className="group hover:shadow-xl transition-all duration-500 overflow-hidden border-0 shadow-md hover:scale-[1.02] bg-gradient-to-b from-background to-muted/20"
+                              >
+                                <div className="aspect-[16/9] relative overflow-hidden bg-muted">
+                                  {!hasImageError && conference.image ? (
+                                    <>
+                                      {!isImageLoaded && (
+                                        <div className="absolute inset-0 flex items-center justify-center bg-muted animate-pulse">
+                                          <Calendar className="h-12 w-12 text-muted-foreground/50" />
+                                        </div>
+                                      )}
+                                      <Image
+                                        src={imageUrl || "/placeholder.svg"}
+                                        alt={conference.name}
+                                        fill
+                                        unoptimized
+                                        className="object-cover group-hover:scale-110 transition-transform duration-700 grayscale group-hover:grayscale-0"
+                                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                        onError={() => handleImageError(conference)}
+                                        onLoad={() => handleImageLoad(conference)}
+                                        priority={index < 4}
+                                      />
+                                    </>
+                                  ) : (
+                                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-muted/50 to-muted/20">
+                                      <Calendar className="h-16 w-16 text-muted-foreground/40" />
                                     </div>
                                   )}
-                                  <Image
-                                    src={imageUrl || "/placeholder.svg"}
-                                    alt={conference.name}
-                                    fill
-                                    unoptimized
-                                    className="object-cover group-hover:scale-110 transition-transform duration-700 grayscale group-hover:grayscale-0"
-                                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                    onError={() => handleImageError(conference)}
-                                    onLoad={() => handleImageLoad(conference)}
-                                    priority={index < 4}
-                                  />
-                                </>
-                              ) : (
-                                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-muted/50 to-muted/20">
-                                  <Calendar className="h-16 w-16 text-muted-foreground/40" />
-                                </div>
-                              )}
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-                              <div className="absolute top-4 left-4 right-4 flex justify-between">
-                                <Badge className="bg-muted/90 text-muted-foreground border-0 shadow-lg">
-                                  {t.international}
-                                </Badge>
-                                <Badge variant="outline" className="bg-gray-500/90 text-white border-0 shadow-lg">
-                                  {t.completed}
-                                </Badge>
-                              </div>
-                            </div>
-
-                            <CardHeader className="pb-3 space-y-2">
-                              <CardTitle className="text-lg sm:text-xl font-bold text-foreground group-hover:text-primary transition-colors line-clamp-2 leading-tight">
-                                {conference.name}
-                              </CardTitle>
-                              <CardDescription className="text-muted-foreground line-clamp-2 text-sm leading-relaxed">
-                                <div dangerouslySetInnerHTML={{ __html: conference.description }} />
-                              </CardDescription>
-                            </CardHeader>
-
-                            <CardContent className="space-y-4">
-                              <div className="space-y-2 text-sm">
-                                <div className="flex items-center space-x-2 text-muted-foreground">
-                                  <Calendar className="h-4 w-4 text-primary" />
-                                  <span className="font-medium">{formatDate(conference.date)}</span>
-                                </div>
-                                <div className="flex items-center space-x-2 text-muted-foreground">
-                                  <MapPin className="h-4 w-4 text-primary" />
-                                  <span className="line-clamp-1">{conference.manzil}</span>
-                                </div>
-                                {conference.tashkilotchi_hamkorlar && (
-                                  <div className="flex items-center space-x-2 text-muted-foreground">
-                                    <Users className="h-4 w-4 text-primary" />
-                                    <span className="line-clamp-1">{conference.tashkilotchi_hamkorlar}</span>
+                                  <div className="absolute top-4 left-4 right-4 flex justify-between">
+                                    <Badge className="bg-muted/90 text-muted-foreground border-0 shadow-lg">
+                                      {t.international}
+                                    </Badge>
+                                    <Badge variant="outline" className="bg-gray-500/90 text-white border-0 shadow-lg">
+                                      {t.completed}
+                                    </Badge>
                                   </div>
-                                )}
-                              </div>
+                                </div>
 
-                              <div className="flex space-x-2">
-                                <Button asChild className="flex-1 hover:shadow-lg transition-all duration-300">
-                                  <Link href={`/${lang}/conferences/${conferenceSlug}`}>{t.viewButton}</Link>
-                                </Button>
-                                {conference.pdf && (
-                                  <Button variant="outline" className="bg-transparent">
-                                    {t.materialsButton}
-                                  </Button>
-                                )}
-                              </div>
-                            </CardContent>
-                          </Card>
-                        )
-                      })}
-                    </div>
+                                <CardHeader className="pb-3 space-y-2">
+                                  <CardTitle className="text-lg sm:text-xl font-bold text-foreground group-hover:text-primary transition-colors line-clamp-2 leading-tight">
+                                    {conference.name}
+                                  </CardTitle>
+                                  <CardDescription className="text-muted-foreground line-clamp-2 text-sm leading-relaxed">
+                                    <div dangerouslySetInnerHTML={{ __html: conference.description }} />
+                                  </CardDescription>
+                                </CardHeader>
+
+                                <CardContent className="space-y-4">
+                                  <div className="space-y-2 text-sm">
+                                    <div className="flex items-center space-x-2 text-muted-foreground">
+                                      <Calendar className="h-4 w-4 text-primary" />
+                                      <span className="font-medium">{formatDate(conference.date)}</span>
+                                    </div>
+                                    <div className="flex items-center space-x-2 text-muted-foreground">
+                                      <MapPin className="h-4 w-4 text-primary" />
+                                      <span className="line-clamp-1">{conference.manzil}</span>
+                                    </div>
+                                    {conference.tashkilotchi_hamkorlar && (
+                                      <div className="flex items-center space-x-2 text-muted-foreground">
+                                        <Users className="h-4 w-4 text-primary" />
+                                        <span className="line-clamp-1">{conference.tashkilotchi_hamkorlar}</span>
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  <div className="flex space-x-2">
+                                    <Button asChild className="flex-1 hover:shadow-lg transition-all duration-300">
+                                      <Link href={`/${lang}/conferences/${conferenceSlug}`}>{t.viewButton}</Link>
+                                    </Button>
+                                    {conference.pdf && (
+                                      <Button variant="outline" className="bg-transparent">
+                                        {t.materialsButton}
+                                      </Button>
+                                    )}
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            )
+                          })}
+                      </div>
+
+                      {pastConferences.length > ITEMS_PER_PAGE && (
+                        <div className="flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-4 pt-8 sm:pt-10 border-t border-border mt-8">
+                          <Button
+                            variant="outline"
+                            disabled={pastPage === 1}
+                            onClick={() => setPastPage((prev) => Math.max(1, prev - 1))}
+                            className="hover:bg-primary hover:text-primary-foreground w-full sm:w-auto text-sm sm:text-base px-6 py-2 transition-all"
+                          >
+                            ← {lang === "uz" ? "Oldingi" : lang === "ru" ? "Предыдущая" : "Previous"}
+                          </Button>
+                          <div className="flex items-center gap-2 px-4 sm:px-6 py-2 bg-primary/10 rounded-lg border border-primary/20">
+                            <span className="text-sm sm:text-base font-semibold text-primary">
+                              {lang === "uz" ? "Sahifa" : lang === "ru" ? "Страница" : "Page"} {pastPage} /{" "}
+                              {Math.ceil(pastConferences.length / ITEMS_PER_PAGE)}
+                            </span>
+                          </div>
+                          <Button
+                            variant="outline"
+                            disabled={pastPage * ITEMS_PER_PAGE >= pastConferences.length}
+                            onClick={() => setPastPage((prev) => prev + 1)}
+                            className="hover:bg-primary hover:text-primary-foreground w-full sm:w-auto text-sm sm:text-base px-6 py-2 transition-all"
+                          >
+                            {lang === "uz" ? "Keyingi" : lang === "ru" ? "Следующая" : "Next"} →
+                          </Button>
+                        </div>
+                      )}
+                    </>
                   )}
                 </TabsContent>
               </Tabs>

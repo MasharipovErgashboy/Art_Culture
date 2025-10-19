@@ -296,48 +296,40 @@ export default function BookCategoryPage() {
 
           {category.latest_books && category.latest_books.length > 0 ? (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-8">
                 {currentBooks.map((book) => (
                   <BookCard key={book.slug_uz} book={book} lang={lang} />
                 ))}
               </div>
 
-              {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 mt-12">
+              {category.latest_books.length > booksPerPage && (
+                <div className="flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-4 pt-8 mt-8 border-t-2 border-primary/20">
                   <Button
                     variant="outline"
-                    size="sm"
+                    size="lg"
                     onClick={() => handlePageChange(currentPage - 1)}
                     disabled={currentPage === 1}
-                    className="gap-1"
+                    className="gap-2 hover:bg-primary hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed px-6 py-3"
                   >
-                    <ChevronLeft className="h-4 w-4" />
-                    {t.previous}
+                    <ChevronLeft className="h-5 w-5" />
+                    <span className="font-semibold">{t.previous}</span>
                   </Button>
 
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
-                      <Button
-                        key={pageNum}
-                        variant={currentPage === pageNum ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => handlePageChange(pageNum)}
-                        className="min-w-[40px]"
-                      >
-                        {pageNum}
-                      </Button>
-                    ))}
+                  <div className="flex items-center gap-2 px-6 py-3 bg-primary/10 rounded-lg">
+                    <span className="text-base font-semibold text-primary">
+                      {t.page} {currentPage} {t.of} {totalPages}
+                    </span>
                   </div>
 
                   <Button
                     variant="outline"
-                    size="sm"
+                    size="lg"
                     onClick={() => handlePageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}
-                    className="gap-1"
+                    className="gap-2 hover:bg-primary hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed px-6 py-3"
                   >
-                    {t.next}
-                    <ChevronRight className="h-4 w-4" />
+                    <span className="font-semibold">{t.next}</span>
+                    <ChevronRight className="h-5 w-5" />
                   </Button>
                 </div>
               )}

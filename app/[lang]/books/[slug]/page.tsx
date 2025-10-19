@@ -121,6 +121,7 @@ export default function BookDetailPage() {
     console.log("[v0] Book slug_ru from API:", book?.slug_ru)
     console.log("[v0] Book ID from API:", book?.id)
     console.log("[v0] Book pdf_file from API:", book?.pdf_file)
+    console.log("[v0] Current language:", lang)
 
     // Check if user is logged in
     const token = localStorage.getItem("access_token")
@@ -133,11 +134,51 @@ export default function BookDetailPage() {
       return
     }
 
+    if (!book) {
+      console.error("[v0] No book data available")
+      return
+    }
+
     try {
-      // The URL slug is what works for fetching book details, so it should work for PDF too
-      const bookSlug = slug
-      console.log("[v0] Using URL slug for PDF fetch:", bookSlug)
-      console.log("[v0] Fetching PDF for book:", bookSlug)
+      if (book.pdf_file) {
+        console.log("[v0] Attempting to fetch PDF directly from pdf_file path")
+        const directPdfUrl = `https://artculture.pythonanywhere.com${book.pdf_file}`
+        console.log("[v0] Direct PDF URL:", directPdfUrl)
+
+        try {
+          const pdfResponse = await fetchWithAuth(directPdfUrl, {
+            method: "GET",
+            headers: {
+              Accept: "*/*",
+            },
+          })
+
+          console.log("[v0] Direct PDF response status:", pdfResponse.status)
+          console.log("[v0] Direct PDF response ok:", pdfResponse.ok)
+
+          if (pdfResponse.ok) {
+            const pdfBlob = await pdfResponse.blob()
+            console.log("[v0] PDF blob size:", pdfBlob.size)
+            console.log("[v0] PDF blob type:", pdfBlob.type)
+
+            if (pdfBlob.size > 0) {
+              const blobUrl = URL.createObjectURL(pdfBlob)
+              console.log("[v0] PDF blob URL created:", blobUrl)
+              setPdfBlobUrl(blobUrl)
+              setShowPDFViewer(true)
+              console.log("[v0] ========== BOOK PDF OPEN SUCCESS (DIRECT) ==========")
+              return
+            }
+          }
+        } catch (directError) {
+          console.log("[v0] Direct PDF fetch failed, trying slug-based API:", directError)
+        }
+      }
+
+      console.log("[v0] Attempting slug-based PDF API")
+      const bookSlug = slug // Use URL slug directly
+      console.log("[v0] Using URL slug for PDF:", bookSlug)
+
       const pdfUrl = `https://artculture.pythonanywhere.com/${lang}/book/${bookSlug}/`
       console.log("[v0] PDF URL:", pdfUrl)
 
@@ -150,7 +191,6 @@ export default function BookDetailPage() {
 
       console.log("[v0] PDF response status:", pdfResponse.status)
       console.log("[v0] PDF response ok:", pdfResponse.ok)
-      console.log("[v0] PDF response content-type:", pdfResponse.headers.get("content-type"))
 
       if (pdfResponse.status === 403) {
         console.log("[v0] 403 Forbidden - User needs subscription")
@@ -171,27 +211,16 @@ export default function BookDetailPage() {
           } catch (e) {
             console.error("[v0] Could not parse error response as JSON")
           }
-        } else {
-          const errorText = await pdfResponse.text()
-          console.error("[v0] API error response (text):", errorText)
-          if (errorText) {
-            errorMessage = errorText
-          }
         }
 
-        console.error("[v0] PDF fetch failed:", errorMessage)
-        alert(`PDF yuklanishida xatolik yuz berdi: ${errorMessage}`)
-        return
+        throw new Error(errorMessage)
       }
 
       const pdfBlob = await pdfResponse.blob()
       console.log("[v0] PDF blob size:", pdfBlob.size)
-      console.log("[v0] PDF blob type:", pdfBlob.type)
 
       if (pdfBlob.size === 0) {
-        console.error("[v0] PDF blob is empty")
-        alert("PDF yuklanishida xatolik yuz berdi: Fayl bo'sh")
-        return
+        throw new Error("PDF fayli bo'sh")
       }
 
       const blobUrl = URL.createObjectURL(pdfBlob)
@@ -204,10 +233,6 @@ export default function BookDetailPage() {
       console.error("[v0] Error:", error)
       if (error instanceof Error) {
         console.error("[v0] Error message:", error.message)
-        console.error("[v0] Error stack:", error.stack)
-        alert(`PDF yuklanishida xatolik yuz berdi: ${error.message}`)
-      } else {
-        alert("PDF yuklanishida xatolik yuz berdi")
       }
       console.error("[v0] ========== BOOK PDF OPEN ERROR END ==========")
     }

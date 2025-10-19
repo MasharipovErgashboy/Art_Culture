@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { fetchJournalDetail, fetchJournalIssues, type Journal, type JournalIssue } from "@/lib/api"
 import { Calendar, User, BookOpen, ArrowLeft, AlertCircle, Users, FileText } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -258,7 +259,7 @@ export default function JournalDetailPage() {
                         <div className="flex items-center space-x-2">
                           <BookOpen className="h-4 w-4 text-muted-foreground" />
                           <span>
-                            <strong>{t.issuesCount}:</strong> {journal.issn}
+                            <strong>ISSN:</strong> {journal.issn}
                           </span>
                         </div>
                       )}
@@ -294,67 +295,81 @@ export default function JournalDetailPage() {
                 </div>
               </div>
 
-              {journal.about && journal.about.trim().length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <BookOpen className="h-5 w-5" />
-                      {t.aboutJournal}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div
-                      className="text-muted-foreground leading-relaxed prose prose-lg max-w-none"
-                      dangerouslySetInnerHTML={{ __html: journal.about }}
-                    />
-                  </CardContent>
-                </Card>
-              )}
-
-              {journal.editorial_team && journal.editorial_team.trim().length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Users className="h-5 w-5" />
-                      {t.editorialTeam}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div
-                      className="text-muted-foreground leading-relaxed prose prose-lg max-w-none"
-                      dangerouslySetInnerHTML={{ __html: journal.editorial_team }}
-                    />
-                  </CardContent>
-                </Card>
-              )}
-
-              {journal.article_submission && journal.article_submission.trim().length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <FileText className="h-5 w-5" />
-                      {t.articleSubmission}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div
-                      className="text-muted-foreground leading-relaxed prose prose-lg max-w-none"
-                      dangerouslySetInnerHTML={{ __html: journal.article_submission }}
-                    />
-                  </CardContent>
-                </Card>
-              )}
-
-              {!journal.about && journal.description && (
+              {(journal.about || journal.editorial_team || journal.article_submission || journal.description) && (
                 <Card>
                   <CardHeader>
                     <CardTitle>{t.aboutJournal}</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div
-                      className="text-muted-foreground leading-relaxed prose prose-lg max-w-none"
-                      dangerouslySetInnerHTML={{ __html: journal.description }}
-                    />
+                    <Accordion type="multiple" className="w-full">
+                      {journal.about && journal.about.trim().length > 0 && (
+                        <AccordionItem value="about">
+                          <AccordionTrigger className="text-lg font-semibold">
+                            <div className="flex items-center gap-2">
+                              <BookOpen className="h-5 w-5" />
+                              {t.aboutJournal}
+                            </div>
+                          </AccordionTrigger>
+                          <AccordionContent>
+                            <div
+                              className="text-muted-foreground leading-relaxed prose prose-lg max-w-none pt-4"
+                              dangerouslySetInnerHTML={{ __html: journal.about }}
+                            />
+                          </AccordionContent>
+                        </AccordionItem>
+                      )}
+
+                      {journal.editorial_team && journal.editorial_team.trim().length > 0 && (
+                        <AccordionItem value="editorial">
+                          <AccordionTrigger className="text-lg font-semibold">
+                            <div className="flex items-center gap-2">
+                              <Users className="h-5 w-5" />
+                              {t.editorialTeam}
+                            </div>
+                          </AccordionTrigger>
+                          <AccordionContent>
+                            <div
+                              className="text-muted-foreground leading-relaxed prose prose-lg max-w-none pt-4"
+                              dangerouslySetInnerHTML={{ __html: journal.editorial_team }}
+                            />
+                          </AccordionContent>
+                        </AccordionItem>
+                      )}
+
+                      {journal.article_submission && journal.article_submission.trim().length > 0 && (
+                        <AccordionItem value="submission">
+                          <AccordionTrigger className="text-lg font-semibold">
+                            <div className="flex items-center gap-2">
+                              <FileText className="h-5 w-5" />
+                              {t.articleSubmission}
+                            </div>
+                          </AccordionTrigger>
+                          <AccordionContent>
+                            <div
+                              className="text-muted-foreground leading-relaxed prose prose-lg max-w-none pt-4"
+                              dangerouslySetInnerHTML={{ __html: journal.article_submission }}
+                            />
+                          </AccordionContent>
+                        </AccordionItem>
+                      )}
+
+                      {!journal.about && journal.description && (
+                        <AccordionItem value="description">
+                          <AccordionTrigger className="text-lg font-semibold">
+                            <div className="flex items-center gap-2">
+                              <BookOpen className="h-5 w-5" />
+                              {t.aboutJournal}
+                            </div>
+                          </AccordionTrigger>
+                          <AccordionContent>
+                            <div
+                              className="text-muted-foreground leading-relaxed prose prose-lg max-w-none pt-4"
+                              dangerouslySetInnerHTML={{ __html: journal.description }}
+                            />
+                          </AccordionContent>
+                        </AccordionItem>
+                      )}
+                    </Accordion>
                   </CardContent>
                 </Card>
               )}

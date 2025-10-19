@@ -90,10 +90,10 @@ function SectionList({ sections, lang }: { sections: JournalSection[]; lang: str
       return
     }
 
-    // Get the appropriate slug based on language
-    const slug = lang === "uz" ? section.slug_uz : lang === "en" ? section.slug_en : section.slug_ru
+    // The section data might have a different slug than what's in the URL
+    const sectionSlug = section.slug_uz || section.slug_en || section.slug_ru
 
-    if (!slug) {
+    if (!sectionSlug) {
       alert("PDF slug mavjud emas")
       return
     }
@@ -102,19 +102,27 @@ function SectionList({ sections, lang }: { sections: JournalSection[]; lang: str
     setCurrentPdfTitle(section.author_name || "PDF")
 
     try {
-      console.log("[v0] Fetching PDF from section API:", `${API_BASE}/${lang}/section/${slug}/`)
+      console.log("[v0] ========== SECTION PDF OPEN DEBUG ==========")
+      console.log("[v0] Section data:", section)
+      console.log("[v0] Section slug_uz:", section.slug_uz)
+      console.log("[v0] Section slug_en:", section.slug_en)
+      console.log("[v0] Section slug_ru:", section.slug_ru)
+      console.log("[v0] Using slug:", sectionSlug)
+      console.log("[v0] Fetching PDF from section API:", `${API_BASE}/${lang}/section/${sectionSlug}/`)
 
-      const response = await fetch(`${API_BASE}/${lang}/section/${slug}/`, {
+      const response = await fetch(`${API_BASE}/${lang}/section/${sectionSlug}/`, {
         headers: {
           Authorization: `Bearer ${token}`,
           Accept: "*/*",
         },
       })
 
-      console.log("[v0] API Response status:", response.status)
+      console.log("[v0] Response status:", response.status)
+      console.log("[v0] Response ok:", response.ok)
 
       // Handle authentication errors
       if (response.status === 401) {
+        console.log("[v0] 401 Unauthorized - redirecting to login")
         localStorage.removeItem("access_token")
         localStorage.removeItem("refresh_token")
         const returnUrl = encodeURIComponent(window.location.pathname + window.location.search)
@@ -124,17 +132,39 @@ function SectionList({ sections, lang }: { sections: JournalSection[]; lang: str
 
       // Handle subscription errors
       if (response.status === 403) {
+        console.log("[v0] 403 Forbidden - redirecting to buy page")
         const returnUrl = encodeURIComponent(window.location.pathname + window.location.search)
         router.push(`/${lang}/buy?subscription_type_id=3&returnUrl=${returnUrl}`)
         return
       }
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        const contentType = response.headers.get("content-type")
+        let errorMessage = `HTTP error! status: ${response.status}`
+
+        if (contentType?.includes("application/json")) {
+          try {
+            const errorData = await response.json()
+            console.error("[v0] API error response (JSON):", errorData)
+            errorMessage = errorData.detail || errorData.message || errorMessage
+          } catch (e) {
+            console.error("[v0] Could not parse error response as JSON")
+          }
+        }
+
+        console.error("[v0] ========== ERROR OPENING PDF ==========")
+        console.error("[v0] Error message:", errorMessage)
+        throw new Error(errorMessage)
       }
 
       const pdfBlob = await response.blob()
       console.log("[v0] PDF blob received, size:", pdfBlob.size, "type:", pdfBlob.type)
+
+      if (pdfBlob.size === 0) {
+        console.error("[v0] PDF blob is empty")
+        alert("PDF yuklanishida xatolik yuz berdi: Fayl bo'sh")
+        return
+      }
 
       // Clean up previous blob URL if exists
       if (pdfBlobUrl) {
@@ -144,8 +174,10 @@ function SectionList({ sections, lang }: { sections: JournalSection[]; lang: str
       const blobUrl = URL.createObjectURL(pdfBlob)
       setPdfBlobUrl(blobUrl)
       setShowPDFViewer(true)
+      console.log("[v0] ========== SECTION PDF OPEN SUCCESS ==========")
     } catch (error) {
-      console.error("[v0] Error opening PDF:", error)
+      console.error("[v0] ========== ERROR OPENING PDF ==========")
+      console.error("[v0] Error:", error)
       alert(`PDF ochishda xatolik: ${error instanceof Error ? error.message : "Noma'lum xatolik"}`)
     } finally {
       setLoadingPdfId(null)

@@ -454,6 +454,47 @@ export interface Book {
   pdf_file: string
 }
 
+// Fetch paginated books list
+export async function fetchBooks(
+  lang = "en",
+  page = 1,
+): Promise<{
+  count: number
+  next: string | null
+  previous: string | null
+  results: Book[]
+}> {
+  try {
+    const url = `${API_BASE}/${lang}/books/?page=${page}`
+    console.log("[v0] Fetching books from URL:", url)
+
+    const response = await fetchWithTimeout(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "Accept-Language": lang,
+      },
+      mode: "cors",
+      cache: "no-store",
+    })
+
+    if (!response.ok) {
+      console.error("[v0] Books API response not OK:", response.status, response.statusText)
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
+    console.log("[v0] Books API response:", data)
+    console.log("[v0] Number of books:", data.results?.length || 0)
+
+    return data
+  } catch (error) {
+    console.error("[v0] Error fetching books:", error)
+    throw error
+  }
+}
+
 // Fetch book category with optional token
 export async function fetchBookCategory(slug: string, lang = "en", token?: string): Promise<BookCategory> {
   try {

@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { BookOpen, ArrowRight } from "lucide-react"
+import { BookOpen, ArrowRight, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { BookCategory } from "@/lib/api"
 
@@ -10,7 +10,6 @@ interface BookCategoryCardProps {
 }
 
 export function BookCategoryCard({ category, lang }: BookCategoryCardProps) {
-  // Get the correct slug for the current language
   const slug = lang === "uz" ? category.slug_uz : lang === "ru" ? category.slug_ru : category.slug_en
 
   const translations = {
@@ -23,26 +22,38 @@ export function BookCategoryCard({ category, lang }: BookCategoryCardProps) {
 
   return (
     <Link href={`/${lang}/books-category/${slug}`} className="block group">
-      <Card className="h-full overflow-hidden border-0 shadow-md hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] bg-gradient-to-br from-background via-background to-primary/5">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/0 via-primary/0 to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+      <Card className="relative h-full overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-[1.03] bg-white">
+        {/* Animated gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-        <CardHeader className="relative pb-4">
-          <div className="flex items-start justify-between gap-4 mb-3">
-            <div className="flex-shrink-0">
-              <div className="p-3 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 group-hover:from-primary/30 group-hover:to-primary/20 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3">
-                <BookOpen className="h-6 w-6 text-primary" />
+        {/* Decorative elements */}
+        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/10 to-transparent rounded-bl-full opacity-50 group-hover:opacity-100 transition-opacity duration-500" />
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-primary/5 to-transparent rounded-tr-full opacity-50 group-hover:opacity-100 transition-opacity duration-500" />
+
+        <CardHeader className="relative pb-4 space-y-4">
+          {/* Icon with animated background */}
+          <div className="flex items-center justify-between">
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/10 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-500" />
+              <div className="relative p-4 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 group-hover:from-primary/20 group-hover:to-primary/10 transition-all duration-500 group-hover:scale-110 group-hover:rotate-6 shadow-lg">
+                <BookOpen className="h-8 w-8 text-primary" />
               </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <CardTitle className="text-xl font-bold group-hover:text-primary transition-colors duration-300 line-clamp-2 leading-tight">
-                {category.name}
-              </CardTitle>
-            </div>
+
+            {/* Sparkle icon for visual interest */}
+            <Sparkles className="h-5 w-5 text-primary/40 group-hover:text-primary group-hover:scale-125 transition-all duration-500" />
           </div>
 
+          {/* Title with better typography */}
+          <CardTitle className="text-2xl font-bold group-hover:text-primary transition-colors duration-300 line-clamp-2 leading-tight">
+            {category.name}
+          </CardTitle>
+
+          {/* Books count badge with modern design */}
           <div className="flex items-center gap-2">
-            <div className="px-3 py-1 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors duration-300">
-              <span className="text-sm font-semibold text-primary">
+            <div className="px-4 py-2 rounded-full bg-gradient-to-r from-primary/15 to-primary/10 group-hover:from-primary/25 group-hover:to-primary/15 transition-all duration-300 shadow-sm">
+              <span className="text-sm font-bold text-primary flex items-center gap-1">
+                <BookOpen className="h-4 w-4" />
                 {category.books_count} {t.books}
               </span>
             </div>
@@ -50,23 +61,23 @@ export function BookCategoryCard({ category, lang }: BookCategoryCardProps) {
         </CardHeader>
 
         <CardContent className="relative space-y-4">
-          <CardDescription className="text-sm text-muted-foreground line-clamp-3 leading-relaxed">
+          {/* Description with better readability */}
+          <CardDescription className="text-sm text-muted-foreground line-clamp-3 leading-relaxed min-h-[4.5rem]">
             {category.description}
           </CardDescription>
 
-          <Button
-            variant="ghost"
-            className="w-full justify-between group-hover:bg-primary/10 transition-all duration-300 group-hover:translate-x-1"
-          >
-            <span className="font-medium">{t.viewBooks}</span>
-            <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" />
+          {/* Modern button with gradient and animation */}
+          <Button className="w-full bg-gradient-to-r from-primary via-primary/90 to-primary/80 hover:from-primary/90 hover:via-primary hover:to-primary text-white shadow-md hover:shadow-xl transition-all duration-300 group-hover:translate-y-[-2px] font-semibold">
+            <span className="flex items-center justify-between w-full">
+              <span>{t.viewBooks}</span>
+              <ArrowRight className="h-4 w-4 group-hover:translate-x-2 transition-transform duration-300" />
+            </span>
           </Button>
         </CardContent>
 
-        {/* Decorative corner accent */}
-        <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-primary/5 to-transparent rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        {/* Bottom accent line */}
+        <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
       </Card>
     </Link>
   )
 }
-  
