@@ -6,7 +6,6 @@ import Footer from "@/components/footer"
 import { Loader } from "@/components/Loader"
 import { PDFViewer } from "@/components/pdf-viewer"
 import { fetchAllJournalSections, type JournalSection } from "@/lib/api"
-import { getUser } from "@/lib/auth"
 import { fetchWithAuth } from "@/lib/auth"
 import { FileText, AlertCircle, Search, ExternalLink } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -144,40 +143,48 @@ export default function JournalSectionsPage() {
         return
       }
 
-      console.log("[v0] Checking user subscription status...")
-      const user = await getUser()
-      console.log("[v0] User data:", user)
-
-      if (!user) {
-        console.log("[v0] Could not fetch user data, redirecting to login")
-        const currentUrl = `/${lang}/journal-sections`
-        router.push(`/${lang}/login?returnUrl=${encodeURIComponent(currentUrl)}`)
-        setLoadingPdfSlug(null)
-        return
-      }
-
-      const hasActiveSubscription = user.subscription?.active && user.subscription.active.length > 0
-      console.log("[v0] Has active subscription:", hasActiveSubscription)
-
-      if (!hasActiveSubscription) {
-        console.log("[v0] User has no active subscription, redirecting to buy page")
-        const currentUrl = `/${lang}/journal-sections`
-        router.push(`/${lang}/buy?subscription_type_id=3&returnUrl=${encodeURIComponent(currentUrl)}`)
-        setLoadingPdfSlug(null)
-        return
-      }
-
       const API_BASE = "https://artculture.pythonanywhere.com"
-      const url = `${API_BASE}/${lang}/section/${slug}/`
-      console.log("[v0] Fetching PDF from URL:", url)
 
-      console.log("[v0] Starting fetch request...")
-      const response = await fetchWithAuth(url, {
-        method: "GET",
-        headers: {
-          Accept: "*/*",
-        },
-      })
+      let pdfUrl = ""
+      let response: Response | null = null
+
+      // Try direct PDF file path first
+      if (section.pdf) {
+        pdfUrl = section.pdf.startsWith("http") ? section.pdf : `${API_BASE}${section.pdf}`
+        console.log("[v0] Trying direct PDF path:", pdfUrl)
+
+        try {
+          response = await fetchWithAuth(pdfUrl, {
+            method: "GET",
+            headers: {
+              Accept: "*/*",
+            },
+          })
+
+          if (response.ok) {
+            console.log("[v0] Direct PDF path successful")
+          } else {
+            console.log("[v0] Direct PDF path failed, trying slug-based API")
+            response = null
+          }
+        } catch (err) {
+          console.log("[v0] Direct PDF path error, trying slug-based API:", err)
+          response = null
+        }
+      }
+
+      // If direct path failed or not available, try slug-based API
+      if (!response) {
+        pdfUrl = `${API_BASE}/${lang}/section/${slug}/`
+        console.log("[v0] Fetching PDF from slug-based API:", pdfUrl)
+
+        response = await fetchWithAuth(pdfUrl, {
+          method: "GET",
+          headers: {
+            Accept: "*/*",
+          },
+        })
+      }
 
       console.log("[v0] Response received:")
       console.log("[v0] - Status:", response.status)

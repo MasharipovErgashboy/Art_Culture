@@ -9,6 +9,7 @@ import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { Loader } from "@/components/Loader"
 import { fetchJournalIssue, fetchJournalSections, type JournalIssue, type JournalSection } from "@/lib/api"
+import { fetchWithAuth } from "@/lib/auth"
 import { Calendar, AlertCircle, ArrowLeft, Download, FileText, Users } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
@@ -287,47 +288,126 @@ export default function JournalIssueDetailPage() {
   const handlePdfClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault()
 
+    console.log("[v0] ========== JOURNAL ISSUE PDF OPEN DEBUG ==========")
+    console.log("[v0] Journal issue data:", issue)
+    console.log("[v0] URL slug parameter:", slug)
+    console.log("[v0] Journal issue pdf_file from API:", issue?.pdf_file)
+    console.log("[v0] Current language:", lang)
+
     const token = localStorage.getItem("access_token")
+    console.log("[v0] Access token exists:", !!token)
 
     if (!token) {
+      console.log("[v0] No token found, redirecting to login")
       const returnUrl = encodeURIComponent(window.location.pathname + window.location.search)
       router.push(`/${lang}/login?returnUrl=${returnUrl}`)
       return
     }
 
+    if (!issue) {
+      console.error("[v0] No journal issue data available")
+      return
+    }
+
     try {
-      const response = await fetch(`${API_BASE}/${lang}/journal-issue/${slug}/`, {
+      if (issue.pdf_file) {
+        console.log("[v0] Attempting to fetch PDF directly from pdf_file path")
+        const directPdfUrl = `${API_BASE}${issue.pdf_file}`
+        console.log("[v0] Direct PDF URL:", directPdfUrl)
+
+        try {
+          const pdfResponse = await fetchWithAuth(directPdfUrl, {
+            method: "GET",
+            headers: {
+              Accept: "*/*",
+            },
+          })
+
+          console.log("[v0] Direct PDF response status:", pdfResponse.status)
+          console.log("[v0] Direct PDF response ok:", pdfResponse.ok)
+
+          if (pdfResponse.ok) {
+            const pdfBlob = await pdfResponse.blob()
+            console.log("[v0] PDF blob size:", pdfBlob.size)
+            console.log("[v0] PDF blob type:", pdfBlob.type)
+
+            if (pdfBlob.size > 0) {
+              const blobUrl = URL.createObjectURL(pdfBlob)
+              console.log("[v0] PDF blob URL created:", blobUrl)
+              setPdfBlobUrl(blobUrl)
+              setShowPDFViewer(true)
+              console.log("[v0] ========== JOURNAL ISSUE PDF OPEN SUCCESS (DIRECT) ==========")
+              return
+            }
+          }
+        } catch (directError) {
+          console.log("[v0] Direct PDF fetch failed, trying slug-based API:", directError)
+        }
+      }
+
+      console.log("[v0] Attempting slug-based PDF API")
+      const issueSlug = slug // Use URL slug directly
+      console.log("[v0] Using URL slug for PDF:", issueSlug)
+
+      const pdfUrl = `${API_BASE}/${lang}/journal-issue/${issueSlug}/`
+      console.log("[v0] PDF URL:", pdfUrl)
+
+      const pdfResponse = await fetchWithAuth(pdfUrl, {
+        method: "GET",
         headers: {
-          Authorization: `Bearer ${token}`,
+          Accept: "*/*",
         },
       })
 
-      if (response.status === 401) {
-        localStorage.removeItem("access_token")
-        localStorage.removeItem("refresh_token")
-        const returnUrl = encodeURIComponent(window.location.pathname + window.location.search)
-        router.push(`/${lang}/login?returnUrl=${returnUrl}`)
-        return
-      }
+      console.log("[v0] PDF response status:", pdfResponse.status)
+      console.log("[v0] PDF response ok:", pdfResponse.ok)
 
-      if (response.status === 403) {
+      if (pdfResponse.status === 403) {
+        console.log("[v0] 403 Forbidden - User needs subscription")
         const returnUrl = encodeURIComponent(window.location.pathname + window.location.search)
         router.push(`/${lang}/buy/?subscription_type_id=1&returnUrl=${returnUrl}`)
         return
       }
 
-      if (!response.ok) {
-        alert("PDF yuklanishida xatolik yuz berdi")
-        return
+      if (!pdfResponse.ok) {
+        const contentType = pdfResponse.headers.get("content-type")
+        let errorMessage = `HTTP error! status: ${pdfResponse.status}`
+
+        if (contentType?.includes("application/json")) {
+          try {
+            const errorData = await pdfResponse.json()
+            console.error("[v0] API error response (JSON):", errorData)
+            errorMessage = errorData.detail || errorData.message || errorMessage
+          } catch (e) {
+            console.error("[v0] Could not parse error response as JSON")
+          }
+        }
+
+        throw new Error(errorMessage)
       }
 
-      const pdfBlob = await response.blob()
+      const pdfBlob = await pdfResponse.blob()
+      console.log("[v0] PDF blob size:", pdfBlob.size)
+
+      if (pdfBlob.size === 0) {
+        throw new Error("PDF fayli bo'sh")
+      }
+
       const blobUrl = URL.createObjectURL(pdfBlob)
+      console.log("[v0] PDF blob URL created:", blobUrl)
       setPdfBlobUrl(blobUrl)
       setShowPDFViewer(true)
+      console.log("[v0] ========== JOURNAL ISSUE PDF OPEN SUCCESS ==========")
     } catch (error) {
-      console.error("[v0] Error fetching PDF:", error)
-      alert("PDF yuklanishida xatolik yuz berdi")
+      console.error("[v0] ========== JOURNAL ISSUE PDF OPEN ERROR ==========")
+      console.error("[v0] Error:", error)
+      if (error instanceof Error) {
+        console.error("[v0] Error message:", error.message)
+        alert(`PDF yuklanishida xatolik yuz berdi: ${error.message}`)
+      } else {
+        alert("PDF yuklanishida xatolik yuz berdi")
+      }
+      console.error("[v0] ========== JOURNAL ISSUE PDF OPEN ERROR END ==========")
     }
   }
 

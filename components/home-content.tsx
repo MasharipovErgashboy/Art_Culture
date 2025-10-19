@@ -694,7 +694,6 @@ export function HomeContent({ lang }: HomeContentProps) {
 
   return (
     <>
-
       <div className="flex-1 min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
         <section className="relative bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 py-4 sm:py-6 lg:py-8 px-0">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 lg:h-[500px] w-full">
