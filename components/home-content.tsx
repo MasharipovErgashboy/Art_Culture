@@ -570,7 +570,7 @@ export function HomeContent({ lang }: HomeContentProps) {
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length)
-    }, 1000) // Changed from 5000ms to 4000ms (4 seconds)
+    }, 4000) // Changed from 5000ms to 4000ms (4 seconds)
     return () => clearInterval(timer)
   }, [slides])
 
@@ -694,6 +694,7 @@ export function HomeContent({ lang }: HomeContentProps) {
 
   return (
     <>
+
       <div className="flex-1 min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
         <section className="relative bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 py-4 sm:py-6 lg:py-8 px-0">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 lg:h-[500px] w-full">
