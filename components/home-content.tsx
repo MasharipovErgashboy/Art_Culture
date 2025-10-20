@@ -570,7 +570,7 @@ export function HomeContent({ lang }: HomeContentProps) {
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length)
-    }, 4000) // Changed from 5000ms to 4000ms (4 seconds)
+    }, 1000) // Changed from 5000ms to 4000ms (4 seconds)
     return () => clearInterval(timer)
   }, [slides])
 
