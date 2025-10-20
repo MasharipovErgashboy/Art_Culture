@@ -12,6 +12,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
+import { fetchUserProfile } from "@/lib/user"
 
 const translations = {
   uz: {
@@ -129,14 +130,41 @@ export default function JournalSectionsPage() {
       console.log("[v0] ========== OPENING PDF ==========")
       console.log("[v0] Section:", section)
       console.log("[v0] Selected slug:", slug)
-      console.log("[v0] Language:", lang)
       setLoadingPdfSlug(slug)
 
       const token = localStorage.getItem("access_token")
       console.log("[v0] Token exists:", !!token)
 
       if (!token) {
-        console.log("[v0] User not logged in, redirecting to login")
+        console.log("[v0] User not logged in, redirecting to login page")
+        const currentUrl = `/${lang}/journal-sections`
+        router.push(`/${lang}/login?returnUrl=${encodeURIComponent(currentUrl)}`)
+        setLoadingPdfSlug(null)
+        return
+      }
+
+      try {
+        console.log("[v0] Checking user subscription status...")
+        const userProfile = await fetchUserProfile(token)
+        console.log("[v0] User profile:", userProfile)
+
+        const hasActiveSubscription = userProfile.subscription?.active && userProfile.subscription.active.length > 0
+        console.log("[v0] Has active subscription:", hasActiveSubscription)
+
+        if (!hasActiveSubscription) {
+          console.log("[v0] User has no active subscription, redirecting to buy page")
+          const currentUrl = `/${lang}/journal-sections`
+          router.push(`/${lang}/buy?subscription_type_id=3&returnUrl=${encodeURIComponent(currentUrl)}`)
+          setLoadingPdfSlug(null)
+          return
+        }
+
+        console.log("[v0] User has active subscription, proceeding to fetch PDF")
+      } catch (profileError) {
+        console.error("[v0] Error fetching user profile:", profileError)
+        // If profile fetch fails, redirect to login (token might be invalid)
+        localStorage.removeItem("access_token")
+        localStorage.removeItem("refresh_token")
         const currentUrl = `/${lang}/journal-sections`
         router.push(`/${lang}/login?returnUrl=${encodeURIComponent(currentUrl)}`)
         setLoadingPdfSlug(null)
@@ -186,23 +214,11 @@ export default function JournalSectionsPage() {
         })
       }
 
-      console.log("[v0] Response received:")
-      console.log("[v0] - Status:", response.status)
-      console.log("[v0] - Status text:", response.statusText)
-      console.log("[v0] - OK:", response.ok)
-      console.log("[v0] - Content-Type:", response.headers.get("content-type"))
-
-      if (response.status === 403) {
-        console.log("[v0] 403 Forbidden - User needs subscription, redirecting to buy page")
-        const currentUrl = `/${lang}/journal-sections`
-        router.push(`/${lang}/buy?subscription_type_id=3&returnUrl=${encodeURIComponent(currentUrl)}`)
-        setLoadingPdfSlug(null)
-        return
-      }
+      console.log("[v0] Response status:", response.status)
 
       if (!response.ok) {
         const contentType = response.headers.get("content-type")
-        let errorMessage = `HTTP error! status: ${response.status} - ${response.statusText}`
+        let errorMessage = `HTTP error! status: ${response.status}`
 
         if (contentType?.includes("application/json")) {
           try {
@@ -212,43 +228,27 @@ export default function JournalSectionsPage() {
           } catch (e) {
             console.error("[v0] Could not parse error response as JSON")
           }
-        } else {
-          const errorText = await response.text()
-          console.error("[v0] API error response (text):", errorText)
-          if (errorText) {
-            errorMessage = errorText
-          }
         }
 
         throw new Error(errorMessage)
       }
 
-      console.log("[v0] Converting response to blob...")
       const pdfBlob = await response.blob()
-      console.log("[v0] PDF blob received:")
-      console.log("[v0] - Size:", pdfBlob.size, "bytes")
-      console.log("[v0] - Type:", pdfBlob.type)
+      console.log("[v0] PDF blob size:", pdfBlob.size)
 
       if (pdfBlob.size === 0) {
         throw new Error("PDF fayli bo'sh")
       }
 
-      console.log("[v0] Creating blob URL...")
       const blobUrl = URL.createObjectURL(pdfBlob)
-      console.log("[v0] Blob URL created:", blobUrl)
-
-      console.log("[v0] Opening PDF in viewer...")
       setPdfViewerUrl(blobUrl)
       setPdfViewerTitle(`${section.journal_issue_name} - ${section.author_name}`)
       console.log("[v0] ========== PDF OPENED SUCCESSFULLY ==========")
     } catch (err) {
       console.error("[v0] ========== ERROR OPENING PDF ==========")
-      console.error("[v0] Error type:", err instanceof Error ? err.constructor.name : typeof err)
-      console.error("[v0] Error message:", err instanceof Error ? err.message : String(err))
-      console.error("[v0] Full error:", err)
-
+      console.error("[v0] Error:", err)
       const errorMessage = err instanceof Error ? err.message : "PDF ochishda xatolik yuz berdi"
-      alert(`PDF ochishda xatolik: ${errorMessage}\n\nBatafsil ma'lumot uchun browser console'ni tekshiring (F12).`)
+      alert(`PDF ochishda xatolik: ${errorMessage}`)
     } finally {
       setLoadingPdfSlug(null)
     }

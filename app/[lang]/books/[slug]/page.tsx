@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { fetchBook, type Book } from "@/lib/api"
 import { fetchWithAuth } from "@/lib/auth"
+import { fetchUserProfile } from "@/lib/user" // Import fetchUserProfile function
 import { BookOpen, AlertCircle, ArrowLeft, Download, Calendar, User, FileText } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import Link from "next/link"
@@ -116,19 +117,38 @@ export default function BookDetailPage() {
     console.log("[v0] ========== BOOK PDF OPEN DEBUG ==========")
     console.log("[v0] Book data:", book)
     console.log("[v0] URL slug parameter:", slug)
-    console.log("[v0] Book slug_uz from API:", book?.slug_uz)
-    console.log("[v0] Book slug_en from API:", book?.slug_en)
-    console.log("[v0] Book slug_ru from API:", book?.slug_ru)
-    console.log("[v0] Book ID from API:", book?.id)
-    console.log("[v0] Book pdf_file from API:", book?.pdf_file)
-    console.log("[v0] Current language:", lang)
 
-    // Check if user is logged in
     const token = localStorage.getItem("access_token")
     console.log("[v0] Access token exists:", !!token)
 
     if (!token) {
-      console.log("[v0] No token found, redirecting to login")
+      console.log("[v0] User not logged in, redirecting to login page")
+      const returnUrl = encodeURIComponent(window.location.pathname + window.location.search)
+      router.push(`/${lang}/login?returnUrl=${returnUrl}`)
+      return
+    }
+
+    try {
+      console.log("[v0] Checking user subscription status...")
+      const userProfile = await fetchUserProfile(token)
+      console.log("[v0] User profile:", userProfile)
+
+      const hasActiveSubscription = userProfile.subscription?.active && userProfile.subscription.active.length > 0
+      console.log("[v0] Has active subscription:", hasActiveSubscription)
+
+      if (!hasActiveSubscription) {
+        console.log("[v0] User has no active subscription, redirecting to buy page")
+        const returnUrl = encodeURIComponent(window.location.pathname + window.location.search)
+        router.push(`/${lang}/buy/?subscription_type_id=3&returnUrl=${returnUrl}`)
+        return
+      }
+
+      console.log("[v0] User has active subscription, proceeding to fetch PDF")
+    } catch (profileError) {
+      console.error("[v0] Error fetching user profile:", profileError)
+      // If profile fetch fails, redirect to login (token might be invalid)
+      localStorage.removeItem("access_token")
+      localStorage.removeItem("refresh_token")
       const returnUrl = encodeURIComponent(window.location.pathname + window.location.search)
       router.push(`/${lang}/login?returnUrl=${returnUrl}`)
       return
@@ -154,16 +174,13 @@ export default function BookDetailPage() {
           })
 
           console.log("[v0] Direct PDF response status:", pdfResponse.status)
-          console.log("[v0] Direct PDF response ok:", pdfResponse.ok)
 
           if (pdfResponse.ok) {
             const pdfBlob = await pdfResponse.blob()
             console.log("[v0] PDF blob size:", pdfBlob.size)
-            console.log("[v0] PDF blob type:", pdfBlob.type)
 
             if (pdfBlob.size > 0) {
               const blobUrl = URL.createObjectURL(pdfBlob)
-              console.log("[v0] PDF blob URL created:", blobUrl)
               setPdfBlobUrl(blobUrl)
               setShowPDFViewer(true)
               console.log("[v0] ========== BOOK PDF OPEN SUCCESS (DIRECT) ==========")
@@ -176,10 +193,7 @@ export default function BookDetailPage() {
       }
 
       console.log("[v0] Attempting slug-based PDF API")
-      const bookSlug = slug // Use URL slug directly
-      console.log("[v0] Using URL slug for PDF:", bookSlug)
-
-      const pdfUrl = `https://artculture.pythonanywhere.com/${lang}/book/${bookSlug}/`
+      const pdfUrl = `https://artculture.pythonanywhere.com/${lang}/book/${slug}/`
       console.log("[v0] PDF URL:", pdfUrl)
 
       const pdfResponse = await fetchWithAuth(pdfUrl, {
@@ -190,14 +204,6 @@ export default function BookDetailPage() {
       })
 
       console.log("[v0] PDF response status:", pdfResponse.status)
-      console.log("[v0] PDF response ok:", pdfResponse.ok)
-
-      if (pdfResponse.status === 403) {
-        console.log("[v0] 403 Forbidden - User needs subscription")
-        const returnUrl = encodeURIComponent(window.location.pathname + window.location.search)
-        router.push(`/${lang}/buy/?subscription_type_id=3&returnUrl=${returnUrl}`)
-        return
-      }
 
       if (!pdfResponse.ok) {
         const contentType = pdfResponse.headers.get("content-type")
@@ -224,7 +230,6 @@ export default function BookDetailPage() {
       }
 
       const blobUrl = URL.createObjectURL(pdfBlob)
-      console.log("[v0] PDF blob URL created:", blobUrl)
       setPdfBlobUrl(blobUrl)
       setShowPDFViewer(true)
       console.log("[v0] ========== BOOK PDF OPEN SUCCESS ==========")
@@ -232,9 +237,8 @@ export default function BookDetailPage() {
       console.error("[v0] ========== BOOK PDF OPEN ERROR ==========")
       console.error("[v0] Error:", error)
       if (error instanceof Error) {
-        console.error("[v0] Error message:", error.message)
+        alert(`PDF yuklanishida xatolik yuz berdi: ${error.message}`)
       }
-      console.error("[v0] ========== BOOK PDF OPEN ERROR END ==========")
     }
   }
 

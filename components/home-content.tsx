@@ -22,7 +22,7 @@ import {
 import Link from "next/link"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { fetchConferences, fetchBooks, fetchJournals, type Conference, getSlugForLang } from "@/lib/api"
+import { fetchConferences, fetchJournals, type Conference, getSlugForLang, fetchBookCategories } from "@/lib/api"
 import Navbar from "@/components/navbar" // Changed to default import
 import Footer from "@/components/footer"
 
@@ -38,8 +38,8 @@ interface RasmiyElon {
   description_en: string | null
   description_ru: string | null
   title?: string
+  name?: string // Added name field
   slug?: string
-  name?: string
   slug_uz?: string
   slug_ru?: string
   slug_en?: string
@@ -68,6 +68,16 @@ interface Yangilik {
   description: string
   media?: string
   date: string
+  slug_uz?: string
+  slug_en?: string
+  slug_ru?: string
+}
+
+interface BookCategory {
+  id: number
+  name: string
+  description: string | null
+  books_count: number
   slug_uz?: string
   slug_en?: string
   slug_ru?: string
@@ -428,64 +438,78 @@ export function HomeContent({ lang }: HomeContentProps) {
         }> = []
 
         try {
-          console.log("[v0] Fetching latest book from books-category...")
-          const booksResponse = await fetchBooks(lang, 1)
-          console.log("[v0] Books API response:", booksResponse)
-          console.log("[v0] Books results:", booksResponse?.results)
+          console.log("[v0] Fetching latest book category from books-category...")
+          const categoriesResponse = await fetchBookCategories(lang)
+          console.log("[v0] Book categories API full response:", JSON.stringify(categoriesResponse, null, 2))
+          console.log("[v0] Book categories array length:", categoriesResponse?.length)
 
-          if (booksResponse?.results && Array.isArray(booksResponse.results) && booksResponse.results.length > 0) {
-            const book = booksResponse.results[0]
-            console.log("[v0] Latest book selected:", book)
-            console.log("[v0] Book name:", book.name)
-            console.log("[v0] Book image:", book.image)
-            console.log("[v0] Book slug:", getSlugForLang(book, lang))
+          if (categoriesResponse && Array.isArray(categoriesResponse) && categoriesResponse.length > 0) {
+            const category = categoriesResponse[0] // Get the first (latest) category
+            console.log("[v0] Latest book category selected:", JSON.stringify(category, null, 2))
+            console.log("[v0] Category name:", category.name)
+            console.log("[v0] Category description:", category.description)
+            console.log("[v0] Category books_count:", category.books_count)
+            console.log("[v0] Category slug_uz:", category.slug_uz)
+            console.log("[v0] Category slug_en:", category.slug_en)
+            console.log("[v0] Category slug_ru:", category.slug_ru)
+            console.log("[v0] Category slug for lang:", getSlugForLang(category, lang))
 
-            content.push({
-              type: "book",
-              title: book.name || "Kitob",
-              description: book.description || "Kitob haqida ma'lumot",
-              image: book.image ? `${API_BASE}${book.image}` : "/placeholder.svg",
-              href: `/${lang}/books/${getSlugForLang(book, lang)}`,
-            })
-            console.log("[v0] ✓ Book added to content successfully")
+            const categoryItem = {
+              type: "book" as const,
+              title: category.name || "Kitoblar kategoriyasi",
+              description: category.description || `${category.books_count} ta kitob mavjud`,
+              image: "/placeholder.svg", // Categories don't have images, use placeholder
+              href: `/${lang}/books-category/${getSlugForLang(category, lang)}`,
+            }
+            console.log("[v0] Book category item to be added:", JSON.stringify(categoryItem, null, 2))
+            content.push(categoryItem)
+            console.log("[v0] ✓ Book category added to content successfully")
+            console.log("[v0] Content array after book category:", content.length, "items")
           } else {
-            console.log("[v0] ✗ No books found in API response")
+            console.log("[v0] ✗ No book categories found in API response")
+            console.log("[v0] categoriesResponse:", categoriesResponse)
           }
         } catch (err) {
-          console.error("[v0] ✗ Error fetching books for swiper:", err)
+          console.error("[v0] ✗ Error fetching book categories for swiper:", err)
+          console.error("[v0] Error details:", JSON.stringify(err, null, 2))
         }
 
         try {
           console.log("[v0] Fetching latest journal...")
           const journalsResponse = await fetchJournals(lang)
-          console.log("[v0] Journals response:", journalsResponse)
+          console.log("[v0] Journals full response:", JSON.stringify(journalsResponse, null, 2))
 
           // Handle both array and paginated response formats
           const journals = Array.isArray(journalsResponse) ? journalsResponse : journalsResponse?.results || []
+          console.log("[v0] Journals array length:", journals.length)
 
           if (journals.length > 0) {
             const journal = journals[0] // Get the first (latest) journal
-            console.log("[v0] Latest journal selected:", journal)
-            content.push({
-              type: "journal",
+            console.log("[v0] Latest journal selected:", JSON.stringify(journal, null, 2))
+
+            const journalItem = {
+              type: "journal" as const,
               title: journal.name || "Jurnal",
               description:
                 journal.description?.replace(/<[^>]*>/g, "").substring(0, 150) + "..." || "Jurnal haqida ma'lumot",
               image: journal.image ? `${API_BASE}${journal.image}` : "/placeholder.svg",
               href: `/${lang}/journals/${getSlugForLang(journal, lang)}`,
-            })
-            console.log("[v0] Journal added to content")
+            }
+            content.push(journalItem)
+            console.log("[v0] ✓ Journal added to content")
+            console.log("[v0] Content array after journal:", content.length, "items")
           } else {
-            console.log("[v0] No journals found")
+            console.log("[v0] ✗ No journals found")
           }
         } catch (err) {
-          console.error("[v0] Error fetching journals for swiper:", err)
+          console.error("[v0] ✗ Error fetching journals for swiper:", err)
+          console.error("[v0] Error details:", JSON.stringify(err, null, 2))
         }
 
         try {
           console.log("[v0] Fetching latest upcoming conference...")
           const conferencesResponse = await fetchConferences(lang, 1) // Get first page
-          console.log("[v0] Conferences response:", conferencesResponse)
+          console.log("[v0] Conferences full response:", JSON.stringify(conferencesResponse, null, 2))
 
           if (conferencesResponse?.results && conferencesResponse.results.length > 0) {
             const today = new Date()
@@ -497,13 +521,14 @@ export function HomeContent({ lang }: HomeContentProps) {
               return confDate >= today
             })
 
-            console.log("[v0] Upcoming conferences:", upcomingConferences.length)
+            console.log("[v0] Upcoming conferences count:", upcomingConferences.length)
 
             if (upcomingConferences.length > 0) {
               const conference = upcomingConferences[0] // Get the first (latest) upcoming conference
-              console.log("[v0] Latest upcoming conference selected:", conference)
-              content.push({
-                type: "conference",
+              console.log("[v0] Latest upcoming conference selected:", JSON.stringify(conference, null, 2))
+
+              const conferenceItem = {
+                type: "conference" as const,
                 title: conference.name || "Konferensiya",
                 description:
                   conference.description?.replace(/<[^>]*>/g, "").substring(0, 150) + "..." ||
@@ -511,26 +536,41 @@ export function HomeContent({ lang }: HomeContentProps) {
                 image: conference.image ? `${API_BASE}${conference.image}` : "/placeholder.svg",
                 href: `/${lang}/conferences/${getSlugForLang(conference, lang)}`,
                 date: conference.date,
-              })
-              console.log("[v0] Conference added to content")
+              }
+              content.push(conferenceItem)
+              console.log("[v0] ✓ Conference added to content")
+              console.log("[v0] Content array after conference:", content.length, "items")
             } else {
-              console.log("[v0] No upcoming conferences found")
+              console.log("[v0] ✗ No upcoming conferences found")
             }
           }
         } catch (err) {
-          console.error("[v0] Error fetching conferences for swiper:", err)
+          console.error("[v0] ✗ Error fetching conferences for swiper:", err)
+          console.error("[v0] Error details:", JSON.stringify(err, null, 2))
         }
 
-        console.log("[v0] Final content array:", content.length, "items")
+        console.log("[v0] ========== FINAL CONTENT ARRAY ==========")
+        console.log("[v0] Total items:", content.length)
         console.log(
           "[v0] Content items:",
           content.map((c) => ({ type: c.type, title: c.title })),
         )
+        console.log("[v0] Full content array:", JSON.stringify(content, null, 2))
+
+        if (content.length === 0) {
+          console.log("[v0] ⚠️ WARNING: No content items fetched!")
+        } else if (content.length < 3) {
+          console.log(`[v0] ⚠️ WARNING: Only ${content.length} items fetched, expected 3`)
+        } else {
+          console.log("[v0] ✓ Successfully fetched all 3 content items")
+        }
+
         setLatestContent(content)
         console.log("[v0] ========== LATEST CONTENT FETCH COMPLETE ==========")
       } catch (error) {
         console.error("[v0] ========== ERROR FETCHING LATEST CONTENT ==========")
         console.error("[v0] Error:", error)
+        console.error("[v0] Error details:", JSON.stringify(error, null, 2))
         setLatestContent([])
       } finally {
         setLatestContentLoading(false)
@@ -694,7 +734,6 @@ export function HomeContent({ lang }: HomeContentProps) {
 
   return (
     <>
-
       <div className="flex-1 min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
         <section className="relative bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 py-4 sm:py-6 lg:py-8 px-0">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 lg:h-[500px] w-full">
@@ -843,7 +882,7 @@ export function HomeContent({ lang }: HomeContentProps) {
                           </div>
 
                           {/* Content section - Full width on mobile, 30% on desktop */}
-                          <div className="w-full lg:w-[30%] h-1/2 lg:h-full bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 p-4 sm:p-6 flex flex-col justify-center relative overflow-hidden">
+                          <div className="w-full lg:w-[30%] h-1/2 lg:h-full bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 p-4 sm:p-5 flex flex-col justify-center relative overflow-hidden">
                             {/* Background pattern */}
                             <div className="absolute inset-0 opacity-10">
                               <div className="absolute top-0 right-0 w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-full transform translate-x-8 sm:translate-x-10 -translate-y-8 sm:-translate-y-10"></div>
@@ -851,24 +890,24 @@ export function HomeContent({ lang }: HomeContentProps) {
                             </div>
 
                             <div className="relative z-10">
-                              <h2 className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold mb-2 sm:mb-3 lg:mb-4 text-white leading-tight">
+                              <h2 className="text-base sm:text-lg lg:text-xl font-bold mb-2 sm:mb-3 text-white leading-tight line-clamp-3">
                                 {slide.title}
                               </h2>
-                              <p className="text-xs sm:text-sm mb-3 sm:mb-4 lg:mb-6 text-white/95 leading-relaxed line-clamp-2 lg:line-clamp-none">
+                              <p className="text-xs sm:text-sm mb-3 sm:mb-4 text-white/95 leading-relaxed line-clamp-2">
                                 {slide.description}
                               </p>
 
                               {slide.date && (
-                                <div className="flex flex-col gap-1 sm:gap-2 mb-3 sm:mb-4 lg:mb-6">
+                                <div className="flex flex-col gap-1 sm:gap-1.5 mb-3 sm:mb-4">
                                   <div className="flex items-center gap-2 text-white/90">
-                                    <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
+                                    <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                                     <span className="text-xs sm:text-sm font-medium">
                                       {new Date(slide.date).toLocaleDateString("uz-UZ")}
                                     </span>
                                   </div>
                                   {slide.location && (
                                     <div className="flex items-center gap-2 text-white/90">
-                                      <Globe className="w-3 h-3 sm:w-4 sm:h-4" />
+                                      <Globe className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                                       <span className="text-xs sm:text-sm font-medium line-clamp-1">
                                         {slide.location}
                                       </span>
@@ -877,11 +916,11 @@ export function HomeContent({ lang }: HomeContentProps) {
                                 </div>
                               )}
 
-                              <div className="space-y-4">
+                              <div className="space-y-3">
                                 <Button
                                   size="sm"
                                   asChild
-                                  className="w-full bg-white hover:bg-gray-100 text-blue-600 hover:text-blue-700 border-0 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold px-4 sm:px-6 py-2 sm:py-3 rounded-full hover:scale-105 transform text-xs sm:text-sm"
+                                  className="w-full bg-white hover:bg-gray-100 text-blue-600 hover:text-blue-700 border-0 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold px-4 py-2 sm:py-2.5 rounded-full hover:scale-105 transform text-xs sm:text-sm"
                                 >
                                   <Link href={slide.href} className="flex items-center justify-center gap-2">
                                     {slide.buttonText}
@@ -900,15 +939,15 @@ export function HomeContent({ lang }: HomeContentProps) {
                 {/* Navigation buttons - Responsive positioning */}
                 <button
                   onClick={prevSlide}
-                  className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-md text-blue-600 p-2 sm:p-3 rounded-full hover:bg-white hover:scale-110 transition-all duration-300 shadow-lg border border-white/30"
-                  disabled={conferencesLoading}
+                  className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-md text-blue-600 p-2 sm:p-3 rounded-full hover:bg-white hover:scale-110 transition-all duration-300 shadow-lg border border-white/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={conferencesLoading || !slides || slides.length === 0}
                 >
                   <ChevronLeft className="w-4 h-4 sm:w-6 sm:h-6" />
                 </button>
                 <button
                   onClick={nextSlide}
-                  className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-md text-blue-600 p-2 sm:p-3 rounded-full hover:bg-white hover:scale-110 transition-all duration-300 shadow-lg border border-white/30"
-                  disabled={conferencesLoading}
+                  className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-md text-blue-600 p-2 sm:p-3 rounded-full hover:bg-white hover:scale-110 transition-all duration-300 shadow-lg border border-white/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={conferencesLoading || !slides || slides.length === 0}
                 >
                   <ChevronRight className="w-4 h-4 sm:w-6 sm:h-6" />
                 </button>
@@ -1145,40 +1184,39 @@ export function HomeContent({ lang }: HomeContentProps) {
               <p className="text-sm sm:text-base text-slate-600 max-w-2xl mx-auto px-4">{t.songgiYangiliklarDesc}</p>
             </div>
 
-            <div className="relative max-w-7xl mx-auto">
+            <div className="relative max-w-6xl mx-auto">
               {latestContentLoading ? (
-                <div className="text-center py-12 sm:py-16">
-                  <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 sm:p-12 shadow-xl max-w-md mx-auto">
-                    <Bell className="w-16 h-16 sm:w-20 sm:h-20 text-gray-400 mx-auto mb-4 sm:mb-6 animate-pulse" />
-                    <h3 className="text-xl sm:text-2xl font-semibold text-gray-700 mb-3 sm:mb-4">
-                      {t.yangiliklarYuklanmoqda}
-                    </h3>
-                    <p className="text-sm sm:text-base text-gray-500 leading-relaxed">{t.iltimosKuting}</p>
+                <div className="text-center py-8">
+                  <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-xl max-w-md mx-auto">
+                    <Bell className="w-16 h-16 text-gray-400 mx-auto mb-4 animate-pulse" />
+                    <h3 className="text-lg font-semibold text-gray-700 mb-2">{t.yangiliklarYuklanmoqda}</h3>
+                    <p className="text-sm text-gray-500">{t.iltimosKuting}</p>
                   </div>
                 </div>
               ) : latestContent && latestContent.length > 0 ? (
                 <>
-                  <div className="relative overflow-hidden min-h-[550px] sm:min-h-[650px] lg:min-h-[700px]">
-                    <div className="flex items-center justify-center h-full">
-                      {/* Mobile: Single elegant card with full content */}
-                      <div className="block lg:hidden w-full max-w-md mx-auto px-4">
-                        <Card className="overflow-hidden shadow-2xl bg-white border-0 rounded-3xl group hover:shadow-3xl transition-all duration-500 hover:scale-[1.02]">
-                          <CardContent className="p-0 flex flex-col">
-                            {/* Image section with elegant gradient */}
-                            <div className="relative h-64 overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
+                  {/* Compact carousel container */}
+                  <div className="relative overflow-hidden">
+                    <div className="flex items-center justify-center py-4">
+                      {/* Mobile: Single compact card */}
+                      <div className="block lg:hidden w-full max-w-sm mx-auto px-4">
+                        <Card className="overflow-hidden shadow-lg bg-white border-0 rounded-2xl group hover:shadow-xl transition-all duration-300">
+                          <CardContent className="p-0">
+                            {/* Compact image */}
+                            <div className="relative h-48 overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
                               <img
                                 src={latestContent[currentBookSlide]?.image || "/placeholder.svg"}
                                 alt={latestContent[currentBookSlide]?.title || "Content"}
-                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                 onError={(e) => {
                                   e.currentTarget.src = "/placeholder.svg"
                                 }}
                               />
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
 
-                              {/* Type badge with refined styling */}
-                              <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm px-5 py-2.5 rounded-full shadow-xl border border-white/50">
-                                <span className="text-xs font-bold text-[#003D7F] uppercase tracking-wider">
+                              {/* Type badge */}
+                              <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-lg">
+                                <span className="text-xs font-semibold text-[#003D7F]">
                                   {latestContent[currentBookSlide]?.type === "book" && "📚 Kitob"}
                                   {latestContent[currentBookSlide]?.type === "journal" && "📰 Jurnal"}
                                   {latestContent[currentBookSlide]?.type === "conference" && "🎯 Konferensiya"}
@@ -1186,25 +1224,25 @@ export function HomeContent({ lang }: HomeContentProps) {
                               </div>
                             </div>
 
-                            {/* Content section with full visibility */}
-                            <div className="p-6 bg-gradient-to-br from-white via-blue-50/30 to-indigo-50/40">
-                              <h3 className="text-xl font-bold mb-4 text-gray-900 leading-tight group-hover:text-[#003D7F] transition-colors duration-300">
+                            {/* Compact content */}
+                            <div className="p-4 bg-white">
+                              <h3 className="text-base font-bold mb-2 text-gray-900 line-clamp-2 leading-tight">
                                 {latestContent[currentBookSlide]?.title || "Content"}
                               </h3>
-                              <div className="text-gray-600 mb-6 leading-relaxed text-sm max-h-32 overflow-y-auto pr-2 custom-scrollbar">
+                              <p className="text-sm text-gray-600 mb-4 line-clamp-2">
                                 {latestContent[currentBookSlide]?.description || ""}
-                              </div>
+                              </p>
 
                               <Button
                                 size="sm"
-                                className="w-full bg-gradient-to-r from-[#003D7F] via-[#0059B2] to-[#007ACC] hover:from-[#002B5A] hover:via-[#004494] hover:to-[#005A99] text-white border-0 shadow-lg hover:shadow-2xl transition-all duration-300 font-semibold px-6 py-3.5 rounded-full hover:scale-105 transform group text-sm"
+                                className="w-full bg-gradient-to-r from-[#003D7F] to-[#0059B2] hover:from-[#002B5A] hover:to-[#004494] text-white border-0 shadow-md hover:shadow-lg transition-all duration-300 font-semibold py-2 rounded-lg text-sm"
                                 onClick={() => {
                                   router.push(latestContent[currentBookSlide]?.href || `/${lang}`)
                                 }}
                               >
                                 <span className="flex items-center justify-center gap-2">
                                   {t.batafsilOqish}
-                                  <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
+                                  <ChevronRight className="w-4 h-4" />
                                 </span>
                               </Button>
                             </div>
@@ -1212,160 +1250,91 @@ export function HomeContent({ lang }: HomeContentProps) {
                         </Card>
                       </div>
 
-                      {/* Desktop: Three elegant cards with full content */}
-                      <div className="hidden lg:flex items-center justify-center h-full w-full gap-6">
-                        {/* Left preview card */}
-                        <div className="w-1/4 opacity-70 transform scale-95 transition-all duration-500 hover:opacity-90 hover:scale-100">
-                          {latestContent.length > 1 && (
-                            <Card className="overflow-hidden shadow-xl bg-white/95 backdrop-blur-sm border-0 rounded-3xl h-[580px]">
-                              <CardContent className="p-0 h-full flex flex-col">
-                                <div className="relative h-48 overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
-                                  <img
-                                    src={
-                                      latestContent[
-                                        (currentBookSlide - 1 + latestContent.length) % latestContent.length
-                                      ]?.image || "/placeholder.svg"
-                                    }
-                                    alt="Preview"
-                                    className="w-full h-full object-cover"
-                                  />
-                                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
-                                </div>
-                                <div className="p-5 flex-1 flex flex-col justify-center bg-gradient-to-br from-white to-blue-50/20">
-                                  <h3 className="text-base font-bold text-gray-800 text-center leading-tight mb-2">
-                                    {latestContent[(currentBookSlide - 1 + latestContent.length) % latestContent.length]
-                                      ?.title || "Content"}
-                                  </h3>
-                                  <p className="text-xs text-gray-600 text-center">
-                                    {latestContent[(currentBookSlide - 1 + latestContent.length) % latestContent.length]
-                                      ?.type === "book" && "📚 Kitob"}
-                                    {latestContent[(currentBookSlide - 1 + latestContent.length) % latestContent.length]
-                                      ?.type === "journal" && "📰 Jurnal"}
-                                    {latestContent[(currentBookSlide - 1 + latestContent.length) % latestContent.length]
-                                      ?.type === "conference" && "🎯 Konferensiya"}
-                                  </p>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          )}
-                        </div>
-
-                        {/* Main featured card with full content */}
-                        <div className="w-1/2 transform scale-100 transition-all duration-500">
-                          <Card className="overflow-hidden shadow-2xl bg-white border-0 rounded-3xl group hover:shadow-3xl transition-all duration-500 hover:scale-[1.02] h-[650px]">
-                            <CardContent className="p-0 h-full flex flex-col">
-                              {/* Image section */}
-                              <div className="relative h-80 overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
+                      {/* Desktop: Three compact cards in a row */}
+                      <div className="hidden lg:flex items-center justify-center gap-6 w-full px-8">
+                        {latestContent.map((item, index) => (
+                          <Card
+                            key={index}
+                            className={`overflow-hidden shadow-lg bg-white border-0 rounded-2xl group hover:shadow-xl transition-all duration-300 w-80 ${
+                              index === currentBookSlide ? "ring-2 ring-[#003D7F] scale-105" : "opacity-90"
+                            }`}
+                          >
+                            <CardContent className="p-0">
+                              {/* Compact image - 288x242 like reference */}
+                              <div className="relative h-60 overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
                                 <img
-                                  src={latestContent[currentBookSlide]?.image || "/placeholder.svg"}
-                                  alt={latestContent[currentBookSlide]?.title || "Content"}
-                                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                                  src={item.image || "/placeholder.svg"}
+                                  alt={item.title || "Content"}
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                   onError={(e) => {
                                     e.currentTarget.src = "/placeholder.svg"
                                   }}
                                 />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
 
                                 {/* Type badge */}
-                                <div className="absolute top-6 right-6 bg-white/95 backdrop-blur-sm px-6 py-3 rounded-full shadow-xl border border-white/50">
-                                  <span className="text-sm font-bold text-[#003D7F] uppercase tracking-wider">
-                                    {latestContent[currentBookSlide]?.type === "book" && "📚 Kitob"}
-                                    {latestContent[currentBookSlide]?.type === "journal" && "📰 Jurnal"}
-                                    {latestContent[currentBookSlide]?.type === "conference" && "🎯 Konferensiya"}
+                                <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-lg">
+                                  <span className="text-xs font-semibold text-[#003D7F]">
+                                    {item.type === "book" && "📚 Kitob"}
+                                    {item.type === "journal" && "📰 Jurnal"}
+                                    {item.type === "conference" && "🎯 Konferensiya"}
                                   </span>
                                 </div>
                               </div>
 
-                              {/* Content section with full visibility and scrolling */}
-                              <div className="flex-1 p-8 flex flex-col bg-gradient-to-br from-white via-blue-50/30 to-indigo-50/40 overflow-hidden">
-                                <h3 className="text-2xl font-bold mb-4 text-gray-900 leading-tight group-hover:text-[#003D7F] transition-colors duration-300">
-                                  {latestContent[currentBookSlide]?.title || "Content"}
+                              {/* Compact content */}
+                              <div className="p-5 bg-white">
+                                <h3 className="text-lg font-bold mb-2 text-gray-900 line-clamp-2 leading-tight group-hover:text-[#003D7F] transition-colors">
+                                  {item.title || "Content"}
                                 </h3>
-                                <div className="text-gray-600 leading-relaxed text-base mb-6 flex-1 overflow-y-auto pr-2 custom-scrollbar">
-                                  {latestContent[currentBookSlide]?.description || ""}
-                                </div>
+                                <p className="text-sm text-gray-600 mb-4 line-clamp-3 leading-relaxed">
+                                  {item.description || ""}
+                                </p>
 
                                 <Button
-                                  size="lg"
-                                  className="w-full bg-gradient-to-r from-[#003D7F] via-[#0059B2] to-[#007ACC] hover:from-[#002B5A] hover:via-[#004494] hover:to-[#005A99] text-white border-0 shadow-lg hover:shadow-2xl transition-all duration-300 font-semibold px-10 py-4 rounded-full hover:scale-105 transform group"
+                                  size="sm"
+                                  className="w-full bg-gradient-to-r from-[#003D7F] to-[#0059B2] hover:from-[#002B5A] hover:to-[#004494] text-white border-0 shadow-md hover:shadow-lg transition-all duration-300 font-semibold py-2.5 rounded-lg text-sm group-btn"
                                   onClick={() => {
-                                    router.push(latestContent[currentBookSlide]?.href || `/${lang}`)
+                                    router.push(item.href || `/${lang}`)
                                   }}
                                 >
-                                  <span className="flex items-center justify-center gap-3 text-lg">
+                                  <span className="flex items-center justify-center gap-2">
                                     {t.batafsilOqish}
-                                    <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
+                                    <ChevronRight className="w-4 h-4 group-btn-hover:translate-x-1 transition-transform" />
                                   </span>
                                 </Button>
                               </div>
                             </CardContent>
                           </Card>
-                        </div>
-
-                        {/* Right preview card */}
-                        <div className="w-1/4 opacity-70 transform scale-95 transition-all duration-500 hover:opacity-90 hover:scale-100">
-                          {latestContent.length > 1 && (
-                            <Card className="overflow-hidden shadow-xl bg-white/95 backdrop-blur-sm border-0 rounded-3xl h-[580px]">
-                              <CardContent className="p-0 h-full flex flex-col">
-                                <div className="relative h-48 overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
-                                  <img
-                                    src={
-                                      latestContent[(currentBookSlide + 1) % latestContent.length]?.image ||
-                                      "/placeholder.svg" ||
-                                      "/placeholder.svg"
-                                    }
-                                    alt="Preview"
-                                    className="w-full h-full object-cover"
-                                  />
-                                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
-                                </div>
-                                <div className="p-5 flex-1 flex flex-col justify-center bg-gradient-to-br from-white to-blue-50/20">
-                                  <h3 className="text-base font-bold text-gray-800 text-center leading-tight mb-2">
-                                    {latestContent[(currentBookSlide + 1) % latestContent.length]?.title || "Content"}
-                                  </h3>
-                                  <p className="text-xs text-gray-600 text-center">
-                                    {latestContent[(currentBookSlide + 1) % latestContent.length]?.type === "book" &&
-                                      "📚 Kitob"}
-                                    {latestContent[(currentBookSlide + 1) % latestContent.length]?.type === "journal" &&
-                                      "📰 Jurnal"}
-                                    {latestContent[(currentBookSlide + 1) % latestContent.length]?.type ===
-                                      "conference" && "🎯 Konferensiya"}
-                                  </p>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          )}
-                        </div>
+                        ))}
                       </div>
                     </div>
                   </div>
 
-                  {/* Navigation controls with elegant styling */}
+                  {/* Compact navigation controls - 50x50 like reference */}
                   {latestContent.length > 1 && (
                     <>
                       <button
                         onClick={prevBookSlide}
-                        className="absolute left-2 sm:left-4 lg:left-6 top-1/2 -translate-y-1/2 bg-white/95 backdrop-blur-md text-[#003D7F] p-3 sm:p-4 lg:p-5 rounded-full hover:bg-white hover:scale-110 transition-all duration-300 shadow-2xl z-30 border border-white/50 hover:border-[#003D7F]/20 hover:shadow-3xl"
+                        className="absolute left-2 top-1/2 -translate-y-1/2 bg-gray-200 hover:bg-gray-300 text-[#003D7F] p-3 rounded-full transition-all duration-300 shadow-lg z-30 w-12 h-12 flex items-center justify-center"
                       >
-                        <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7" />
+                        <ChevronLeft className="w-5 h-5" />
                       </button>
                       <button
                         onClick={nextBookSlide}
-                        className="absolute right-2 sm:right-4 lg:right-6 top-1/2 -translate-y-1/2 bg-white/95 backdrop-blur-md text-[#003D7F] p-3 sm:p-4 lg:p-5 rounded-full hover:bg-white hover:scale-110 transition-all duration-300 shadow-2xl z-30 border border-white/50 hover:border-[#003D7F]/20 hover:shadow-3xl"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 bg-gray-200 hover:bg-gray-300 text-[#003D7F] p-3 rounded-full transition-all duration-300 shadow-lg z-30 w-12 h-12 flex items-center justify-center"
                       >
-                        <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7" />
+                        <ChevronRight className="w-5 h-5" />
                       </button>
 
-                      {/* Elegant pagination dots */}
-                      <div className="absolute -bottom-4 sm:-bottom-6 left-1/2 -translate-x-1/2 flex space-x-2 sm:space-x-3 lg:space-x-4 z-30">
+                      {/* Compact pagination dots */}
+                      <div className="flex justify-center mt-6 space-x-2">
                         {latestContent.map((_, index) => (
                           <button
                             key={index}
                             onClick={() => setCurrentBookSlide(index)}
-                            className={`w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 rounded-full transition-all duration-300 border-2 ${
-                              index === currentBookSlide
-                                ? "bg-[#003D7F] border-[#003D7F] scale-125 shadow-lg"
-                                : "bg-white border-gray-300 hover:bg-gray-100 hover:border-[#003D7F]/50 hover:scale-110"
+                            className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+                              index === currentBookSlide ? "bg-[#003D7F] scale-125" : "bg-gray-300 hover:bg-gray-400"
                             }`}
                           />
                         ))}
@@ -1374,11 +1343,11 @@ export function HomeContent({ lang }: HomeContentProps) {
                   )}
                 </>
               ) : (
-                <div className="text-center py-16">
-                  <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-12 shadow-xl max-w-md mx-auto">
-                    <Bell className="w-20 h-20 text-gray-400 mx-auto mb-6" />
-                    <h3 className="text-2xl font-semibold text-gray-700 mb-4">{t.yangiliklarMavjudEmas}</h3>
-                    <p className="text-gray-500 leading-relaxed">{t.yangiliklarMavjudEmasDesc}</p>
+                <div className="text-center py-12">
+                  <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-xl max-w-md mx-auto">
+                    <Bell className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold text-gray-700 mb-3">{t.yangiliklarMavjudEmas}</h3>
+                    <p className="text-gray-500">{t.yangiliklarMavjudEmasDesc}</p>
                   </div>
                 </div>
               )}

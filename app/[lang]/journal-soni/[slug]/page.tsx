@@ -10,6 +10,7 @@ import { Footer } from "@/components/footer"
 import { Loader } from "@/components/Loader"
 import { fetchJournalIssue, fetchJournalSections, type JournalIssue, type JournalSection } from "@/lib/api"
 import { fetchWithAuth } from "@/lib/auth"
+import { fetchUserProfile } from "@/lib/user"
 import { Calendar, AlertCircle, ArrowLeft, Download, FileText, Users } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
@@ -291,14 +292,39 @@ export default function JournalIssueDetailPage() {
     console.log("[v0] ========== JOURNAL ISSUE PDF OPEN DEBUG ==========")
     console.log("[v0] Journal issue data:", issue)
     console.log("[v0] URL slug parameter:", slug)
-    console.log("[v0] Journal issue pdf_file from API:", issue?.pdf_file)
-    console.log("[v0] Current language:", lang)
 
     const token = localStorage.getItem("access_token")
     console.log("[v0] Access token exists:", !!token)
 
     if (!token) {
-      console.log("[v0] No token found, redirecting to login")
+      console.log("[v0] User not logged in, redirecting to login page")
+      const returnUrl = encodeURIComponent(window.location.pathname + window.location.search)
+      router.push(`/${lang}/login?returnUrl=${returnUrl}`)
+      return
+    }
+
+    try {
+      console.log("[v0] Checking user subscription status...")
+      const userProfile = await fetchUserProfile(token)
+      console.log("[v0] User profile:", userProfile)
+      console.log("[v0] Active subscriptions:", userProfile.subscription?.active)
+
+      const hasActiveSubscription = userProfile.subscription?.active && userProfile.subscription.active.length > 0
+      console.log("[v0] Has active subscription:", hasActiveSubscription)
+
+      if (!hasActiveSubscription) {
+        console.log("[v0] User has no active subscription, redirecting to buy page")
+        const returnUrl = encodeURIComponent(window.location.pathname + window.location.search)
+        router.push(`/${lang}/buy/?subscription_type_id=1&returnUrl=${returnUrl}`)
+        return
+      }
+
+      console.log("[v0] User has active subscription, proceeding to fetch PDF")
+    } catch (profileError) {
+      console.error("[v0] Error fetching user profile:", profileError)
+      // If profile fetch fails, redirect to login (token might be invalid)
+      localStorage.removeItem("access_token")
+      localStorage.removeItem("refresh_token")
       const returnUrl = encodeURIComponent(window.location.pathname + window.location.search)
       router.push(`/${lang}/login?returnUrl=${returnUrl}`)
       return
@@ -324,16 +350,13 @@ export default function JournalIssueDetailPage() {
           })
 
           console.log("[v0] Direct PDF response status:", pdfResponse.status)
-          console.log("[v0] Direct PDF response ok:", pdfResponse.ok)
 
           if (pdfResponse.ok) {
             const pdfBlob = await pdfResponse.blob()
             console.log("[v0] PDF blob size:", pdfBlob.size)
-            console.log("[v0] PDF blob type:", pdfBlob.type)
 
             if (pdfBlob.size > 0) {
               const blobUrl = URL.createObjectURL(pdfBlob)
-              console.log("[v0] PDF blob URL created:", blobUrl)
               setPdfBlobUrl(blobUrl)
               setShowPDFViewer(true)
               console.log("[v0] ========== JOURNAL ISSUE PDF OPEN SUCCESS (DIRECT) ==========")
@@ -346,10 +369,7 @@ export default function JournalIssueDetailPage() {
       }
 
       console.log("[v0] Attempting slug-based PDF API")
-      const issueSlug = slug // Use URL slug directly
-      console.log("[v0] Using URL slug for PDF:", issueSlug)
-
-      const pdfUrl = `${API_BASE}/${lang}/journal-issue/${issueSlug}/`
+      const pdfUrl = `${API_BASE}/${lang}/journal-issue/${slug}/`
       console.log("[v0] PDF URL:", pdfUrl)
 
       const pdfResponse = await fetchWithAuth(pdfUrl, {
@@ -360,14 +380,6 @@ export default function JournalIssueDetailPage() {
       })
 
       console.log("[v0] PDF response status:", pdfResponse.status)
-      console.log("[v0] PDF response ok:", pdfResponse.ok)
-
-      if (pdfResponse.status === 403) {
-        console.log("[v0] 403 Forbidden - User needs subscription")
-        const returnUrl = encodeURIComponent(window.location.pathname + window.location.search)
-        router.push(`/${lang}/buy/?subscription_type_id=1&returnUrl=${returnUrl}`)
-        return
-      }
 
       if (!pdfResponse.ok) {
         const contentType = pdfResponse.headers.get("content-type")
@@ -394,7 +406,6 @@ export default function JournalIssueDetailPage() {
       }
 
       const blobUrl = URL.createObjectURL(pdfBlob)
-      console.log("[v0] PDF blob URL created:", blobUrl)
       setPdfBlobUrl(blobUrl)
       setShowPDFViewer(true)
       console.log("[v0] ========== JOURNAL ISSUE PDF OPEN SUCCESS ==========")
@@ -402,12 +413,10 @@ export default function JournalIssueDetailPage() {
       console.error("[v0] ========== JOURNAL ISSUE PDF OPEN ERROR ==========")
       console.error("[v0] Error:", error)
       if (error instanceof Error) {
-        console.error("[v0] Error message:", error.message)
         alert(`PDF yuklanishida xatolik yuz berdi: ${error.message}`)
       } else {
         alert("PDF yuklanishida xatolik yuz berdi")
       }
-      console.error("[v0] ========== JOURNAL ISSUE PDF OPEN ERROR END ==========")
     }
   }
 
