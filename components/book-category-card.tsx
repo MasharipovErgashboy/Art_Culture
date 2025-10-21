@@ -1,82 +1,96 @@
+"use client"
+import { useState } from "react"
 import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { BookOpen, ArrowRight, Sparkles } from "lucide-react"
+import { BookOpen, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import Image from "next/image"
 import type { BookCategory } from "@/lib/api"
 
 interface BookCategoryCardProps {
-  category: BookCategory
+  category: BookCategory & { image?: string | null }
   lang: string
 }
 
 export function BookCategoryCard({ category, lang }: BookCategoryCardProps) {
+  const [imageError, setImageError] = useState(false)
+  const [imageLoaded, setImageLoaded] = useState(false)
+
   const slug = lang === "uz" ? category.slug_uz : lang === "ru" ? category.slug_ru : category.slug_en
 
   const translations = {
-    uz: { books: "kitob", viewBooks: "Kitoblarni ko'rish" },
-    ru: { books: "книг", viewBooks: "Посмотреть книги" },
-    en: { books: "books", viewBooks: "View Books" },
+    uz: { books: "kitob", viewBooks: "Kitoblarni ko'rish", noImage: "Rasm mavjud emas" },
+    ru: { books: "книг", viewBooks: "Посмотреть книги", noImage: "Изображение недоступно" },
+    en: { books: "books", viewBooks: "View Books", noImage: "No image available" },
   }
 
   const t = translations[lang as keyof typeof translations] || translations.en
 
+  const imageUrl = category.image ? `https://artculture.pythonanywhere.com${category.image}` : null
+
   return (
     <Link href={`/${lang}/books-category/${slug}`} className="block group">
-      <Card className="relative h-full overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-[1.03] bg-white">
-        {/* Animated gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
-        {/* Decorative elements */}
-        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/10 to-transparent rounded-bl-full opacity-50 group-hover:opacity-100 transition-opacity duration-500" />
-        <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-primary/5 to-transparent rounded-tr-full opacity-50 group-hover:opacity-100 transition-opacity duration-500" />
-
-        <CardHeader className="relative pb-4 space-y-4">
-          {/* Icon with animated background */}
-          <div className="flex items-center justify-between">
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/10 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-500" />
-              <div className="relative p-4 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 group-hover:from-primary/20 group-hover:to-primary/10 transition-all duration-500 group-hover:scale-110 group-hover:rotate-6 shadow-lg">
-                <BookOpen className="h-8 w-8 text-primary" />
+      <Card className="group hover:shadow-xl transition-all duration-300 border hover:border-primary/30 hover:scale-[1.02] bg-white/80 backdrop-blur-sm overflow-hidden h-full flex flex-col">
+        {imageUrl && !imageError ? (
+          <div className="relative aspect-[16/10] w-full overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200">
+            {!imageLoaded && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="animate-pulse">
+                  <BookOpen className="h-12 w-12 text-primary/30" />
+                </div>
               </div>
-            </div>
-
-            {/* Sparkle icon for visual interest */}
-            <Sparkles className="h-5 w-5 text-primary/40 group-hover:text-primary group-hover:scale-125 transition-all duration-500" />
+            )}
+            <Image
+              src={imageUrl || "/placeholder.svg"}
+              alt={category.name}
+              fill
+              className={`object-cover group-hover:scale-105 transition-all duration-500 ${
+                imageLoaded ? "opacity-100" : "opacity-0"
+              }`}
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              onError={() => setImageError(true)}
+              onLoad={() => setImageLoaded(true)}
+              unoptimized
+              priority={false}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </div>
+        ) : (
+          <div className="relative aspect-[16/10] w-full overflow-hidden bg-gradient-to-br from-primary/10 via-primary/5 to-primary/20 flex items-center justify-center">
+            <div className="text-center">
+              <BookOpen className="h-16 w-16 text-primary/40 mx-auto mb-4" />
+              <p className="text-primary/60 font-medium">{t.noImage}</p>
+            </div>
+          </div>
+        )}
 
-          {/* Title with better typography */}
-          <CardTitle className="text-2xl font-bold group-hover:text-primary transition-colors duration-300 line-clamp-2 leading-tight">
-            {category.name}
-          </CardTitle>
-
-          {/* Books count badge with modern design */}
-          <div className="flex items-center gap-2">
-            <div className="px-4 py-2 rounded-full bg-gradient-to-r from-primary/15 to-primary/10 group-hover:from-primary/25 group-hover:to-primary/15 transition-all duration-300 shadow-sm">
-              <span className="text-sm font-bold text-primary flex items-center gap-1">
-                <BookOpen className="h-4 w-4" />
+        <CardHeader className="pb-4 flex-1">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors">
+              <BookOpen className="h-6 w-6 text-primary" />
+            </div>
+            <div className="px-4 py-1.5 rounded-full bg-gradient-to-r from-primary/15 to-primary/10 group-hover:from-primary/25 group-hover:to-primary/15 transition-all duration-300">
+              <span className="text-sm font-bold text-primary">
                 {category.books_count} {t.books}
               </span>
             </div>
           </div>
+
+          <CardTitle className="text-xl font-semibold group-hover:text-primary transition-colors line-clamp-2">
+            {category.name}
+          </CardTitle>
+
+          <CardDescription className="line-clamp-3 leading-relaxed">{category.description}</CardDescription>
         </CardHeader>
 
-        <CardContent className="relative space-y-4">
-          {/* Description with better readability */}
-          <CardDescription className="text-sm text-muted-foreground line-clamp-3 leading-relaxed min-h-[4.5rem]">
-            {category.description}
-          </CardDescription>
-
-          {/* Modern button with gradient and animation */}
-          <Button className="w-full bg-gradient-to-r from-primary via-primary/90 to-primary/80 hover:from-primary/90 hover:via-primary hover:to-primary text-white shadow-md hover:shadow-xl transition-all duration-300 group-hover:translate-y-[-2px] font-semibold">
+        <CardContent>
+          <Button className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-md hover:shadow-lg transition-all duration-300">
             <span className="flex items-center justify-between w-full">
               <span>{t.viewBooks}</span>
               <ArrowRight className="h-4 w-4 group-hover:translate-x-2 transition-transform duration-300" />
             </span>
           </Button>
         </CardContent>
-
-        {/* Bottom accent line */}
-        <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
       </Card>
     </Link>
   )

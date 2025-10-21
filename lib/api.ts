@@ -496,16 +496,31 @@ export async function fetchBooks(
 }
 
 // Fetch book category with optional token
-export async function fetchBookCategory(slug: string, lang = "en", token?: string): Promise<BookCategory> {
+export async function fetchBookCategory(
+  slug: string,
+  lang = "en",
+  page = 1,
+  pageSize = 10,
+): Promise<{
+  count: number
+  next: string | null
+  previous: string | null
+  results: BookCategory & {
+    image?: string | null
+    latest_books: Book[]
+  }
+}> {
   try {
-    const url = `${API_BASE}/${lang}/book-categories/${slug}/`
+    const url = `${API_BASE}/${lang}/book-categories/${slug}/?page=${page}&page_size=${pageSize}`
 
     console.log("[v0] ========== FETCH BOOK CATEGORY DEBUG ==========")
     console.log("[v0] URL:", url)
     console.log("[v0] Language:", lang)
     console.log("[v0] Slug:", slug)
+    console.log("[v0] Page:", page)
+    console.log("[v0] Page size:", pageSize)
 
-    const response = await fetchWithAuth(url, {
+    const response = await fetchWithTimeout(url, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -526,6 +541,8 @@ export async function fetchBookCategory(slug: string, lang = "en", token?: strin
 
     const data = await response.json()
     console.log("[v0] Book category data received:", data)
+    console.log("[v0] Total count:", data.count)
+    console.log("[v0] Books in current page:", data.results?.latest_books?.length || 0)
     console.log("[v0] ========== FETCH BOOK CATEGORY SUCCESS ==========")
 
     return data

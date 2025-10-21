@@ -11,6 +11,7 @@ import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { AlertCircle, CheckCircle, Shield, Crown, Star, Calendar, DollarSign, KeyRound } from "lucide-react"
 import { ProtectedRoute } from "@/components/protected-route"
+import { fetchWithAuth } from "@/lib/auth"
 
 interface Translations {
   myProfile: string
@@ -47,7 +48,7 @@ const translations: { [key: string]: Translations } = {
     manageAccount: "Hisob sozlamalarini boshqarish",
     profileUpdated: "Profil muvaffaqiyatli yangilandi!",
     authTokenNotFound: "Autentifikatsiya tokeni topilmadi. Iltimos, qayta kiring.",
-    sessionExpired: "Sessiya muddati tugadi. Iltimos, qayta kiring.",
+    sessionExpired: "Sahifani yangilang (F5 yoki Ctrl+R)",
     networkError: "Tarmoq xatosi. Iltimos, ulanishingizni tekshiring.",
     noProfileData: "Profil ma'lumotlari mavjud emas.",
     personalInfo: "Shaxsiy ma'lumotlar",
@@ -75,7 +76,7 @@ const translations: { [key: string]: Translations } = {
     manageAccount: "Управление настройками аккаунта",
     profileUpdated: "Профиль успешно обновлен!",
     authTokenNotFound: "Токен аутентификации не найден. Пожалуйста, войдите снова.",
-    sessionExpired: "Сессия истекла. Пожалуйста, войдите снова.",
+    sessionExpired: "Обновите страницу (F5 или Ctrl+R)",
     networkError: "Ошибка сети. Пожалуйста, проверьте подключение.",
     noProfileData: "Данные профиля недоступны.",
     personalInfo: "Личная информация",
@@ -103,7 +104,7 @@ const translations: { [key: string]: Translations } = {
     manageAccount: "Manage your account settings and preferences",
     profileUpdated: "Profile updated successfully!",
     authTokenNotFound: "Authentication token not found. Please login again.",
-    sessionExpired: "Session expired. Please login again.",
+    sessionExpired: "Please refresh the page (F5 or Ctrl+R)",
     networkError: "Network error. Please check your connection.",
     noProfileData: "No profile data available.",
     personalInfo: "Personal Information",
@@ -172,23 +173,13 @@ export default function ProfilePage() {
         setLoading(true)
         setError(null)
 
-        const token = localStorage.getItem("access_token")
-        if (!token) {
-          setError(t.authTokenNotFound)
-          return
-        }
-
-        const response = await fetch("https://artculture.pythonanywhere.com/auth/me/", {
+        const response = await fetchWithAuth("https://artculture.pythonanywhere.com/auth/me/", {
           headers: {
-            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         })
 
         if (!response.ok) {
-          if (response.status === 401) {
-            throw new Error("401")
-          }
           throw new Error(`HTTP error! status: ${response.status}`)
         }
 
@@ -196,10 +187,8 @@ export default function ProfilePage() {
         setProfile(data)
       } catch (err) {
         console.error("[v0] Profile fetch error:", err)
-        if (err instanceof Error && err.message.includes("401")) {
+        if (err instanceof Error && (err.message === "REFRESH_PAGE" || err.message === "NO_TOKEN")) {
           setError(t.sessionExpired)
-          localStorage.removeItem("access_token")
-          localStorage.removeItem("refresh_token")
         } else {
           setError(t.networkError)
         }

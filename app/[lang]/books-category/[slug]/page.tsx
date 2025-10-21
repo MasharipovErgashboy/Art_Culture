@@ -1,15 +1,15 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
-import { ArrowLeft, BookOpen, ChevronLeft, ChevronRight } from "lucide-react"
+import { ArrowLeft, BookOpen, ChevronLeft, ChevronRight, AlertCircle } from "lucide-react"
 import { BookCard } from "@/components/book-card"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
+import { fetchBookCategory } from "@/lib/api"
 
 const translations = {
   uz: {
@@ -104,6 +104,7 @@ const API_BASE = "https://artculture.pythonanywhere.com"
 export default function BookCategoryPage() {
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const lang = params.lang as string
   const slug = params.slug as string
   const t = translations[lang as keyof typeof translations] || translations.uz
@@ -111,106 +112,160 @@ export default function BookCategoryPage() {
   const [category, setCategory] = useState<BookCategoryDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [currentPage, setCurrentPage] = useState(1)
+  const [currentPage, setCurrentPage] = useState(() => {
+    const pageParam = searchParams.get("page")
+    return pageParam ? Number.parseInt(pageParam, 10) : 1
+  })
+  const [totalCount, setTotalCount] = useState(0)
+  const [hasNext, setHasNext] = useState(false)
+  const [hasPrevious, setHasPrevious] = useState(false)
   const [currentCategoryId, setCurrentCategoryId] = useState<number | null>(null)
   const prevLang = useRef<string>(lang)
-  const booksPerPage = 9
+  const booksPerPage = 8
 
   useEffect(() => {
-    const fetchCategory = async () => {
+    const pageParam = searchParams.get("page")
+    const pageFromUrl = pageParam ? Number.parseInt(pageParam, 10) : 1
+    if (pageFromUrl !== currentPage) {
+      setCurrentPage(pageFromUrl)
+    }
+  }, [searchParams])
+
+  useEffect(() => {
+    const fetchCategoryData = async () => {
       try {
         setLoading(true)
-        const token = localStorage.getItem("access_token")
+        setError(null)
 
         console.log("[v0] ===== BOOK CATEGORY FETCH STARTED =====")
         console.log("[v0] Current language:", lang)
-        console.log("[v0] Previous language:", prevLang.current)
         console.log("[v0] Current slug from URL:", slug)
-        console.log("[v0] Stored category ID:", currentCategoryId)
+        console.log("[v0] Current page:", currentPage)
+        console.log("[v0] Books per page:", booksPerPage)
 
-        let apiUrl: string
-        let response: Response
+        const data = await fetchBookCategory(slug, lang, currentPage, booksPerPage)
 
-        const languageChanged = prevLang.current !== lang
-        console.log("[v0] Language changed?", languageChanged)
+        console.log("[v0] ===== API RESPONSE RECEIVED =====")
+        console.log("[v0] Full API response:", JSON.stringify(data, null, 2))
+        console.log("[v0] Total count:", data.count)
+        console.log("[v0] Has next:", !!data.next)
+        console.log("[v0] Has previous:", !!data.previous)
+        console.log("[v0] Results object:", data.results)
 
-        if (currentCategoryId && languageChanged) {
-          console.log("[v0] Language changed! Fetching by ID:", currentCategoryId)
-          apiUrl = `${API_BASE}/${lang}/book-categories/id/${currentCategoryId}/`
-          console.log("[v0] Fetching from:", apiUrl)
+        if (data.results) {
+          console.log("[v0] Category name:", data.results.name)
+          console.log("[v0] Category description:", data.results.description)
+          console.log("[v0] Books count:", data.results.books_count)
+          console.log("[v0] Latest books array:", data.results.latest_books)
+          console.log("[v0] Latest books length:", data.results.latest_books?.length || 0)
 
-          response = await fetch(apiUrl, {
-            headers: {
-              ...(token && { Authorization: `Bearer ${token}` }),
-              Accept: "application/json",
-              "Content-Type": "application/json",
-              "Accept-Language": lang,
-            },
-            mode: "cors",
-          })
+          if (data.results.latest_books && data.results.latest_books.length > 0) {
+            console.log("[v0] First book:", data.results.latest_books[0])
+          } else {
+            console.log("[v0] WARNING: No books in latest_books array!")
+          }
         } else {
-          console.log("[v0] Fetching by slug:", slug)
-          apiUrl = `${API_BASE}/${lang}/book-categories/${slug}/`
-          console.log("[v0] Fetching from:", apiUrl)
-
-          response = await fetch(apiUrl, {
-            headers: {
-              ...(token && { Authorization: `Bearer ${token}` }),
-              Accept: "application/json",
-              "Content-Type": "application/json",
-              "Accept-Language": lang,
-            },
-            mode: "cors",
-          })
+          console.log("[v0] ERROR: No results object in API response!")
         }
 
-        console.log("[v0] Response status:", response.status)
-        console.log("[v0] Response ok:", response.ok)
+        setCategory(data.results)
+        setTotalCount(data.count)
+        setHasNext(!!data.next)
+        setHasPrevious(!!data.previous)
 
-        if (!response.ok) {
-          const errorText = await response.text()
-          console.error("[v0] API error response:", errorText)
-          throw new Error("Failed to fetch category")
+        if (data.results.id) {
+          setCurrentCategoryId(data.results.id)
+          console.log("[v0] Stored category ID:", data.results.id)
         }
 
-        const data = await response.json()
-        console.log("[v0] API Response:", data)
-        console.log("[v0] Category data:", data)
-        console.log("[v0] Category slug from API:", data.slug_uz, data.slug_en, data.slug_ru)
-        console.log("[v0] Category ID from API:", data.id)
+        const currentSlugForLang =
+          lang === "uz" ? data.results.slug_uz : lang === "ru" ? data.results.slug_ru : data.results.slug_en
 
-        if (data.id) {
-          setCurrentCategoryId(data.id)
-          console.log("[v0] Stored category ID:", data.id)
-        }
+        console.log("[v0] Current slug for lang:", currentSlugForLang)
+        console.log("[v0] URL slug:", slug)
 
-        setCategory(data)
-
-        const currentSlugForLang = lang === "uz" ? data.slug_uz : lang === "ru" ? data.slug_ru : data.slug_en
         if (currentSlugForLang && currentSlugForLang !== slug) {
           console.log("[v0] Slugs are different! Updating URL...")
-          console.log("[v0]   URL slug:", slug)
-          console.log("[v0]   API slug:", currentSlugForLang)
-          console.log("[v0] New URL will be:", `/${lang}/books-category/${currentSlugForLang}`)
-
-          router.replace(`/${lang}/books-category/${currentSlugForLang}`)
+          router.replace(`/${lang}/books-category/${currentSlugForLang}?page=${currentPage}`)
         }
 
         prevLang.current = lang
 
         console.log("[v0] ===== BOOK CATEGORY FETCH COMPLETED =====")
       } catch (err) {
+        console.error("[v0] ===== BOOK CATEGORY FETCH ERROR =====")
         console.error("[v0] Error loading category:", err)
+        console.error("[v0] Error type:", err instanceof Error ? err.constructor.name : typeof err)
+        if (err instanceof Error) {
+          console.error("[v0] Error message:", err.message)
+          console.error("[v0] Error stack:", err.stack)
+        }
         setError(err instanceof Error ? err.message : "An error occurred")
       } finally {
         setLoading(false)
+        console.log("[v0] Loading state set to false")
       }
     }
 
     if (slug) {
-      fetchCategory()
+      console.log("[v0] Slug exists, starting fetch...")
+      fetchCategoryData()
+    } else {
+      console.log("[v0] No slug provided!")
     }
-  }, [slug, lang, currentCategoryId, router])
+  }, [slug, lang, currentPage, router])
+
+  const totalPages = Math.ceil(totalCount / booksPerPage)
+  const currentBooks = category?.latest_books || []
+
+  console.log("[v0] ===== RENDER STATE =====")
+  console.log("[v0] Loading:", loading)
+  console.log("[v0] Error:", error)
+  console.log("[v0] Category:", category)
+  console.log("[v0] Current books:", currentBooks)
+  console.log("[v0] Current books length:", currentBooks.length)
+  console.log("[v0] Total pages:", totalPages)
+
+  const handlePageChange = (pageNumber: number) => {
+    console.log("[v0] Page change requested:", pageNumber)
+    router.push(`/${lang}/books-category/${slug}?page=${pageNumber}`)
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
+
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = []
+    const maxVisiblePages = 5
+
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i)
+      }
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 4; i++) {
+          pages.push(i)
+        }
+        pages.push("...")
+        pages.push(totalPages)
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1)
+        pages.push("...")
+        for (let i = totalPages - 3; i <= totalPages; i++) {
+          pages.push(i)
+        }
+      } else {
+        pages.push(1)
+        pages.push("...")
+        pages.push(currentPage - 1)
+        pages.push(currentPage)
+        pages.push(currentPage + 1)
+        pages.push("...")
+        pages.push(totalPages)
+      }
+    }
+
+    return pages
+  }
 
   if (loading) {
     return (
@@ -218,13 +273,11 @@ export default function BookCategoryPage() {
         <Navbar />
         <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
           <div className="container mx-auto px-4 py-8">
-            <Skeleton className="h-10 w-48 mb-8" />
-            <Skeleton className="h-12 w-96 mb-4" />
-            <Skeleton className="h-6 w-full max-w-2xl mb-12" />
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-96" />
-              ))}
+            <div className="flex items-center justify-center min-h-[400px]">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-lg text-muted-foreground">{t.loading}</p>
+              </div>
             </div>
           </div>
         </div>
@@ -233,17 +286,29 @@ export default function BookCategoryPage() {
     )
   }
 
-  if (error || !category) {
+  if (error) {
     return (
       <>
         <Navbar />
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center">
-            <p className="text-destructive mb-4">{error || "Category not found"}</p>
-            <Button onClick={() => router.push(`/${lang}/books-category`)}>
+        <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
+          <div className="container mx-auto px-4 py-8">
+            <Button
+              variant="ghost"
+              onClick={() => router.push(`/${lang}/books-category`)}
+              className="mb-8 hover:bg-blue-50 hover:text-blue-600"
+            >
               <ArrowLeft className="mr-2 h-4 w-4" />
               {t.backToBooks}
             </Button>
+            <Card className="text-center py-12">
+              <CardHeader>
+                <div className="mx-auto mb-4 p-4 bg-red-100 rounded-full w-fit">
+                  <AlertCircle className="h-12 w-12 text-red-600" />
+                </div>
+                <CardTitle className="text-red-600">Error Loading Category</CardTitle>
+                <CardDescription>{error}</CardDescription>
+              </CardHeader>
+            </Card>
           </div>
         </div>
         <Footer />
@@ -251,14 +316,34 @@ export default function BookCategoryPage() {
     )
   }
 
-  const indexOfLastBook = currentPage * booksPerPage
-  const indexOfFirstBook = indexOfLastBook - booksPerPage
-  const currentBooks = category?.latest_books?.slice(indexOfFirstBook, indexOfLastBook) || []
-  const totalPages = Math.ceil((category?.latest_books?.length || 0) / booksPerPage)
-
-  const handlePageChange = (pageNumber: number) => {
-    setCurrentPage(pageNumber)
-    window.scrollTo({ top: 0, behavior: "smooth" })
+  if (!category) {
+    return (
+      <>
+        <Navbar />
+        <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
+          <div className="container mx-auto px-4 py-8">
+            <Button
+              variant="ghost"
+              onClick={() => router.push(`/${lang}/books-category`)}
+              className="mb-8 hover:bg-blue-50 hover:text-blue-600"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              {t.backToBooks}
+            </Button>
+            <Card className="text-center py-12">
+              <CardHeader>
+                <div className="mx-auto mb-4 p-4 bg-muted rounded-full w-fit">
+                  <BookOpen className="h-12 w-12 text-muted-foreground" />
+                </div>
+                <CardTitle>Category Not Found</CardTitle>
+                <CardDescription>The requested category could not be found.</CardDescription>
+              </CardHeader>
+            </Card>
+          </div>
+        </div>
+        <Footer />
+      </>
+    )
   }
 
   return (
@@ -286,15 +371,17 @@ export default function BookCategoryPage() {
                 </h1>
                 <div className="flex items-center gap-3 mb-4">
                   <Badge variant="secondary" className="text-base px-4 py-1.5">
-                    {category.books_count} {t.booksInCategory}
+                    {totalCount} {t.booksInCategory}
                   </Badge>
                 </div>
-                <p className="text-lg text-muted-foreground leading-relaxed max-w-3xl">{category.description}</p>
+                {category.description && (
+                  <p className="text-lg text-muted-foreground leading-relaxed max-w-3xl">{category.description}</p>
+                )}
               </div>
             </div>
           </div>
 
-          {category.latest_books && category.latest_books.length > 0 ? (
+          {currentBooks && currentBooks.length > 0 ? (
             <>
               <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-8">
                 {currentBooks.map((book) => (
@@ -302,35 +389,63 @@ export default function BookCategoryPage() {
                 ))}
               </div>
 
-              {category.latest_books.length > booksPerPage && (
-                <div className="flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-4 pt-8 mt-8 border-t-2 border-primary/20">
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className="gap-2 hover:bg-primary hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed px-6 py-3"
-                  >
-                    <ChevronLeft className="h-5 w-5" />
-                    <span className="font-semibold">{t.previous}</span>
-                  </Button>
+              {totalPages > 1 && (
+                <div className="flex flex-col items-center gap-6 pt-12 mt-12 border-t-2 border-primary/20">
+                  {/* Pagination controls */}
+                  <div className="flex flex-wrap justify-center items-center gap-2">
+                    {/* Previous button */}
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={!hasPrevious}
+                      className="gap-2 hover:bg-primary hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ChevronLeft className="h-5 w-5" />
+                      <span className="hidden sm:inline font-semibold">{t.previous}</span>
+                    </Button>
 
-                  <div className="flex items-center gap-2 px-6 py-3 bg-primary/10 rounded-lg">
-                    <span className="text-base font-semibold text-primary">
-                      {t.page} {currentPage} {t.of} {totalPages}
-                    </span>
+                    {/* Page numbers */}
+                    <div className="flex gap-1">
+                      {getPageNumbers().map((page, index) => {
+                        if (page === "...") {
+                          return (
+                            <div key={`ellipsis-${index}`} className="px-3 py-2 text-muted-foreground">
+                              ...
+                            </div>
+                          )
+                        }
+                        const pageNum = page as number
+                        return (
+                          <Button
+                            key={pageNum}
+                            variant={currentPage === pageNum ? "default" : "outline"}
+                            size="lg"
+                            onClick={() => handlePageChange(pageNum)}
+                            className={`min-w-[44px] transition-all ${
+                              currentPage === pageNum
+                                ? "bg-primary text-white shadow-lg scale-110"
+                                : "hover:bg-primary/10"
+                            }`}
+                          >
+                            {pageNum}
+                          </Button>
+                        )
+                      })}
+                    </div>
+
+                    {/* Next button */}
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={!hasNext}
+                      className="gap-2 hover:bg-primary hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <span className="hidden sm:inline font-semibold">{t.next}</span>
+                      <ChevronRight className="h-5 w-5" />
+                    </Button>
                   </div>
-
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className="gap-2 hover:bg-primary hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed px-6 py-3"
-                  >
-                    <span className="font-semibold">{t.next}</span>
-                    <ChevronRight className="h-5 w-5" />
-                  </Button>
                 </div>
               )}
             </>

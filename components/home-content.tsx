@@ -81,6 +81,7 @@ interface BookCategory {
   slug_uz?: string
   slug_en?: string
   slug_ru?: string
+  image?: string | null
 }
 
 interface ApiData {
@@ -250,7 +251,7 @@ const translations = {
     nimaUchunBiz: "Why choose us?",
     nimaUchunBizDesc: "We provide the best services in scientific research and education",
     sifatliKontent: "Quality content",
-    sifatliKontentDesc: "Scientific materials verified by experts",
+    sifatliKontentDesc: "Scientific materials, verified by experts",
     globalKirish: "Global access",
     globalKirishDesc: "24/7 access from anywhere in the world",
     hamjamiyat: "Community",
@@ -458,7 +459,7 @@ export function HomeContent({ lang }: HomeContentProps) {
               type: "book" as const,
               title: category.name || "Kitoblar kategoriyasi",
               description: category.description || `${category.books_count} ta kitob mavjud`,
-              image: "/placeholder.svg", // Categories don't have images, use placeholder
+              image: category.image ? `${API_BASE}${category.image}` : "/placeholder.svg",
               href: `/${lang}/books-category/${getSlugForLang(category, lang)}`,
             }
             console.log("[v0] Book category item to be added:", JSON.stringify(categoryItem, null, 2))
@@ -633,11 +634,13 @@ export function HomeContent({ lang }: HomeContentProps) {
   const nextSlide = () => {
     if (slides && slides.length > 0) {
       setCurrentSlide((prev) => (prev + 1) % slides.length)
+      console.log("[v0] Next slide clicked, new index:", (currentSlide + 1) % slides.length)
     }
   }
   const prevSlide = () => {
     if (slides && slides.length > 0) {
       setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length)
+      console.log("[v0] Previous slide clicked, new index:", (currentSlide - 1 + slides.length) % slides.length)
     }
   }
 
@@ -737,10 +740,10 @@ export function HomeContent({ lang }: HomeContentProps) {
       <div className="flex-1 min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
         <section className="relative bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 py-4 sm:py-6 lg:py-8 px-0">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 lg:h-[500px] w-full">
-            {/* Chap Card - RASMIY E'LON - Mobile responsive */}
+            {/* Chap Card - RASMIY E'LON - Identical to REKLAMA */}
             <div className="lg:col-span-3 order-1 lg:order-1">
               <div className="h-[400px] sm:h-[450px] lg:h-[500px] bg-gradient-to-br from-white via-blue-50/50 to-indigo-100/60 backdrop-blur-xl border border-white/60 shadow-2xl rounded-t-2xl lg:rounded-l-2xl lg:rounded-t-none lg:rounded-r-none overflow-hidden relative group hover:shadow-3xl transition-all duration-500">
-                {/* Enhanced modern header with responsive sizing */}
+                {/* Enhanced modern header - Identical styling */}
                 <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-[#003D7F] via-[#0059B2] to-[#007ACC] backdrop-blur-md p-3 sm:p-4 z-10 shadow-lg">
                   <div className="flex items-center justify-center space-x-2 sm:space-x-3">
                     <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
@@ -750,7 +753,7 @@ export function HomeContent({ lang }: HomeContentProps) {
                   </div>
                 </div>
 
-                {/* Enhanced content area with responsive padding */}
+                {/* Enhanced content area - Identical padding and structure */}
                 <div className="pt-16 sm:pt-20 p-4 sm:p-6 h-full overflow-y-auto">
                   {isLoading ? (
                     <div className="flex items-center justify-center h-full">
@@ -763,13 +766,14 @@ export function HomeContent({ lang }: HomeContentProps) {
                     </div>
                   ) : apiData?.rasmiy_elon ? (
                     <div className="bg-white/90 backdrop-blur-sm rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xl border border-white/70 hover:shadow-2xl transition-all duration-500 hover:bg-white group-inner">
-                      {apiData.rasmiy_elon.media && (
-                        <div className="relative mb-4 sm:mb-6 overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 shadow-inner">
-                          {isVideoFile(apiData.rasmiy_elon.media) ? (
+                      {/* Image section - Identical dimensions to REKLAMA */}
+                      <div className="relative mb-4 sm:mb-6 overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 shadow-inner">
+                        {apiData.rasmiy_elon.media ? (
+                          isVideoFile(apiData.rasmiy_elon.media) ? (
                             <video
                               src={`${API_BASE}${apiData.rasmiy_elon.media}`}
                               controls
-                              className="w-full h-32 sm:h-40 object-contain p-2 sm:p-3"
+                              className="w-full h-32 sm:h-40 object-cover p-2 sm:p-3"
                               onError={(e) => {
                                 e.currentTarget.style.display = "none"
                               }}
@@ -780,22 +784,27 @@ export function HomeContent({ lang }: HomeContentProps) {
                             <img
                               src={`${API_BASE}${apiData.rasmiy_elon.media}`}
                               alt={apiData.rasmiy_elon.title || "Rasmiy E'lon"}
-                              className="w-full h-32 sm:h-40 object-contain p-2 sm:p-3 group-inner-hover:scale-105 transition-transform duration-500"
+                              className="w-full h-32 sm:h-40 object-cover p-2 sm:p-3 group-inner-hover:scale-105 transition-transform duration-500 rounded-lg"
                               onError={(e) => {
-                                e.currentTarget.style.display = "none"
+                                e.currentTarget.src = "/placeholder.svg"
                               }}
                             />
-                          )}
-                        </div>
-                      )}
+                          )
+                        ) : (
+                          <div className="w-full h-32 sm:h-40 flex items-center justify-center bg-gradient-to-br from-blue-100 to-indigo-100">
+                            <Bell className="w-12 h-12 sm:w-16 sm:h-16 text-[#003D7F]/30" />
+                          </div>
+                        )}
+                      </div>
 
+                      {/* Content section - Identical spacing to REKLAMA */}
                       <div className="space-y-4 sm:space-y-5">
                         <div className="flex items-start space-x-3 sm:space-x-4">
                           <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-[#003D7F] to-[#0059B2] rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
                             <Bell className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                           </div>
                           <div className="flex-1">
-                            <h4 className="font-bold text-gray-800 text-sm sm:text-base leading-tight mb-2 sm:mb-3">
+                            <h4 className="font-bold text-gray-800 text-sm sm:text-base leading-tight mb-2 sm:mb-3 line-clamp-2">
                               {apiData.rasmiy_elon.title || t.rasmiyElonTitle}
                             </h4>
                             <div className="text-xs sm:text-sm text-gray-600 leading-relaxed line-clamp-3 sm:line-clamp-4">
@@ -808,6 +817,7 @@ export function HomeContent({ lang }: HomeContentProps) {
                           </div>
                         </div>
 
+                        {/* Button - Identical styling to REKLAMA */}
                         <Button
                           size="sm"
                           className="w-full bg-gradient-to-r from-[#003D7F] via-[#0059B2] to-[#007ACC] hover:from-[#002B5A] hover:via-[#004494] hover:to-[#005A99] text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold rounded-xl sm:rounded-2xl py-3 sm:py-4 group-button hover:scale-105 transform text-xs sm:text-sm"
@@ -822,15 +832,24 @@ export function HomeContent({ lang }: HomeContentProps) {
                     </div>
                   ) : (
                     <div className="flex items-center justify-center h-full">
-                      <div className="bg-white/90 backdrop-blur-sm rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-xl text-center max-w-sm">
-                        <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-gray-200 to-gray-300 rounded-3xl flex items-center justify-center mx-auto mb-4 sm:mb-6">
-                          <Bell className="w-8 h-8 sm:w-10 sm:h-10 text-gray-500" />
+                      <div className="bg-white/90 backdrop-blur-sm rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-xl text-center max-w-sm border border-white/70">
+                        {/* Placeholder image - Identical to REKLAMA */}
+                        <div className="relative mb-4 sm:mb-6 overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 shadow-inner">
+                          <div className="w-full h-32 sm:h-40 flex items-center justify-center">
+                            <Bell className="w-16 h-16 sm:w-20 sm:h-20 text-[#003D7F]/30" />
+                          </div>
+                        </div>
+
+                        <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-[#003D7F] to-[#0059B2] rounded-3xl flex items-center justify-center mx-auto mb-4 sm:mb-6 shadow-lg">
+                          <Bell className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
                         </div>
                         <h4 className="font-bold text-gray-800 text-base mb-2 sm:mb-3">{t.rasmiyElonTitle}</h4>
-                        <p className="text-sm text-gray-600 leading-relaxed mb-4 sm:mb-6">{t.rasmiyElonEmpty}</p>
+                        <p className="text-sm text-gray-600 leading-relaxed mb-4 sm:mb-6">
+                          Ma'lumot tez orada joylanadi
+                        </p>
                         <Button
                           size="sm"
-                          className="w-full bg-gradient-to-r from-gray-400 to-gray-500 text-white border-0 rounded-xl sm:rounded-2xl py-3 sm:py-4 text-xs sm:text-sm"
+                          className="w-full bg-gradient-to-r from-gray-300 to-gray-400 text-gray-600 border-0 rounded-xl sm:rounded-2xl py-3 sm:py-4 text-xs sm:text-sm cursor-not-allowed"
                           disabled
                         >
                           {t.batafsil}
@@ -939,15 +958,17 @@ export function HomeContent({ lang }: HomeContentProps) {
                 {/* Navigation buttons - Responsive positioning */}
                 <button
                   onClick={prevSlide}
-                  className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-md text-blue-600 p-2 sm:p-3 rounded-full hover:bg-white hover:scale-110 transition-all duration-300 shadow-lg border border-white/30 disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={conferencesLoading || !slides || slides.length === 0}
+                  className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-md text-blue-600 p-2 sm:p-3 rounded-full hover:bg-white hover:scale-110 transition-all duration-300 shadow-lg border border-white/30 disabled:opacity-50 disabled:cursor-not-allowed z-20"
+                  aria-label="Previous slide"
                 >
                   <ChevronLeft className="w-4 h-4 sm:w-6 sm:h-6" />
                 </button>
                 <button
                   onClick={nextSlide}
-                  className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-md text-blue-600 p-2 sm:p-3 rounded-full hover:bg-white hover:scale-110 transition-all duration-300 shadow-lg border border-white/30 disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={conferencesLoading || !slides || slides.length === 0}
+                  className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-md text-blue-600 p-2 sm:p-3 rounded-full hover:bg-white hover:scale-110 transition-all duration-300 shadow-lg border border-white/30 disabled:opacity-50 disabled:cursor-not-allowed z-20"
+                  aria-label="Next slide"
                 >
                   <ChevronRight className="w-4 h-4 sm:w-6 sm:h-6" />
                 </button>
@@ -971,7 +992,7 @@ export function HomeContent({ lang }: HomeContentProps) {
               </div>
             </div>
 
-            {/* O'ng Card - REKLAMA - Mobile responsive */}
+            {/* O'ng Card - REKLAMA - Reference card with ideal dimensions */}
             <div className="lg:col-span-3 order-2 lg:order-3">
               <div className="h-[400px] sm:h-[450px] lg:h-[500px] bg-gradient-to-br from-white via-blue-50/50 to-indigo-100/60 backdrop-blur-xl border border-white/60 shadow-2xl rounded-b-2xl lg:rounded-r-2xl lg:rounded-b-none lg:rounded-l-none overflow-hidden relative group hover:shadow-3xl transition-all duration-500">
                 <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-[#003D7F] via-[#0059B2] to-[#007ACC] backdrop-blur-md p-3 sm:p-4 z-10 shadow-lg">
@@ -983,7 +1004,7 @@ export function HomeContent({ lang }: HomeContentProps) {
                   </div>
                 </div>
 
-                {/* Enhanced content area with responsive padding */}
+                {/* Enhanced content area - Same structure as RASMIY E'LON */}
                 <div className="pt-16 sm:pt-20 p-4 sm:p-6 h-full overflow-y-auto">
                   {isLoading ? (
                     <div className="flex items-center justify-center h-full">
@@ -996,13 +1017,14 @@ export function HomeContent({ lang }: HomeContentProps) {
                     </div>
                   ) : apiData?.reklama && apiData.reklama.length > 0 ? (
                     <div className="bg-white/90 backdrop-blur-sm rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xl border border-white/70 hover:shadow-2xl transition-all duration-500 hover:bg-white group-inner">
-                      {apiData.reklama[0].media && (
-                        <div className="relative mb-4 sm:mb-6 overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 shadow-inner">
-                          {isVideoFile(apiData.reklama[0].media) ? (
+                      {/* Image section - Same dimensions as RASMIY E'LON */}
+                      <div className="relative mb-4 sm:mb-6 overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 shadow-inner">
+                        {apiData.reklama[0].media ? (
+                          isVideoFile(apiData.reklama[0].media) ? (
                             <video
                               src={`${API_BASE}${apiData.reklama[0].media}`}
                               controls
-                              className="w-full h-32 sm:h-40 object-contain p-2 sm:p-3"
+                              className="w-full h-32 sm:h-40 object-cover p-2 sm:p-3"
                               onError={(e) => {
                                 e.currentTarget.style.display = "none"
                               }}
@@ -1013,15 +1035,20 @@ export function HomeContent({ lang }: HomeContentProps) {
                             <img
                               src={`${API_BASE}${apiData.reklama[0].media}`}
                               alt={apiData.reklama[0].title}
-                              className="w-full h-32 sm:h-40 object-contain p-2 sm:p-3 group-inner-hover:scale-105 transition-transform duration-500"
+                              className="w-full h-32 sm:h-40 object-cover p-2 sm:p-3 group-inner-hover:scale-105 transition-transform duration-500 rounded-lg"
                               onError={(e) => {
-                                e.currentTarget.style.display = "none"
+                                e.currentTarget.src = "/placeholder.svg"
                               }}
                             />
-                          )}
-                        </div>
-                      )}
+                          )
+                        ) : (
+                          <div className="w-full h-32 sm:h-40 flex items-center justify-center bg-gradient-to-br from-blue-100 to-indigo-100">
+                            <Megaphone className="w-12 h-12 sm:w-16 sm:h-16 text-[#003D7F]/30" />
+                          </div>
+                        )}
+                      </div>
 
+                      {/* Content section - Same spacing as RASMIY E'LON */}
                       <div className="space-y-4 sm:space-y-5">
                         <div className="flex items-start space-x-3 sm:space-x-4">
                           <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-[#003D7F] to-[#0059B2] rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
@@ -1041,6 +1068,7 @@ export function HomeContent({ lang }: HomeContentProps) {
                           </div>
                         </div>
 
+                        {/* Button - Same styling as RASMIY E'LON */}
                         <Button
                           size="sm"
                           className="w-full bg-gradient-to-r from-[#003D7F] via-[#0059B2] to-[#007ACC] hover:from-[#002B5A] hover:via-[#004494] hover:to-[#005A99] text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold rounded-xl sm:rounded-2xl py-3 sm:py-4 group-button hover:scale-105 transform text-xs sm:text-sm"
@@ -1055,15 +1083,24 @@ export function HomeContent({ lang }: HomeContentProps) {
                     </div>
                   ) : (
                     <div className="flex items-center justify-center h-full">
-                      <div className="bg-white/90 backdrop-blur-sm rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-xl text-center max-w-sm">
-                        <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-gray-200 to-gray-300 rounded-3xl flex items-center justify-center mx-auto mb-4 sm:mb-6">
-                          <Megaphone className="w-8 h-8 sm:w-10 sm:h-10 text-gray-500" />
+                      <div className="bg-white/90 backdrop-blur-sm rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-xl text-center max-w-sm border border-white/70">
+                        {/* Placeholder image - Same as RASMIY E'LON */}
+                        <div className="relative mb-4 sm:mb-6 overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 shadow-inner">
+                          <div className="w-full h-32 sm:h-40 flex items-center justify-center">
+                            <Megaphone className="w-16 h-16 sm:w-20 sm:h-20 text-[#003D7F]/30" />
+                          </div>
+                        </div>
+
+                        <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-[#003D7F] to-[#0059B2] rounded-3xl flex items-center justify-center mx-auto mb-4 sm:mb-6 shadow-lg">
+                          <Megaphone className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
                         </div>
                         <h4 className="font-bold text-gray-800 text-base mb-2 sm:mb-3">{t.reklamalarTitle}</h4>
-                        <p className="text-sm text-gray-600 leading-relaxed mb-4 sm:mb-6">{t.reklamalarEmpty}</p>
+                        <p className="text-sm text-gray-600 leading-relaxed mb-4 sm:mb-6">
+                          Ma'lumot tez orada joylanadi
+                        </p>
                         <Button
                           size="sm"
-                          className="w-full bg-gradient-to-r from-gray-400 to-gray-500 text-white border-0 rounded-xl sm:rounded-2xl py-3 sm:py-4 text-xs sm:text-sm"
+                          className="w-full bg-gradient-to-r from-gray-300 to-gray-400 text-gray-600 border-0 rounded-xl sm:rounded-2xl py-3 sm:py-4 text-xs sm:text-sm cursor-not-allowed"
                           disabled
                         >
                           {t.batafsilKorish}
@@ -1255,7 +1292,7 @@ export function HomeContent({ lang }: HomeContentProps) {
                         {latestContent.map((item, index) => (
                           <Card
                             key={index}
-                            className={`overflow-hidden shadow-lg bg-white border-0 rounded-2xl group hover:shadow-xl transition-all duration-300 w-80 ${
+                            className={`overflow-hidden shadow-lg bg-white border-0 rounded-2xl group hover:shadow-xl transition-all duration-500 w-80 ${
                               index === currentBookSlide ? "ring-2 ring-[#003D7F] scale-105" : "opacity-90"
                             }`}
                           >

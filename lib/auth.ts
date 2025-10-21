@@ -180,10 +180,17 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}): Pro
     throw new Error("fetchWithAuth can only be used in browser environment")
   }
 
+  // Check if token is expired before making request
+  const isValid = await ensureValidToken()
+  if (!isValid) {
+    console.error("[v0] Token validation failed before request")
+    throw new Error("REFRESH_PAGE")
+  }
+
   const token = localStorage.getItem("access_token")
   if (!token) {
     console.error("[v0] No access token available for authenticated request")
-    throw new Error("No access token available")
+    throw new Error("NO_TOKEN")
   }
 
   // Add authorization header
@@ -213,11 +220,12 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}): Pro
       console.log("[v0] Retry request status:", response.status)
 
       if (response.status === 401) {
-        console.error("[v0] Still 401 after token refresh, logging out")
-        logout()
+        console.error("[v0] Still 401 after token refresh")
+        throw new Error("REFRESH_PAGE")
       }
     } else {
-      console.error("[v0] Token refresh failed, but not logging out yet")
+      console.error("[v0] Token refresh failed")
+      throw new Error("REFRESH_PAGE")
     }
   }
 

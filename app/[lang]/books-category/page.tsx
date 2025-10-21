@@ -18,6 +18,7 @@ const translations = {
     noBooksDesc: "Tez orada yangi kitoblar qo'shiladi.",
     booksCount: "kitob",
     viewBooks: "Kitoblarni ko'rish",
+    networkError: "Sahifani yangilang (F5 yoki Ctrl+R)",
   },
   ru: {
     pageTitle: "Книги",
@@ -27,6 +28,7 @@ const translations = {
     noBooksDesc: "Скоро будут добавлены новые книги.",
     booksCount: "книг",
     viewBooks: "Посмотреть книги",
+    networkError: "Обновите страницу (F5 или Ctrl+R)",
   },
   en: {
     pageTitle: "Books",
@@ -36,6 +38,7 @@ const translations = {
     noBooksDesc: "New books will be added soon.",
     booksCount: "books",
     viewBooks: "View Books",
+    networkError: "Please refresh the page (F5 or Ctrl+R)",
   },
 }
 
@@ -63,15 +66,12 @@ export default function BooksPage() {
         setIsLoading(true)
         setError(null)
 
-        const token = localStorage.getItem("access_token")
-
         const url = `https://artculture.pythonanywhere.com/${lang}/book-categories/`
 
         const response = await fetch(url, {
           method: "GET",
           headers: {
             accept: "application/json",
-            ...(token && { Authorization: `Bearer ${token}` }),
           },
           mode: "cors",
         })
@@ -84,17 +84,7 @@ export default function BooksPage() {
         setBookCategories(data)
       } catch (err) {
         console.error("Error loading book categories:", err)
-        if (err instanceof TypeError && err.message.includes("fetch")) {
-          setError(`Serverga ulanishda xatolik. Iltimos, internet aloqangizni tekshiring yoki keyinroq urinib ko'ring.`)
-        } else if (err instanceof Error && err.message.includes("401")) {
-          setError(`Autentifikatsiya xatoligi. Iltimos, qaytadan tizimga kiring.`)
-        } else if (err instanceof Error && err.message.includes("403")) {
-          setError(`Ruxsat yo'q. Bu sahifaga kirish uchun huquqingiz yo'q.`)
-        } else if (err instanceof Error && err.message.includes("404")) {
-          setError(`Ma'lumot topilmadi. API endpoint mavjud emas.`)
-        } else {
-          setError(err instanceof Error ? `Xatolik: ${err.message}` : "Kitoblarni yuklashda xatolik yuz berdi")
-        }
+        setError(t.networkError)
       } finally {
         setIsLoading(false)
       }

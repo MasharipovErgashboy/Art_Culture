@@ -457,28 +457,42 @@ export async function fetchBookCategories(lang = "en"): Promise<BookCategory[]> 
   }
 }
 
-export async function fetchBookCategory(slug: string, lang = "en", token?: string): Promise<BookCategory> {
+export async function fetchBookCategory(
+  slug: string,
+  lang = "en",
+  page = 1,
+  pageSize = 10,
+): Promise<{
+  count: number
+  next: string | null
+  previous: string | null
+  results: BookCategory & {
+    image?: string | null
+    latest_books: Book[]
+  }
+}> {
   try {
-    const url = `${API_BASE}/${lang}/book-categories/${slug}/`
-    const authToken = token || (typeof window !== "undefined" ? localStorage.getItem("access_token") : null)
+    const url = `${API_BASE}/${lang}/book-categories/${slug}/?page=${page}&page_size=${pageSize}`
 
-    console.log("[v0] fetchBookCategory called:", { url, lang, slug, hasToken: !!authToken })
-
-    const headers: HeadersInit = {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      "Accept-Language": lang,
-    }
-
-    if (authToken) {
-      headers.Authorization = `Bearer ${authToken}`
-    }
+    console.log("[v0] ========== FETCH BOOK CATEGORY DEBUG ==========")
+    console.log("[v0] URL:", url)
+    console.log("[v0] Language:", lang)
+    console.log("[v0] Slug:", slug)
+    console.log("[v0] Page:", page)
+    console.log("[v0] Page size:", pageSize)
 
     const response = await fetchWithTimeout(url, {
       method: "GET",
-      headers,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "Accept-Language": lang,
+      },
       mode: "cors",
     })
+
+    console.log("[v0] Response status:", response.status)
+    console.log("[v0] Response ok:", response.ok)
 
     if (!response.ok) {
       const errorText = await response.text()
@@ -487,7 +501,11 @@ export async function fetchBookCategory(slug: string, lang = "en", token?: strin
     }
 
     const data = await response.json()
-    console.log("[v0] fetchBookCategory success:", data)
+    console.log("[v0] Book category data received:", data)
+    console.log("[v0] Total count:", data.count)
+    console.log("[v0] Books in current page:", data.results?.latest_books?.length || 0)
+    console.log("[v0] ========== FETCH BOOK CATEGORY SUCCESS ==========")
+
     return data
   } catch (error) {
     console.error("[v0] fetchBookCategory error:", error)
