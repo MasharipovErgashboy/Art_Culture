@@ -365,7 +365,7 @@ export function Navbar({ currentLang: propLang }: { currentLang?: string } = {})
               />
               <span className="hidden xl:flex flex-col items-center font-bold leading-tight">
                 <span className="text-xl lg:text-2xl text-[#F4C430]">
-                  Art<span className="text-xl lg:text-2xl text-white">&</span>Culture
+                  Art<span className="text-lg lg:text-xl">&</span>Culture
                 </span>
                 <span className="text-xl lg:text-2xl text-white">Publishing</span>
               </span>
@@ -376,7 +376,7 @@ export function Navbar({ currentLang: propLang }: { currentLang?: string } = {})
             <img src="/logo.jpg" alt="Art&Culture Logo" className="h-10 w-10 sm:h-12 sm:w-12 rounded" />
             <span className="flex flex-col items-center font-bold leading-tight">
               <span className="text-base sm:text-lg text-[#F4C430]">
-                Art<span className="text-base sm:text-lg text-white">&</span>Culture
+                Art<span className="text-sm sm:text-base">&</span>Culture
               </span>
               <span className="text-base sm:text-lg text-white">Publishing</span>
             </span>
@@ -387,11 +387,10 @@ export function Navbar({ currentLang: propLang }: { currentLang?: string } = {})
               <Link
                 key={item.href}
                 href={item.href}
-                className={`text-base xl:text-lg font-semibold transition-colors whitespace-nowrap ${
-                  pathname === item.href
+                className={`text-base xl:text-lg font-semibold transition-colors whitespace-nowrap ${pathname === item.href
                     ? "text-yellow-400 border-b-2 border-yellow-400 pb-1"
                     : "text-blue-100 hover:text-white"
-                }`}
+                  }`}
               >
                 {item.label}
               </Link>
@@ -404,11 +403,10 @@ export function Navbar({ currentLang: propLang }: { currentLang?: string } = {})
                 <button
                   key={langCode}
                   onClick={() => handleLanguageChange(langCode)}
-                  className={`px-3 py-1.5 text-sm font-medium rounded transition-all ${
-                    lang === langCode
+                  className={`px-3 py-1.5 text-sm font-medium rounded transition-all ${lang === langCode
                       ? "bg-white text-[#003D7F] shadow-sm"
                       : "text-blue-100 hover:text-white hover:bg-white/10"
-                  }`}
+                    }`}
                 >
                   {langCode.toUpperCase()}
                 </button>
@@ -504,11 +502,10 @@ export function Navbar({ currentLang: propLang }: { currentLang?: string } = {})
                           handleLanguageChange(langCode)
                           setIsMenuOpen(false)
                         }}
-                        className={`flex-1 px-3 py-2 text-sm font-medium rounded transition-all ${
-                          lang === langCode
+                        className={`flex-1 px-3 py-2 text-sm font-medium rounded transition-all ${lang === langCode
                             ? "bg-white text-[#003D7F] shadow-sm"
                             : "text-gray-600 hover:text-gray-900 hover:bg-white/50"
-                        }`}
+                          }`}
                       >
                         {langCode.toUpperCase()}
                       </button>
@@ -522,11 +519,10 @@ export function Navbar({ currentLang: propLang }: { currentLang?: string } = {})
                         <Link
                           key={item.href}
                           href={item.href}
-                          className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                            pathname === item.href
+                          className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${pathname === item.href
                               ? "bg-primary text-primary-foreground font-semibold"
                               : "hover:bg-muted"
-                          }`}
+                            }`}
                           onClick={() => setIsMenuOpen(false)}
                         >
                           <Icon className="h-5 w-5" />

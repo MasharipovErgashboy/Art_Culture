@@ -601,6 +601,18 @@ export async function fetchBook(slug: string, lang = "en", token?: string): Prom
   }
 }
 
+export interface Conference {
+  id: number
+  slug_uz: string
+  slug_en: string
+  slug_ru: string
+  name: string
+  description: string
+  date: string
+  manzil: string
+  image: string
+}
+
 export function getSlugForLang(item: { slug_uz?: string; slug_en?: string; slug_ru?: string }, lang: string): string {
   console.log("[v0] getSlugForLang called with:", { item, lang })
 

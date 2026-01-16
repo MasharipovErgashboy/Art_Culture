@@ -481,7 +481,7 @@ export function HomeContent({ lang }: HomeContentProps) {
           console.log("[v0] Journals full response:", JSON.stringify(journalsResponse, null, 2))
 
           // Handle both array and paginated response formats
-          const journals = Array.isArray(journalsResponse) ? journalsResponse : journalsResponse?.results || []
+          const journals = Array.isArray(journalsResponse) ? journalsResponse : (journalsResponse as any)?.results || []
           console.log("[v0] Journals array length:", journals.length)
 
           if (journals.length > 0) {
@@ -584,17 +584,17 @@ export function HomeContent({ lang }: HomeContentProps) {
   const slides =
     conferences && conferences.length > 0
       ? conferences.map((conference) => ({
-          title: conference.name,
-          description:
-            conference.description && conference.description.length > 100
-              ? conference.description.replace(/<[^>]*>/g, "").substring(0, 100) + "..."
-              : conference.description?.replace(/<[^>]*>/g, "") || "",
-          image: conference.image ? `${API_BASE}${conference.image}` : "/swiper_konferensiya.jpg",
-          buttonText: t.konferensiyaKorish,
-          href: `/${lang}/conferences/${getSlugForLang(conference, lang)}`,
-          date: conference.date,
-          location: conference.manzil,
-        }))
+        title: conference.name,
+        description:
+          conference.description && conference.description.length > 100
+            ? conference.description.replace(/<[^>]*>/g, "").substring(0, 100) + "..."
+            : conference.description?.replace(/<[^>]*>/g, "") || "",
+        image: conference.image ? `${API_BASE}${conference.image}` : "/swiper_konferensiya.jpg",
+        buttonText: t.konferensiyaKorish,
+        href: `/${lang}/conferences/${getSlugForLang(conference, lang)}`,
+        date: conference.date,
+        location: conference.manzil,
+      }))
       : [] // Return empty array instead of demo slides when no conferences
 
   const adSlides = [
@@ -725,14 +725,14 @@ export function HomeContent({ lang }: HomeContentProps) {
 
   const subscriptionPlans = apiData?.subscriptions
     ? apiData.subscriptions.map((sub) => ({
-        id: sub.id,
-        title: sub.name,
-        description: `${sub.books_count} ${t.kitoblar}, ${sub.journals_count} ${t.jurnallar}, ${sub.conferences_count} ${t.konferensiya}`,
-        price: Number.parseFloat(sub.price).toLocaleString("uz-UZ"),
-        duration: sub.duration_days.toString(),
-        icon: getSubscriptionIcon(sub.duration_days),
-        gradient: getSubscriptionGradient(apiData.subscriptions.findIndex((s) => s.id === sub.id)), // Ensure correct gradient mapping
-      }))
+      id: sub.id,
+      title: sub.name,
+      description: `${sub.books_count} ${t.kitoblar}, ${sub.journals_count} ${t.jurnallar}, ${sub.conferences_count} ${t.konferensiya}`,
+      price: Number.parseFloat(sub.price).toLocaleString("uz-UZ"),
+      duration: sub.duration_days.toString(),
+      icon: getSubscriptionIcon(sub.duration_days),
+      gradient: getSubscriptionGradient(apiData.subscriptions ? apiData.subscriptions.findIndex((s) => s.id === sub.id) : 0), // Ensure correct gradient mapping
+    }))
     : []
 
   return (
@@ -740,123 +740,60 @@ export function HomeContent({ lang }: HomeContentProps) {
       <div className="flex-1 min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
         <section className="relative bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 py-4 sm:py-6 lg:py-8 px-0">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 lg:h-[500px] w-full">
-            {/* Chap Card - RASMIY E'LON - Identical to REKLAMA */}
-            <div className="lg:col-span-3 order-1 lg:order-1">
-              <div className="h-[400px] sm:h-[450px] lg:h-[500px] bg-gradient-to-br from-white via-blue-50/50 to-indigo-100/60 backdrop-blur-xl border border-white/60 shadow-2xl rounded-t-2xl lg:rounded-l-2xl lg:rounded-t-none lg:rounded-r-none overflow-hidden relative group hover:shadow-3xl transition-all duration-500">
-                {/* Enhanced modern header - Identical styling */}
-                <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-[#003D7F] via-[#0059B2] to-[#007ACC] backdrop-blur-md p-3 sm:p-4 z-10 shadow-lg">
-                  <div className="flex items-center justify-center space-x-2 sm:space-x-3">
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                      <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                    </div>
-                    <h3 className="font-bold text-xs sm:text-sm text-white tracking-wide">{t.rasmiyElon}</h3>
-                  </div>
+            {/* Chap Card - RASMIY E'LON - Simplified Design */}
+            <div className="lg:col-span-3 order-1 lg:order-1 h-full">
+              <div className="h-[400px] sm:h-[450px] lg:h-[500px] bg-[#F5F5F0] border border-gray-200 shadow-xl flex flex-col rounded-t-2xl lg:rounded-l-2xl lg:rounded-t-none lg:rounded-r-none overflow-hidden relative group hover:shadow-2xl transition-all duration-300">
+                {/* Header - Solid Blue */}
+                <div className="bg-[#003D7F] py-3 sm:py-4 text-center shadow-md">
+                  <h3 className="font-bold text-sm sm:text-base text-white tracking-wide uppercase">{t.rasmiyElon}</h3>
                 </div>
 
-                {/* Enhanced content area - Identical padding and structure */}
-                <div className="pt-16 sm:pt-20 p-4 sm:p-6 h-full overflow-y-auto">
+                {/* Content Area - Image Only */}
+                <div className="flex-1 relative overflow-hidden bg-[#F5F5F0] flex items-center justify-center p-4">
                   {isLoading ? (
-                    <div className="flex items-center justify-center h-full">
-                      <div className="text-center">
-                        <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-[#003D7F] to-[#0059B2] rounded-3xl flex items-center justify-center mx-auto mb-4 sm:mb-6 animate-pulse shadow-xl">
-                          <Bell className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
-                        </div>
-                        <p className="text-xs sm:text-sm text-gray-600 font-medium">{t.elonlarYuklanmoqda}</p>
-                      </div>
+                    <div className="text-center">
+                      <Bell className="w-12 h-12 text-gray-300 mx-auto mb-2 animate-pulse" />
+                      <p className="text-xs text-gray-400">{t.elonlarYuklanmoqda}</p>
                     </div>
-                  ) : apiData?.rasmiy_elon ? (
-                    <div className="bg-white/90 backdrop-blur-sm rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xl border border-white/70 hover:shadow-2xl transition-all duration-500 hover:bg-white group-inner">
-                      {/* Image section - Identical dimensions to REKLAMA */}
-                      <div className="relative mb-4 sm:mb-6 overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 shadow-inner">
-                        {apiData.rasmiy_elon.media ? (
-                          isVideoFile(apiData.rasmiy_elon.media) ? (
-                            <video
-                              src={`${API_BASE}${apiData.rasmiy_elon.media}`}
-                              controls
-                              className="w-full h-32 sm:h-40 object-cover p-2 sm:p-3"
-                              onError={(e) => {
-                                e.currentTarget.style.display = "none"
-                              }}
-                            >
-                              Your browser does not support the video tag.
-                            </video>
-                          ) : (
-                            <img
-                              src={`${API_BASE}${apiData.rasmiy_elon.media}`}
-                              alt={apiData.rasmiy_elon.title || "Rasmiy E'lon"}
-                              className="w-full h-32 sm:h-40 object-cover p-2 sm:p-3 group-inner-hover:scale-105 transition-transform duration-500 rounded-lg"
-                              onError={(e) => {
-                                e.currentTarget.src = "/placeholder.svg"
-                              }}
-                            />
-                          )
-                        ) : (
-                          <div className="w-full h-32 sm:h-40 flex items-center justify-center bg-gradient-to-br from-blue-100 to-indigo-100">
-                            <Bell className="w-12 h-12 sm:w-16 sm:h-16 text-[#003D7F]/30" />
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Content section - Identical spacing to REKLAMA */}
-                      <div className="space-y-4 sm:space-y-5">
-                        <div className="flex items-start space-x-3 sm:space-x-4">
-                          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-[#003D7F] to-[#0059B2] rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
-                            <Bell className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                          </div>
-                          <div className="flex-1">
-                            <h4 className="font-bold text-gray-800 text-sm sm:text-base leading-tight mb-2 sm:mb-3 line-clamp-2">
-                              {apiData.rasmiy_elon.title || t.rasmiyElonTitle}
-                            </h4>
-                            <div className="text-xs sm:text-sm text-gray-600 leading-relaxed line-clamp-3 sm:line-clamp-4">
-                              <div
-                                dangerouslySetInnerHTML={{
-                                  __html: apiData.rasmiy_elon.homepage_content || apiData.rasmiy_elon.description || "",
-                                }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Button - Identical styling to REKLAMA */}
-                        <Button
-                          size="sm"
-                          className="w-full bg-gradient-to-r from-[#003D7F] via-[#0059B2] to-[#007ACC] hover:from-[#002B5A] hover:via-[#004494] hover:to-[#005A99] text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold rounded-xl sm:rounded-2xl py-3 sm:py-4 group-button hover:scale-105 transform text-xs sm:text-sm"
-                          onClick={() => handleRasmiyElonDetail(apiData.rasmiy_elon)}
-                        >
-                          <span className="flex items-center justify-center space-x-2">
-                            <span>{t.batafsil}</span>
-                            <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 group-button-hover:translate-x-1 transition-transform duration-300" />
-                          </span>
-                        </Button>
-                      </div>
-                    </div>
+                  ) : apiData?.rasmiy_elon && apiData.rasmiy_elon.media ? (
+                    isVideoFile(apiData.rasmiy_elon.media) ? (
+                      <video
+                        src={`${API_BASE}${apiData.rasmiy_elon.media}`}
+                        controls
+                        className="max-w-full max-h-full object-contain shadow-lg rounded-sm"
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none"
+                        }}
+                      >
+                        Your browser does not support the video tag.
+                      </video>
+                    ) : (
+                      <img
+                        src={`${API_BASE}${apiData.rasmiy_elon.media}`}
+                        alt={apiData.rasmiy_elon.title || "Rasmiy E'lon"}
+                        className="max-w-full max-h-full object-contain shadow-lg rounded-sm transform group-hover:scale-105 transition-transform duration-500"
+                        onError={(e) => {
+                          e.currentTarget.src = "/placeholder.svg"
+                        }}
+                      />
+                    )
                   ) : (
-                    <div className="flex items-center justify-center h-full">
-                      <div className="bg-white/90 backdrop-blur-sm rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-xl text-center max-w-sm border border-white/70">
-                        {/* Placeholder image - Identical to REKLAMA */}
-                        <div className="relative mb-4 sm:mb-6 overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 shadow-inner">
-                          <div className="w-full h-32 sm:h-40 flex items-center justify-center">
-                            <Bell className="w-16 h-16 sm:w-20 sm:h-20 text-[#003D7F]/30" />
-                          </div>
-                        </div>
-
-                        <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-[#003D7F] to-[#0059B2] rounded-3xl flex items-center justify-center mx-auto mb-4 sm:mb-6 shadow-lg">
-                          <Bell className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
-                        </div>
-                        <h4 className="font-bold text-gray-800 text-base mb-2 sm:mb-3">{t.rasmiyElonTitle}</h4>
-                        <p className="text-sm text-gray-600 leading-relaxed mb-4 sm:mb-6">
-                          Ma'lumot tez orada joylanadi
-                        </p>
-                        <Button
-                          size="sm"
-                          className="w-full bg-gradient-to-r from-gray-300 to-gray-400 text-gray-600 border-0 rounded-xl sm:rounded-2xl py-3 sm:py-4 text-xs sm:text-sm cursor-not-allowed"
-                          disabled
-                        >
-                          {t.batafsil}
-                        </Button>
-                      </div>
+                    <div className="text-center text-gray-400">
+                      <Bell className="w-16 h-16 mx-auto mb-2 opacity-20" />
+                      <span className="text-sm">{t.rasmiyElonTitle}</span>
                     </div>
                   )}
+                </div>
+
+                {/* Footer - Button Area */}
+                <div className="p-4 bg-gray-200/50 border-t border-gray-200">
+                  <Button
+                    className="w-full bg-[#003D7F] hover:bg-[#002B5A] text-white font-semibold py-5 sm:py-6 rounded-xl sm:rounded-2xl transition-all duration-300 shadow-md text-base"
+                    onClick={() => apiData?.rasmiy_elon && handleRasmiyElonDetail(apiData.rasmiy_elon)}
+                    disabled={!apiData?.rasmiy_elon}
+                  >
+                    {t.batafsil}
+                  </Button>
                 </div>
               </div>
             </div>
@@ -881,9 +818,8 @@ export function HomeContent({ lang }: HomeContentProps) {
                     slides.map((slide, index) => (
                       <div
                         key={index}
-                        className={`absolute inset-0 transition-opacity duration-700 ${
-                          index === currentSlide ? "opacity-100" : "opacity-0"
-                        }`}
+                        className={`absolute inset-0 transition-opacity duration-700 ${index === currentSlide ? "opacity-100" : "opacity-0"
+                          }`}
                       >
                         <div className="flex flex-col lg:flex-row h-full">
                           {/* Image section - Full width on mobile, 70% on desktop */}
@@ -980,11 +916,10 @@ export function HomeContent({ lang }: HomeContentProps) {
                       <button
                         key={index}
                         onClick={() => setCurrentSlide(index)}
-                        className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full transition-all duration-300 border border-white/50 ${
-                          index === currentSlide
-                            ? "bg-white scale-125 shadow-md"
-                            : "bg-white/60 hover:bg-white/80 hover:scale-110"
-                        }`}
+                        className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full transition-all duration-300 border border-white/50 ${index === currentSlide
+                          ? "bg-white scale-125 shadow-md"
+                          : "bg-white/60 hover:bg-white/80 hover:scale-110"
+                          }`}
                         disabled={conferencesLoading}
                       />
                     ))}
@@ -992,225 +927,76 @@ export function HomeContent({ lang }: HomeContentProps) {
               </div>
             </div>
 
-            {/* O'ng Card - REKLAMA - Reference card with ideal dimensions */}
-            <div className="lg:col-span-3 order-2 lg:order-3">
-              <div className="h-[400px] sm:h-[450px] lg:h-[500px] bg-gradient-to-br from-white via-blue-50/50 to-indigo-100/60 backdrop-blur-xl border border-white/60 shadow-2xl rounded-b-2xl lg:rounded-r-2xl lg:rounded-b-none lg:rounded-l-none overflow-hidden relative group hover:shadow-3xl transition-all duration-500">
-                <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-[#003D7F] via-[#0059B2] to-[#007ACC] backdrop-blur-md p-3 sm:p-4 z-10 shadow-lg">
-                  <div className="flex items-center justify-center space-x-2 sm:space-x-3">
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                      <Megaphone className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                    </div>
-                    <h3 className="font-bold text-xs sm:text-sm text-white tracking-wide">{t.reklama}</h3>
-                  </div>
+            {/* O'ng Card - REKLAMA - Simplified Design */}
+            <div className="lg:col-span-3 order-2 lg:order-3 h-full">
+              <div className="h-[400px] sm:h-[450px] lg:h-[500px] bg-[#F5F5F0] border border-gray-200 shadow-xl flex flex-col rounded-b-2xl lg:rounded-r-2xl lg:rounded-b-none lg:rounded-l-none overflow-hidden relative group hover:shadow-2xl transition-all duration-300">
+                {/* Header - Solid Blue */}
+                <div className="bg-[#003D7F] py-3 sm:py-4 text-center shadow-md">
+                  <h3 className="font-bold text-sm sm:text-base text-white tracking-wide uppercase">{t.reklama}</h3>
                 </div>
 
-                {/* Enhanced content area - Same structure as RASMIY E'LON */}
-                <div className="pt-16 sm:pt-20 p-4 sm:p-6 h-full overflow-y-auto">
+                {/* Content Area - Image Only */}
+                <div className="flex-1 relative overflow-hidden bg-[#F5F5F0] flex items-center justify-center p-4">
                   {isLoading ? (
-                    <div className="flex items-center justify-center h-full">
-                      <div className="text-center">
-                        <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-[#003D7F] to-[#0059B2] rounded-3xl flex items-center justify-center mx-auto mb-4 sm:mb-6 animate-pulse shadow-xl">
-                          <Megaphone className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
-                        </div>
-                        <p className="text-xs sm:text-sm text-gray-600 font-medium">{t.reklamalarYuklanmoqda}</p>
-                      </div>
+                    <div className="text-center">
+                      <Megaphone className="w-12 h-12 text-gray-300 mx-auto mb-2 animate-pulse" />
+                      <p className="text-xs text-gray-400">{t.reklamalarYuklanmoqda}</p>
                     </div>
                   ) : apiData?.reklama && apiData.reklama.length > 0 ? (
-                    <div className="bg-white/90 backdrop-blur-sm rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xl border border-white/70 hover:shadow-2xl transition-all duration-500 hover:bg-white group-inner">
-                      {/* Image section - Same dimensions as RASMIY E'LON */}
-                      <div className="relative mb-4 sm:mb-6 overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 shadow-inner">
-                        {apiData.reklama[0].media ? (
-                          isVideoFile(apiData.reklama[0].media) ? (
-                            <video
-                              src={`${API_BASE}${apiData.reklama[0].media}`}
-                              controls
-                              className="w-full h-32 sm:h-40 object-cover p-2 sm:p-3"
-                              onError={(e) => {
-                                e.currentTarget.style.display = "none"
-                              }}
-                            >
-                              Your browser does not support the video tag.
-                            </video>
-                          ) : (
-                            <img
-                              src={`${API_BASE}${apiData.reklama[0].media}`}
-                              alt={apiData.reklama[0].title}
-                              className="w-full h-32 sm:h-40 object-cover p-2 sm:p-3 group-inner-hover:scale-105 transition-transform duration-500 rounded-lg"
-                              onError={(e) => {
-                                e.currentTarget.src = "/placeholder.svg"
-                              }}
-                            />
-                          )
-                        ) : (
-                          <div className="w-full h-32 sm:h-40 flex items-center justify-center bg-gradient-to-br from-blue-100 to-indigo-100">
-                            <Megaphone className="w-12 h-12 sm:w-16 sm:h-16 text-[#003D7F]/30" />
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Content section - Same spacing as RASMIY E'LON */}
-                      <div className="space-y-4 sm:space-y-5">
-                        <div className="flex items-start space-x-3 sm:space-x-4">
-                          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-[#003D7F] to-[#0059B2] rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
-                            <Star className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                          </div>
-                          <div className="flex-1">
-                            <h4 className="font-bold text-gray-800 text-sm sm:text-base leading-tight mb-2 sm:mb-3 line-clamp-2">
-                              {apiData.reklama[0].title}
-                            </h4>
-                            <div className="text-xs sm:text-sm text-gray-600 leading-relaxed line-clamp-3 sm:line-clamp-4">
-                              <div
-                                dangerouslySetInnerHTML={{
-                                  __html: apiData.reklama[0].homepage_content || apiData.reklama[0].description || "",
-                                }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Button - Same styling as RASMIY E'LON */}
-                        <Button
-                          size="sm"
-                          className="w-full bg-gradient-to-r from-[#003D7F] via-[#0059B2] to-[#007ACC] hover:from-[#002B5A] hover:via-[#004494] hover:to-[#005A99] text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold rounded-xl sm:rounded-2xl py-3 sm:py-4 group-button hover:scale-105 transform text-xs sm:text-sm"
-                          onClick={() => handleReklamaDetail(apiData.reklama[0])}
+                    apiData.reklama[0].media ? (
+                      isVideoFile(apiData.reklama[0].media) ? (
+                        <video
+                          src={`${API_BASE}${apiData.reklama[0].media}`}
+                          controls
+                          className="max-w-full max-h-full object-contain shadow-lg rounded-sm"
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none"
+                          }}
                         >
-                          <span className="flex items-center justify-center space-x-2">
-                            <span>{t.batafsilKorish}</span>
-                            <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 group-button-hover:translate-x-1 transition-transform duration-300" />
-                          </span>
-                        </Button>
+                          Your browser does not support the video tag.
+                        </video>
+                      ) : (
+                        <img
+                          src={`${API_BASE}${apiData.reklama[0].media}`}
+                          alt={apiData.reklama[0].title}
+                          className="max-w-full max-h-full object-contain shadow-lg rounded-sm transform group-hover:scale-105 transition-transform duration-500"
+                          onError={(e) => {
+                            e.currentTarget.src = "/placeholder.svg"
+                          }}
+                        />
+                      )
+                    ) : (
+                      <div className="text-center text-gray-400">
+                        <Megaphone className="w-16 h-16 mx-auto mb-2 opacity-20" />
+                        <span className="text-sm">{t.reklama}</span>
                       </div>
-                    </div>
+                    )
                   ) : (
-                    <div className="flex items-center justify-center h-full">
-                      <div className="bg-white/90 backdrop-blur-sm rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-xl text-center max-w-sm border border-white/70">
-                        {/* Placeholder image - Same as RASMIY E'LON */}
-                        <div className="relative mb-4 sm:mb-6 overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 shadow-inner">
-                          <div className="w-full h-32 sm:h-40 flex items-center justify-center">
-                            <Megaphone className="w-16 h-16 sm:w-20 sm:h-20 text-[#003D7F]/30" />
-                          </div>
-                        </div>
-
-                        <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-[#003D7F] to-[#0059B2] rounded-3xl flex items-center justify-center mx-auto mb-4 sm:mb-6 shadow-lg">
-                          <Megaphone className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
-                        </div>
-                        <h4 className="font-bold text-gray-800 text-base mb-2 sm:mb-3">{t.reklamalarTitle}</h4>
-                        <p className="text-sm text-gray-600 leading-relaxed mb-4 sm:mb-6">
-                          Ma'lumot tez orada joylanadi
-                        </p>
-                        <Button
-                          size="sm"
-                          className="w-full bg-gradient-to-r from-gray-300 to-gray-400 text-gray-600 border-0 rounded-xl sm:rounded-2xl py-3 sm:py-4 text-xs sm:text-sm cursor-not-allowed"
-                          disabled
-                        >
-                          {t.batafsilKorish}
-                        </Button>
-                      </div>
+                    <div className="text-center text-gray-400">
+                      <Megaphone className="w-16 h-16 mx-auto mb-2 opacity-20" />
+                      <span className="text-sm">{t.reklamalarTitle}</span>
                     </div>
                   )}
                 </div>
-              </div>
-            </div>
-          </div>
-        </section>
 
-        {/* Asosiy bo'limlar section - Hidden on mobile */}
-        <section className="py-8 sm:py-12 lg:py-16 hidden lg:block">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-6 sm:mb-8 lg:mb-12">
-              <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-3 sm:mb-4">
-                {t.asosiyBolimlar}
-              </h2>
-              <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto px-4">
-                {t.asosiyBolimlarDesc}
-              </p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 max-w-6xl mx-auto">
-              {sections.map((section) => {
-                const Icon = section.icon
-                return (
-                  <Card
-                    key={section.title}
-                    className="group relative overflow-hidden border-0 shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-105 bg-white"
+                {/* Footer - Button Area */}
+                <div className="p-4 bg-gray-200/50 border-t border-gray-200">
+                  <Button
+                    className="w-full bg-[#003D7F] hover:bg-[#002B5A] text-white font-semibold py-5 sm:py-6 rounded-xl sm:rounded-2xl transition-all duration-300 shadow-md text-base"
+                    onClick={() => apiData?.reklama && apiData.reklama.length > 0 && handleReklamaDetail(apiData.reklama[0])}
+                    disabled={!apiData?.reklama || apiData.reklama.length === 0}
                   >
-                    {/* Gradient background overlay */}
-                    <div
-                      className={`absolute inset-0 bg-gradient-to-br ${section.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-500`}
-                    ></div>
-
-                    <CardHeader className="text-center pb-3 sm:pb-4 p-4 sm:p-6 lg:p-8 relative z-10">
-                      <div
-                        className={`mx-auto mb-3 sm:mb-4 lg:mb-6 p-4 sm:p-5 lg:p-6 rounded-2xl lg:rounded-3xl ${section.iconBg} group-hover:scale-110 transition-transform duration-500 shadow-lg`}
-                      >
-                        <Icon className={`h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 ${section.iconColor}`} />
-                      </div>
-                      <CardTitle className="text-lg sm:text-xl lg:text-2xl font-bold mb-2 sm:mb-3">
-                        {section.title}
-                      </CardTitle>
-                      <CardDescription className="text-sm sm:text-base text-gray-600 leading-relaxed">
-                        {section.description}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="text-center p-4 sm:p-6 lg:p-8 pt-0 relative z-10">
-                      <Button
-                        asChild
-                        className={`w-full bg-gradient-to-r ${section.gradient} hover:shadow-xl text-white border-0 font-semibold text-sm sm:text-base py-5 sm:py-6 lg:py-7 rounded-xl lg:rounded-2xl transition-all duration-300 hover:scale-105`}
-                      >
-                        <Link href={section.href} className="flex items-center justify-center gap-2">
-                          {t.korish}
-                          <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform duration-300" />
-                        </Link>
-                      </Button>
-                    </CardContent>
-                  </Card>
-                )
-              })}
-            </div>
-          </div>
-        </section>
-
-        <section className="py-8 sm:py-12 lg:py-16 bg-gradient-to-br from-blue-50 to-indigo-50">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-8 sm:mb-12">
-              <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-3 sm:mb-4">{t.nimaUchunBiz}</h2>
-              <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto px-4">{t.nimaUchunBizDesc}</p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-              <div className="text-center space-y-3 sm:space-y-4 p-4 sm:p-6 rounded-lg bg-white/70 backdrop-blur-sm hover:bg-white/90 transition-all duration-300 shadow-lg hover:shadow-xl order-4 sm:order-none">
-                <div className="mx-auto w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-[#003D7F] to-[#0059B2] rounded-full flex items-center justify-center shadow-lg">
-                  <Award className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
+                    {t.batafsilKorish}
+                  </Button>
                 </div>
-                <h3 className="text-lg sm:text-xl font-semibold text-gray-800">{t.sifatliKontent}</h3>
-                <p className="text-sm sm:text-base text-gray-600">{t.sifatliKontentDesc}</p>
-              </div>
-
-              <div className="text-center space-y-3 sm:space-y-4 p-4 sm:p-6 rounded-lg bg-white/70 backdrop-blur-sm hover:bg-white/90 transition-all duration-300 shadow-lg hover:shadow-xl order-5 sm:order-none">
-                <div className="mx-auto w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-[#003D7F] to-[#0059B2] rounded-full flex items-center justify-center shadow-lg">
-                  <Globe className="h-6 w-6 sm:h-8 sm:h-8 text-white" />
-                </div>
-                <h3 className="text-lg sm:text-xl font-semibold text-gray-800">{t.globalKirish}</h3>
-                <p className="text-sm sm:text-base text-gray-600">{t.globalKirishDesc}</p>
-              </div>
-
-              <div className="text-center space-y-3 sm:space-y-4 p-4 sm:p-6 rounded-lg bg-white/70 backdrop-blur-sm hover:bg-white/90 transition-all duration-300 shadow-lg hover:shadow-xl order-6 sm:order-none">
-                <div className="mx-auto w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-[#003D7F] to-[#0059B2] rounded-full flex items-center justify-center shadow-lg">
-                  <Users className="h-6 w-6 sm:h-8 sm:h-8 text-white" />
-                </div>
-                <h3 className="text-lg sm:text-xl font-semibold text-gray-800">{t.hamjamiyat}</h3>
-                <p className="text-sm sm:text-base text-gray-600">{t.hamjamiyatDesc}</p>
-              </div>
-
-              <div className="text-center space-y-3 sm:space-y-4 p-4 sm:p-6 rounded-lg bg-white/70 backdrop-blur-sm hover:bg-white/90 transition-all duration-300 shadow-lg hover:shadow-xl order-7 sm:order-none">
-                <div className="mx-auto w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-[#003D7F] to-[#0059B2] rounded-full flex items-center justify-center shadow-lg">
-                  <Lightbulb className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
-                </div>
-                <h3 className="text-lg sm:text-xl font-semibold text-gray-800">{t.innovatsiya}</h3>
-                <p className="text-sm sm:text-base text-gray-600">{t.innovatsiyaDesc}</p>
               </div>
             </div>
           </div>
         </section>
+
+
+
+
 
         <section className="py-8 sm:py-12 lg:py-16 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 order-8 sm:order-none">
           <div className="container mx-auto px-4">
@@ -1292,9 +1078,8 @@ export function HomeContent({ lang }: HomeContentProps) {
                         {latestContent.map((item, index) => (
                           <Card
                             key={index}
-                            className={`overflow-hidden shadow-lg bg-white border-0 rounded-2xl group hover:shadow-xl transition-all duration-500 w-80 ${
-                              index === currentBookSlide ? "ring-2 ring-[#003D7F] scale-105" : "opacity-90"
-                            }`}
+                            className={`overflow-hidden shadow-lg bg-white border-0 rounded-2xl group hover:shadow-xl transition-all duration-500 w-80 ${index === currentBookSlide ? "ring-2 ring-[#003D7F] scale-105" : "opacity-90"
+                              }`}
                           >
                             <CardContent className="p-0">
                               {/* Compact image - 288x242 like reference */}
@@ -1370,9 +1155,8 @@ export function HomeContent({ lang }: HomeContentProps) {
                           <button
                             key={index}
                             onClick={() => setCurrentBookSlide(index)}
-                            className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
-                              index === currentBookSlide ? "bg-[#003D7F] scale-125" : "bg-gray-300 hover:bg-gray-400"
-                            }`}
+                            className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${index === currentBookSlide ? "bg-[#003D7F] scale-125" : "bg-gray-300 hover:bg-gray-400"
+                              }`}
                           />
                         ))}
                       </div>
@@ -1461,6 +1245,49 @@ export function HomeContent({ lang }: HomeContentProps) {
                 </div>
               </div>
             )}
+          </div>
+        </section>
+
+        <section className="py-8 sm:py-12 lg:py-16 bg-gradient-to-br from-blue-50 to-indigo-50">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-8 sm:mb-12">
+              <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-3 sm:mb-4">{t.nimaUchunBiz}</h2>
+              <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto px-4">{t.nimaUchunBizDesc}</p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+              <div className="text-center space-y-3 sm:space-y-4 p-4 sm:p-6 rounded-lg bg-white/70 backdrop-blur-sm hover:bg-white/90 transition-all duration-300 shadow-lg hover:shadow-xl order-4 sm:order-none">
+                <div className="mx-auto w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-[#003D7F] to-[#0059B2] rounded-full flex items-center justify-center shadow-lg">
+                  <Award className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
+                </div>
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-800">{t.sifatliKontent}</h3>
+                <p className="text-sm sm:text-base text-gray-600">{t.sifatliKontentDesc}</p>
+              </div>
+
+              <div className="text-center space-y-3 sm:space-y-4 p-4 sm:p-6 rounded-lg bg-white/70 backdrop-blur-sm hover:bg-white/90 transition-all duration-300 shadow-lg hover:shadow-xl order-5 sm:order-none">
+                <div className="mx-auto w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-[#003D7F] to-[#0059B2] rounded-full flex items-center justify-center shadow-lg">
+                  <Globe className="h-6 w-6 sm:h-8 sm:h-8 text-white" />
+                </div>
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-800">{t.globalKirish}</h3>
+                <p className="text-sm sm:text-base text-gray-600">{t.globalKirishDesc}</p>
+              </div>
+
+              <div className="text-center space-y-3 sm:space-y-4 p-4 sm:p-6 rounded-lg bg-white/70 backdrop-blur-sm hover:bg-white/90 transition-all duration-300 shadow-lg hover:shadow-xl order-6 sm:order-none">
+                <div className="mx-auto w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-[#003D7F] to-[#0059B2] rounded-full flex items-center justify-center shadow-lg">
+                  <Users className="h-6 w-6 sm:h-8 sm:h-8 text-white" />
+                </div>
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-800">{t.hamjamiyat}</h3>
+                <p className="text-sm sm:text-base text-gray-600">{t.hamjamiyatDesc}</p>
+              </div>
+
+              <div className="text-center space-y-3 sm:space-y-4 p-4 sm:p-6 rounded-lg bg-white/70 backdrop-blur-sm hover:bg-white/90 transition-all duration-300 shadow-lg hover:shadow-xl order-7 sm:order-none">
+                <div className="mx-auto w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-[#003D7F] to-[#0059B2] rounded-full flex items-center justify-center shadow-lg">
+                  <Lightbulb className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
+                </div>
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-800">{t.innovatsiya}</h3>
+                <p className="text-sm sm:text-base text-gray-600">{t.innovatsiyaDesc}</p>
+              </div>
+            </div>
           </div>
         </section>
       </div>
